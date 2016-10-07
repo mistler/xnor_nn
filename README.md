@@ -17,6 +17,11 @@ convolutional neural networks with C interface.
 }
 ```
 
+### Build
+```
+   mkdir build && cd build && cmake ../ && make
+```
+
 ### Performance
 conv4 from Alexnet:
 ICxIHxIW->OCxOHxOW
