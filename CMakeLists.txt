@@ -1,5 +1,7 @@
-cmake_minimum_required(VERSION 2.8)
 project(xnor_nn)
+cmake_minimum_required(VERSION 2.8)
+
+set(LIB_NAME xnor_nn)
 
 if("${CMAKE_BUILD_TYPE}" STREQUAL "")
     message(STATUS "CMAKE_BUILD_TYPE is unset, defaulting to Release")
