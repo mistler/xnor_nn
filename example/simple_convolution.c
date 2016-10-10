@@ -45,8 +45,8 @@ int main(void){
     if (st != xnor_nn_success) goto label;
 
     // Internal data
-    size_t sz_src_bin = src_binarizer.size();
-    size_t sz_weights_bin = weights_binarizer.size();
+    size_t sz_src_bin = src_binarizer.size(&src_binarizer);
+    size_t sz_weights_bin = weights_binarizer.size(&weights_binarizer);
 
     st = xnor_nn_memory_allocate(&src_bin, sz_src_bin);
     if (st != xnor_nn_success) goto label;
@@ -54,14 +54,15 @@ int main(void){
     if (st != xnor_nn_success) goto label;
 
     // Execution
-    st = weights_binarizer.execute(weights_usr, weights_bin);
+    st = weights_binarizer.execute(&weights_binarizer,
+            weights_usr, weights_bin);
     if (st != xnor_nn_success) goto label;
 
     for (int i = 0; i < 3; i++) {
-        st = src_binarizer.execute(src_usr, src_bin);
+        st = src_binarizer.execute(&src_binarizer, src_usr, src_bin);
         if (st != xnor_nn_success) goto label;
 
-        st = convolution.forward(src_bin, weights_bin, dst);
+        st = convolution.forward(&convolution, src_bin, weights_bin, dst);
         if (st != xnor_nn_success) goto label;
     }
 

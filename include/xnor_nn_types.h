@@ -15,15 +15,17 @@ typedef struct {
     int mb;
     int sz[3];
 
-    xnor_nn_status_t (*execute)(const void *from, void *to);
-    size_t (*size)(void);
+    xnor_nn_status_t (*execute)(const void *self,
+            const void *from, void *to);
+    size_t (*size)(const void *self);
 } xnor_nn_data_binarizer_t;
 
 typedef struct {
     int sz[4];
 
-    xnor_nn_status_t (*execute)(const void *from, void *to);
-    size_t (*size)(void);
+    xnor_nn_status_t (*execute)(const void *self,
+            const void *from, void *to);
+    size_t (*size)(const void *self);
 } xnor_nn_weights_binarizer_t;
 
 typedef struct {
@@ -33,9 +35,8 @@ typedef struct {
     int stride[2];
     int padding[2];
 
-    xnor_nn_status_t (*forward)(const void *src, const void *weights,
-            void *dst);
-    size_t (*size)(void);
+    xnor_nn_status_t (*forward)(const void *self,
+            const void *src, const void *weights, void *dst);
 } xnor_nn_convolution_t;
 
 #ifdef __cplusplus
