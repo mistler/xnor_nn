@@ -21,7 +21,7 @@ xnor_nn_status_t xnor_nn_init_weights_binarizer(xnor_nn_weights_binarizer_t *b,
         int oc, int ic, int kh, int kw);
 
 xnor_nn_status_t xnor_nn_init_convolution(xnor_nn_convolution_t *c,
-        int mb, int ic, int ih, int iw, int oc, int oh, int ow,
+        int mb, int oc, int ic, int ih, int iw,
         int kh, int kw, int sh, int sw, int ph, int pw);
 
 #ifdef __cplusplus

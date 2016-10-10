@@ -41,7 +41,7 @@ int main(void){
     if (st != xnor_nn_success) goto label;
 
     st = xnor_nn_init_convolution(&convolution,
-            MB, IC, IH, IW, OC, OH, OW, KH, KW, SH, SW, PH, PW);
+            MB, OC, IC, IH, IW, KH, KW, SH, SW, PH, PW);
     if (st != xnor_nn_success) goto label;
 
     // Internal data
@@ -61,7 +61,7 @@ int main(void){
         st = src_binarizer.execute(src_usr, src_bin);
         if (st != xnor_nn_success) goto label;
 
-        st = convolution.execute(src_bin, weights_bin, dst);
+        st = convolution.forward(src_bin, weights_bin, dst);
         if (st != xnor_nn_success) goto label;
     }
 

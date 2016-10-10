@@ -37,7 +37,7 @@ xnor_nn_status_t xnor_nn_init_weights_binarizer(xnor_nn_weights_binarizer_t *b,
 }
 
 xnor_nn_status_t xnor_nn_init_convolution(xnor_nn_convolution_t *c,
-        int mb, int ic, int ih, int iw, int oc, int oh, int ow,
+        int mb, int oc, int ic, int ih, int iw,
         int kh, int kw, int sh, int sw, int ph, int pw) {
     (void)c;
     (void)mb;
@@ -45,8 +45,6 @@ xnor_nn_status_t xnor_nn_init_convolution(xnor_nn_convolution_t *c,
     (void)ih;
     (void)iw;
     (void)oc;
-    (void)oh;
-    (void)ow;
     (void)kh;
     (void)kw;
     (void)sh;

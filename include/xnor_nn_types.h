@@ -33,7 +33,7 @@ typedef struct {
     int stride[2];
     int padding[2];
 
-    xnor_nn_status_t (*execute)(const void *src, const void *weights,
+    xnor_nn_status_t (*forward)(const void *src, const void *weights,
             void *dst);
     size_t (*size)(void);
 } xnor_nn_convolution_t;
