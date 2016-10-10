@@ -16,6 +16,9 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CCXX_FLAGS} -std=c++11")
 
 include_directories(include)
 
+enable_testing()
+
 add_subdirectory(external)
 add_subdirectory(src)
+add_subdirectory(example)
 add_subdirectory(test)
