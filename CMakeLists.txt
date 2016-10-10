@@ -18,7 +18,7 @@ include_directories(include)
 
 enable_testing()
 
-add_subdirectory(external)
 add_subdirectory(src)
 add_subdirectory(example)
+add_subdirectory(external)
 add_subdirectory(test)
