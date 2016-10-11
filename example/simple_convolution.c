@@ -13,8 +13,8 @@ int main(void){
     const int SH = 1, SW = 1;
     const int PH = 1, PW = 1;
 
-    void *src_usr, *weights_usr;
-    void *src_bin, *weights_bin;
+    void *src_usr = NULL, *weights_usr = NULL;
+    void *src_bin = NULL, *weights_bin = NULL;
     void *dst;
 
     xnor_nn_data_binarizer_t src_binarizer;
