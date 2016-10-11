@@ -4,9 +4,8 @@
 #include "xnor_nn.h"
 
 int main(void){
-    // conv4 from AlexNet
-    const int MB = 256;
-    const int IC = 384, OC = 384;
+    const int MB = 32;
+    const int IC = 64, OC = 24;
     const int IH = 13, IW = 13;
     const int OH = 13, OW = 13;
     const int KH = 3, KW = 3;
@@ -23,6 +22,9 @@ int main(void){
 
     xnor_nn_status_t st;
     char st_msg[16];
+
+    size_t sz_src_bin;
+    size_t sz_weights_bin;
 
     // Usr data
     src_usr = malloc(sizeof(float)*MB*IC*IH*IW);
@@ -45,8 +47,8 @@ int main(void){
     if (st != xnor_nn_success) goto label;
 
     // Internal data
-    size_t sz_src_bin = src_binarizer.size(&src_binarizer);
-    size_t sz_weights_bin = weights_binarizer.size(&weights_binarizer);
+    sz_src_bin = src_binarizer.size(&src_binarizer);
+    sz_weights_bin = weights_binarizer.size(&weights_binarizer);
 
     st = xnor_nn_memory_allocate(&src_bin, sz_src_bin);
     if (st != xnor_nn_success) goto label;

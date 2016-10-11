@@ -1,6 +1,8 @@
 #ifndef XNOR_NN_TYPES_H
 #define XNOR_NN_TYPES_H
 
+#include <stddef.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -30,9 +32,10 @@ typedef struct {
 
 typedef struct {
     int mb;
-    int in[3];
-    int out[3];
+    int src[3];
+    int dst[3];
     int stride[2];
+    int kernel[2];
     int padding[2];
 
     xnor_nn_status_t (*forward)(const void *self,
