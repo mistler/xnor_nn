@@ -14,7 +14,10 @@ static xnor_nn_status_t copy_on_float(
     const float *f = (const float*)from;
     float *t = (float*)to;
     int elems = self->sz[0] * self->sz[1] * self->sz[2] * self->sz[3];
+
+#   pragma omp parallel for
     for(int i = 0; i < elems; i++) t[i] = f[i];
+
     return xnor_nn_success;
 }
 

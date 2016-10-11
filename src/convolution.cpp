@@ -22,6 +22,7 @@ static xnor_nn_status_t fwd_xnor_on_float(const void *s,
     const int PW = self->padding[0];
     const int PH = self->padding[1];
 
+#   pragma omp parallel for collapse(2)
     for (int mb = 0; mb < MB; ++mb)
     for (int oc = 0; oc < OC; ++oc)
     for (int oh = 0; oh < OH; ++oh)
