@@ -19,7 +19,7 @@ convolutional neural networks with C interface.
 
 ### Build
 ```
-   mkdir build && cd build && cmake ../ && make
+    (mkdir -p build && rm -rf build/* && cd build && cmake ../ && make -j && make -j test)
 ```
 
 ### Performance
