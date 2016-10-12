@@ -1,11 +1,14 @@
-set(APP_NAME "test_gtest")
+set(APP_NAME "gtest")
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 include_directories(${CMAKE_SOURCE_DIR}/external/gtest)
 
-file(GLOB PRIM_TEST_CASES_SRC test_*.cpp)
+file(GLOB PRIM_TEST_CASES_SRC RELATIVE
+    ${CMAKE_SOURCE_DIR}/test/gtest test_*.cpp)
 
-add_executable(${APP_NAME} main.cpp ${PRIM_TEST_CASES_SRC})
-set_property(TARGET simple_convolution PROPERTY C_STANDARD 99)
-target_link_libraries(${APP_NAME} xnor_nn gtest)
-add_test(${APP_NAME} ${APP_NAME})
+foreach(TEST_FILE ${PRIM_TEST_CASES_SRC})
+    set(CURR_APP_NAME ${APP_NAME}_${TEST_FILE})
+    add_executable(${CURR_APP_NAME} main.cpp ${TEST_FILE})
+    target_link_libraries(${CURR_APP_NAME} xnor_nn gtest)
+    add_test(${CURR_APP_NAME} ${CURR_APP_NAME})
+endforeach()
