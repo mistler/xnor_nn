@@ -1,6 +1,5 @@
 #include <cmath>
 #include <vector>
-#include <iostream>
 
 #include "xnor_nn.h"
 
