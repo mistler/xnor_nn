@@ -40,13 +40,18 @@ TEST(ConvolutionXnorFwd, simple_precalculated) {
         N, N, P,
         P, N, N
     };
-    /*
+    // Precalculated output
     const float expected_dst[MB*OC*OH*OW] = {
-        N // TODO: fill me!
-    };
-    */
+        8, 12, 8,
+        48, 81, 36,
+        16, 36, 20,
 
-    float actual_dst[MB*OC*OH*OW] = { .0f };
+        16, 36, 16,
+        24, 72, 36,
+        16, 36, 12
+    }; // * 1/9
+
+    float actual_dst[MB*OC*OH*OW] = { 0.f };
 
     // Convolution setup
     xnor_nn::Convolution convolution{MB, OC, IC, IH, IW,
@@ -56,14 +61,15 @@ TEST(ConvolutionXnorFwd, simple_precalculated) {
     convolution.forward(src, actual_dst);
 
     // Check result
-    /*
+    int wrong = 0;
     for (int mb = 0; mb < MB; mb++)
     for (int oc = 0; oc < OC; oc++)
     for (int oh = 0; oh < OH; oh++)
     for (int ow = 0; ow < OW; ow++) {
         float actual = actual_dst[((mb*OC + oc)*OH + oh)*OW + ow];
-        float expected = expected_dst[((mb*OC + oc)*OH + oh)*OW + ow];
-        EXPECT_FLOAT_EQ(expected, actual);
+        float expected = expected_dst[((mb*OC + oc)*OH + oh)*OW + ow] / 9.f;
+        EXPECT_NEAR(expected, actual, 1e-5f) << "mb: " << mb << ", oc: "
+            << oc << ", oh: " << oh << ", ow: " << ow << ". wrong/total: "
+            << ++wrong << "/" << MB*OC*OH*OW;
     }
-    */
 }
