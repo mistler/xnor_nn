@@ -14,7 +14,8 @@ int main(void){
 
     void *src_usr = NULL, *weights_usr = NULL;
     void *src_bin = NULL, *weights_bin = NULL;
-    void *dst;
+    // TODO: dst allignment
+    void *dst = NULL;
 
     xnor_nn_data_binarizer_t src_binarizer;
     xnor_nn_weights_binarizer_t weights_binarizer;
@@ -55,11 +56,11 @@ int main(void){
     st = xnor_nn_memory_allocate(&weights_bin, sz_weights_bin);
     if (st != xnor_nn_success) goto label;
 
-    // Execution
     st = weights_binarizer.execute(&weights_binarizer,
             weights_usr, weights_bin);
     if (st != xnor_nn_success) goto label;
 
+    // Execution
     for (int i = 0; i < 3; i++) {
         st = src_binarizer.execute(&src_binarizer, src_usr, src_bin);
         if (st != xnor_nn_success) goto label;
