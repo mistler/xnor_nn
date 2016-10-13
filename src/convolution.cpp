@@ -1,5 +1,6 @@
 #include <cmath>
 #include <vector>
+#include <iostream>
 
 #include "xnor_nn.h"
 
@@ -25,25 +26,24 @@ static xnor_nn_status_t fwd_xnor_on_float(const void *s,
     const int PW = self->padding[0];
     const int PH = self->padding[1];
 
-    std::vector<float> a(MB*IH*IW, .0f);
-
     const float c = 1.f / IC;
     const float khw = 1.f / KH / KW;
     const float cckhw = 1.f / OC / IC / KH / KW;
 
-    float alpha = .0f;
+    float alpha = 0.f;
+    std::vector<float> a(IH*IW, 0.f);
+    std::vector<float> k(OH*OW, 0.f);
 
-#   pragma omp parallel for collapse(2)
+    // Calculate A
     for (int mb = 0; mb < MB; mb++)
     for (int ih = 0; ih < IH; ih++)
     for (int iw = 0; iw < IW; iw++)
     for (int ic = 0; ic < IC; ic++) {
         int src_idx = ((mb*IC + ic)*IH + ih)*IW + iw;
-        a[(mb*IH + ih)*IW + iw] += std::fabs(src[src_idx]) * c;
+        a[ih*IW + iw] += std::fabs(src[src_idx]) * c;
     }
 
-    // TODO: THINK OF ORDER OF CALCULATING ALPHA (DIVISION ORDER)
-#   pragma omp parallel for collapse(2)
+    // Calculate alpha
     for (int oc = 0; oc < OC; oc++)
     for (int ic = 0; ic < IC; ic++)
     for (int kh = 0; kh < KH; kh++)
@@ -52,29 +52,42 @@ static xnor_nn_status_t fwd_xnor_on_float(const void *s,
         alpha += std::fabs(weights[weights_idx]) * cckhw;
     }
 
+    // Calculate K
+    for (int oh = 0; oh < OH; oh++)
+    for (int ow = 0; ow < OW; ow++)
+    for (int kh = 0; kh < KH; kh++)
+    for (int kw = 0; kw < KW; kw++) {
+        if (oh*SH + kh < (PH > 0 ? PH : 0)) continue;
+        if (ow*SW + kw < (PW > 0 ? PW : 0)) continue;
+
+        if (oh*SH + kh >= IH + PH) continue;
+        if (ow*SW + kw >= IW + PW) continue;
+
+        const int ih = oh * SH - PH + kh;
+        const int iw = ow * SW - PW + kw;
+
+        k[oh*OW + ow] += a[ih*IW + iw] * khw;
+    }
+
 #   pragma omp parallel for collapse(2)
     for (int mb = 0; mb < MB; mb++)
     for (int oc = 0; oc < OC; oc++)
     for (int oh = 0; oh < OH; oh++)
     for (int ow = 0; ow < OW; ow++) {
-        float beta = .0f;
         int dst_idx = ((mb*OC + oc)*OH + oh)*OW + ow;
         float *d = dst + dst_idx;
-        *d = .0f;
+        *d = 0.f;
         for (int ic = 0; ic < IC; ic++) {
-            beta = .0f;
             for (int kh = 0; kh < KH; kh++)
             for (int kw = 0; kw < KW; kw++) {
                 if (oh*SH + kh < (PH > 0 ? PH : 0)) continue;
-                if (ow*SW + kw < (PW > 0 ? PH : 0)) continue;
+                if (ow*SW + kw < (PW > 0 ? PW : 0)) continue;
 
                 if (oh*SH + kh >= IH + PH) continue;
                 if (ow*SW + kw >= IW + PW) continue;
 
                 const int ih = oh * SH - PH + kh;
                 const int iw = ow * SW - PW + kw;
-
-                beta += a[(mb*IH + ih)*IW + iw] * khw;
 
                 int src_idx = ((mb*IC + ic)*IH + ih)*IW + iw;
                 int weights_idx = ((oc*IC + ic)*KH + kh)*KW + kw;
@@ -83,13 +96,12 @@ static xnor_nn_status_t fwd_xnor_on_float(const void *s,
                 bool bsrc = src[src_idx] >= 0 ? true : false;
                 bool bweights = weights[weights_idx] >= 0 ? true : false;
 
-                float result = ~(bsrc ^ bweights);
+                float result = !(bsrc ^ bweights);
                 *d += result;
             }
-            // TODO: THINK OF ORDER OF APPLYING ALPHA AND BETHA !!!
         }
         *d *= alpha;
-        *d *= beta;
+        *d *= k[oh*OW + ow];
     }
 
     return xnor_nn_success;
