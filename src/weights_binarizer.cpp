@@ -64,5 +64,8 @@ xnor_nn_status_t xnor_nn_init_weights_binarizer(xnor_nn_weights_binarizer_t *b,
     b->size = sz;
     b->execute = weights_bin_dispatch;
 
+    Logger::info("weights_binarizer:", "create:",
+            "OC:", oc, "IC:", ic, "KH:", kh, "KW:", kw);
+
     return xnor_nn_success;
 }

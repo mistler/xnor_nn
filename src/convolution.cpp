@@ -164,5 +164,10 @@ xnor_nn_status_t xnor_nn_init_convolution(xnor_nn_convolution_t *c,
 
     c->forward = convolution_dispatch;
 
+    Logger::info("convolution:", "create:",
+            "MB:", mb, "IC:", ic, "IH:", ih, "IW:", iw,
+            "OC:", oc, "OH:", oh, "OW:", ow,
+            "KH:", kh, "KW:", kw, "SH:", sh, "SW:", sw, "PH:", ph, "PW:", pw);
+
     return xnor_nn_success;
 }

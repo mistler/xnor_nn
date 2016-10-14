@@ -63,5 +63,8 @@ xnor_nn_status_t xnor_nn_init_data_binarizer(xnor_nn_data_binarizer_t *b,
     b->size = sz;
     b->execute = data_bin_dispatch;
 
+    Logger::info("data_binarizer:", "create:",
+            "MB:", mb, "IC:", ic, "IH:", ih, "IW:", iw);
+
     return xnor_nn_success;
 }
