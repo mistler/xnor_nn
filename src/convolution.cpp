@@ -3,28 +3,13 @@
 
 #include "xnor_nn.h"
 
-static xnor_nn_status_t fwd_xnor_on_float(const void *s,
-        const void *src_, const void *weights_, void *dst_) {
-    const xnor_nn_convolution_t *self = (const xnor_nn_convolution_t*)s;
+namespace {
 
-    const float *src = (const float*)src_;
-    const float *weights = (const float*)weights_;
-    float *dst = (float*)dst_;
-
-    const int MB = self->mb;
-    const int IW = self->src[0];
-    const int IH = self->src[1];
-    const int IC = self->src[2];
-    const int OW = self->dst[0];
-    const int OH = self->dst[1];
-    const int OC = self->dst[2];
-    const int SW = self->stride[0];
-    const int SH = self->stride[1];
-    const int KW = self->kernel[0];
-    const int KH = self->kernel[1];
-    const int PW = self->padding[0];
-    const int PH = self->padding[1];
-
+xnor_nn_status_t fwd_xnor_on_float(
+        const float *src, const float *weights, float *dst,
+        int MB, int IC, int IH, int IW,
+        int OC, int OH, int OW,
+        int KH, int KW, int SH, int SW, int PH, int PW) {
     const float c = 1.f / IC;
     const float khw = 1.f / KH / KW;
     const float cckhw = 1.f / OC / IC / KH / KW;
@@ -106,6 +91,34 @@ static xnor_nn_status_t fwd_xnor_on_float(const void *s,
     return xnor_nn_success;
 }
 
+xnor_nn_status_t convolution_dispatch(const void *s,
+        const void *src_, const void *weights_, void *dst_) {
+    const xnor_nn_convolution_t *self = (const xnor_nn_convolution_t*)s;
+
+    const float *src = (const float*)src_;
+    const float *weights = (const float*)weights_;
+    float *dst = (float*)dst_;
+
+    const int MB = self->mb;
+    const int IW = self->src[0];
+    const int IH = self->src[1];
+    const int IC = self->src[2];
+    const int OW = self->dst[0];
+    const int OH = self->dst[1];
+    const int OC = self->dst[2];
+    const int SW = self->stride[0];
+    const int SH = self->stride[1];
+    const int KW = self->kernel[0];
+    const int KH = self->kernel[1];
+    const int PW = self->padding[0];
+    const int PH = self->padding[1];
+
+    return fwd_xnor_on_float(src, weights, dst, MB, IC, IH, IW, OC, OH, OW,
+            KH, KW, SH, SW, PH, PW);
+}
+
+}
+
 xnor_nn_status_t xnor_nn_init_convolution(xnor_nn_convolution_t *c,
         int mb, int oc, int ic, int ih, int iw,
         int kh, int kw, int sh, int sw, int ph, int pw) {
@@ -131,7 +144,7 @@ xnor_nn_status_t xnor_nn_init_convolution(xnor_nn_convolution_t *c,
     c->padding[0] = pw;
     c->padding[1] = ph;
 
-    c->forward = fwd_xnor_on_float;
+    c->forward = convolution_dispatch;
 
     return xnor_nn_success;
 }
