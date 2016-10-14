@@ -3,6 +3,11 @@
 
 #include "xnor_nn.h"
 
+#include "utils/logger.hpp"
+#include "utils/timer.hpp"
+
+using Logger = xnor_nn::utils::Logger;
+
 namespace {
 
 xnor_nn_status_t fwd_xnor_on_float(
@@ -91,6 +96,7 @@ xnor_nn_status_t fwd_xnor_on_float(
     return xnor_nn_success;
 }
 
+// TODO: dispatch at init time
 xnor_nn_status_t convolution_dispatch(const void *s,
         const void *src_, const void *weights_, void *dst_) {
     const xnor_nn_convolution_t *self = (const xnor_nn_convolution_t*)s;
@@ -113,8 +119,20 @@ xnor_nn_status_t convolution_dispatch(const void *s,
     const int PW = self->padding[0];
     const int PH = self->padding[1];
 
-    return fwd_xnor_on_float(src, weights, dst, MB, IC, IH, IW, OC, OH, OW,
-            KH, KW, SH, SW, PH, PW);
+    xnor_nn::utils::Timer timer;
+    timer.start();
+
+    xnor_nn_status_t st = fwd_xnor_on_float(src, weights, dst,
+            MB, IC, IH, IW, OC, OH, OW, KH, KW, SH, SW, PH, PW);
+
+    timer.stop();
+    Logger::info("convolution:", "execute:",
+            "MB:", MB, "IC:", IC, "IH:", IH, "IW:", IW,
+            "OC:", OC, "OH:", OH, "OW:", OW,
+            "KH:", KH, "KW:", KW, "SH:", SH, "SW:", SW, "PH:", PH, "PW:", PW,
+            "time:", timer.millis(), "ms");
+
+    return st;
 }
 
 }
