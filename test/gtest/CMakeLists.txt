@@ -1,7 +1,9 @@
 set(APP_NAME "gtest")
 
-include_directories(${CMAKE_SOURCE_DIR}/include)
-include_directories(${CMAKE_SOURCE_DIR}/external/gtest)
+include_directories(
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/external/gtest
+    )
 
 file(GLOB PRIM_TEST_CASES_SRC RELATIVE
     ${CMAKE_SOURCE_DIR}/test/gtest test_*.cpp)
