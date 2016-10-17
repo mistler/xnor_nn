@@ -28,6 +28,26 @@ template<> void check_data<float>(int MB, int C, int H, int W,
     }
 }
 
+template <typename T>
+void check_weights(int OC, int IC, int KH, int KW,
+        const T *actual, const T *expected);
+
+template<> void check_weights<float>(int OC, int IC, int KH, int KW,
+        const float *actual, const float *expected) {
+    const float ERR = 1e-5f;
+    int wrong = 0;
+    for (int oc = 0; oc < OC; oc++)
+    for (int ic = 0; ic < IC; ic++)
+    for (int kh = 0; kh < KH; kh++)
+    for (int kw = 0; kw < KW; kw++) {
+        float a = actual[((oc*IC + ic)*KH + kh)*KW + kw];
+        float e = expected[((oc*IC + ic)*KH + kh)*KW + kw];
+        EXPECT_NEAR(e, a, ERR) << "oc: " << oc << ", ic: "
+            << ic << ", kh: " << kh << ", kw: " << kw << ". wrong/total: "
+            << ++wrong << "/" << OC*IC*KH*KW;
+    }
+}
+
 }
 }
 
