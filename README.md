@@ -36,5 +36,5 @@ Minibatch   |   Caffe(gemm-algorithm)   |   xnor(direct)
 CPU: ARM Cortex-A53 (Raspberry PI 3)
 --------------------------------------------------------------------------------
 Minibatch   |   Caffe(gemm-algorithm)   |   xnor(direct)
-256         |   ~500000 ms              |   9209 ms
-1           |   ~1000 ms                |   55 ms
+256         |   20000 ms                |   9209 ms
+1           |   70 ms                   |   55 ms
