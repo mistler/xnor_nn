@@ -1,10 +1,10 @@
-#include <mm_malloc.h>
+#include <cstdlib>
 
 #include "xnor_nn.h"
 
 xnor_nn_status_t xnor_nn_memory_allocate(void **ptr, size_t sz) {
     if (ptr == NULL) return xnor_nn_error_invalid_input;
-    void *mem = _mm_malloc(sz, 64);
+    void *mem = aligned_alloc(64, sz);
     if (mem == NULL) {
         *ptr = NULL;
         return xnor_nn_error_memory;
@@ -15,5 +15,5 @@ xnor_nn_status_t xnor_nn_memory_allocate(void **ptr, size_t sz) {
 
 void xnor_nn_memory_free(void *ptr) {
     if (ptr == NULL) return;
-    _mm_free(ptr);
+    free(ptr);
 }
