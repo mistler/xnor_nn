@@ -4,7 +4,7 @@
 #include "xnor_nn.h"
 
 int main(void){
-    const int MB = 32;
+    const int MB = 8;
     const int IC = 64, OC = 128;
     const int IH = 13, IW = 13;
     const int OH = 13, OW = 13;
