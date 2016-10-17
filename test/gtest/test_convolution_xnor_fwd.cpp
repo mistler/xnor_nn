@@ -1,5 +1,7 @@
 #include "xnor_nn.hpp"
+
 #include "gtest.h"
+#include "common.hpp"
 
 TEST(ConvolutionXnorFwd, simple_precalculated) {
     const int MB = 1;
@@ -41,7 +43,7 @@ TEST(ConvolutionXnorFwd, simple_precalculated) {
         P, N, N
     };
     // Precalculated output
-    const float expected_dst[MB*OC*OH*OW] = {
+    float expected_dst[MB*OC*OH*OW] = {
         8, 12, 8,
         48, 81, 36,
         16, 36, 20,
@@ -50,6 +52,7 @@ TEST(ConvolutionXnorFwd, simple_precalculated) {
         24, 72, 36,
         16, 36, 12
     }; // * 1/9
+    for (int i = 0; i < MB*OC*OH*OW; i++) expected_dst[i] /= 9.f;
 
     float actual_dst[MB*OC*OH*OW] = { 0.f };
 
@@ -61,15 +64,5 @@ TEST(ConvolutionXnorFwd, simple_precalculated) {
     convolution.forward(src, actual_dst);
 
     // Check result
-    int wrong = 0;
-    for (int mb = 0; mb < MB; mb++)
-    for (int oc = 0; oc < OC; oc++)
-    for (int oh = 0; oh < OH; oh++)
-    for (int ow = 0; ow < OW; ow++) {
-        float actual = actual_dst[((mb*OC + oc)*OH + oh)*OW + ow];
-        float expected = expected_dst[((mb*OC + oc)*OH + oh)*OW + ow] / 9.f;
-        EXPECT_NEAR(expected, actual, 1e-5f) << "mb: " << mb << ", oc: "
-            << oc << ", oh: " << oh << ", ow: " << ow << ". wrong/total: "
-            << ++wrong << "/" << MB*OC*OH*OW;
-    }
+    xnor_nn::test::check_data(MB, OC, OH, OW, actual_dst, expected_dst);
 }
