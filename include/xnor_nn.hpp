@@ -23,8 +23,8 @@ public:
         check_status(xnor_nn_init_weights_binarizer(
                     &weights_binarizer_, OC, IC, KH, KW));
 
-        oh_ = convolution_.dst[1];
-        ow_ = convolution_.dst[0];
+        oh_ = convolution_.oh;
+        ow_ = convolution_.ow;
 
         // Internal memory
         size_t sz_src_bin = src_binarizer_.size(&src_binarizer_);

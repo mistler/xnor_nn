@@ -14,8 +14,7 @@ typedef enum {
 } xnor_nn_status_t;
 
 typedef struct {
-    int mb;
-    int sz[3];
+    int mb, c, h, w;
 
     xnor_nn_status_t (*execute)(const void *self,
             const void *from, void *to);
@@ -23,7 +22,7 @@ typedef struct {
 } xnor_nn_data_binarizer_t;
 
 typedef struct {
-    int sz[4];
+    int oc, ic, kh, kw;
 
     xnor_nn_status_t (*execute)(const void *self,
             const void *from, void *to);
@@ -32,11 +31,11 @@ typedef struct {
 
 typedef struct {
     int mb;
-    int src[3];
-    int dst[3];
-    int stride[2];
-    int kernel[2];
-    int padding[2];
+    int ic, ih, iw;
+    int oc, oh, ow;
+    int sh, sw;
+    int kh, kw;
+    int ph, pw;
 
     xnor_nn_status_t (*forward)(const void *self,
             const void *src, const void *weights, void *dst);

@@ -106,18 +106,18 @@ xnor_nn_status_t convolution_dispatch(const void *s,
     float *dst = (float*)dst_;
 
     const int MB = self->mb;
-    const int IW = self->src[0];
-    const int IH = self->src[1];
-    const int IC = self->src[2];
-    const int OW = self->dst[0];
-    const int OH = self->dst[1];
-    const int OC = self->dst[2];
-    const int SW = self->stride[0];
-    const int SH = self->stride[1];
-    const int KW = self->kernel[0];
-    const int KH = self->kernel[1];
-    const int PW = self->padding[0];
-    const int PH = self->padding[1];
+    const int IW = self->iw;
+    const int IH = self->ih;
+    const int IC = self->ic;
+    const int OW = self->ow;
+    const int OH = self->oh;
+    const int OC = self->oc;
+    const int SW = self->sw;
+    const int SH = self->sh;
+    const int KW = self->kw;
+    const int KH = self->kh;
+    const int PW = self->pw;
+    const int PH = self->ph;
 
     xnor_nn::utils::Timer timer;
     timer.start();
@@ -145,22 +145,22 @@ xnor_nn_status_t xnor_nn_init_convolution(xnor_nn_convolution_t *c,
 
     c->mb = mb;
 
-    c->src[0] = iw;
-    c->src[1] = ih;
-    c->src[2] = ic;
+    c->iw = iw;
+    c->ih = ih;
+    c->ic = ic;
 
-    c->dst[0] = ow;
-    c->dst[1] = oh;
-    c->dst[2] = oc;
+    c->ow = ow;
+    c->oh = oh;
+    c->oc = oc;
 
-    c->stride[0] = sw;
-    c->stride[1] = sh;
+    c->sw = sw;
+    c->sh = sh;
 
-    c->kernel[0] = kw;
-    c->kernel[1] = kh;
+    c->kw = kw;
+    c->kh = kh;
 
-    c->padding[0] = pw;
-    c->padding[1] = ph;
+    c->pw = pw;
+    c->ph = ph;
 
     c->forward = convolution_dispatch;
 

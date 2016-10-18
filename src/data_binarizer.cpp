@@ -10,7 +10,7 @@ namespace {
 size_t sz(const void *s){
     const xnor_nn_data_binarizer_t *self = (const xnor_nn_data_binarizer_t*)s;
 
-    size_t elems = self->mb * self->sz[0] * self->sz[1] * self->sz[2];
+    size_t elems = self->mb * self->c * self->h * self->w;
     return elems * sizeof(float);
 }
 
@@ -33,9 +33,9 @@ xnor_nn_status_t data_bin_dispatch(
     float *t = (float*)to;
 
     const int MB = self->mb;
-    const int IC = self->sz[2];
-    const int IH = self->sz[1];
-    const int IW = self->sz[0];
+    const int IC = self->c;
+    const int IH = self->h;
+    const int IW = self->w;
 
     xnor_nn::utils::Timer timer;
     timer.start();
@@ -48,7 +48,6 @@ xnor_nn_status_t data_bin_dispatch(
             "time:", timer.millis(), "ms");
 
     return st;
-
 }
 
 }
@@ -56,9 +55,9 @@ xnor_nn_status_t data_bin_dispatch(
 xnor_nn_status_t xnor_nn_init_data_binarizer(xnor_nn_data_binarizer_t *b,
         int mb, int ic, int ih, int iw) {
     b->mb = mb;
-    b->sz[0] = iw;
-    b->sz[1] = ih;
-    b->sz[2] = ic;
+    b->w = iw;
+    b->h = ih;
+    b->c = ic;
 
     b->size = sz;
     b->execute = data_bin_dispatch;

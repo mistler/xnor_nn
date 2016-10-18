@@ -11,7 +11,7 @@ size_t sz(const void *s){
     const xnor_nn_weights_binarizer_t *self =
         (const xnor_nn_weights_binarizer_t*)s;
 
-    size_t elems = self->sz[0] * self->sz[1] * self->sz[2] * self->sz[3];
+    size_t elems = self->oc * self->ic * self->kh * self->kw;
     return elems * sizeof(float);
 }
 
@@ -34,10 +34,10 @@ xnor_nn_status_t weights_bin_dispatch(
     const float *f = (const float*)from;
     float *t = (float*)to;
 
-    const int OC = self->sz[3];
-    const int IC = self->sz[2];
-    const int KH = self->sz[1];
-    const int KW = self->sz[0];
+    const int OC = self->oc;
+    const int IC = self->ic;
+    const int KH = self->kh;
+    const int KW = self->kw;
 
     xnor_nn::utils::Timer timer;
     timer.start();
@@ -56,10 +56,10 @@ xnor_nn_status_t weights_bin_dispatch(
 
 xnor_nn_status_t xnor_nn_init_weights_binarizer(xnor_nn_weights_binarizer_t *b,
         int oc, int ic, int kh, int kw) {
-    b->sz[0] = kw;
-    b->sz[1] = kh;
-    b->sz[2] = ic;
-    b->sz[3] = oc;
+    b->kw = kw;
+    b->kh = kh;
+    b->ic = ic;
+    b->oc = oc;
 
     b->size = sz;
     b->execute = weights_bin_dispatch;
