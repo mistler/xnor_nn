@@ -138,10 +138,8 @@ xnor_nn_status_t xnor_nn_init_convolution(xnor_nn_convolution_t *c,
 
     c->sw = sw;
     c->sh = sh;
-
     c->kw = kw;
     c->kh = kh;
-
     c->pw = pw;
     c->ph = ph;
 

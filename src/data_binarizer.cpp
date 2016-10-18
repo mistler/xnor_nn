@@ -70,17 +70,17 @@ xnor_nn_status_t data_bin_dispatch(
 }
 
 xnor_nn_status_t xnor_nn_init_data_binarizer(xnor_nn_data_binarizer_t *b,
-        int mb, int ic, int ih, int iw) {
-    b->mb = mb;
-    b->w = iw;
-    b->h = ih;
-    b->c = ic;
+        const xnor_nn_convolution_t *c) {
+    b->mb = c->mb;
+    b->c = c->ic;
+    b->h = c->ih;
+    b->w = c->iw;
 
     b->size = sz;
     b->execute = data_bin_dispatch;
 
     Logger::info("data_binarizer:", "create:",
-            "MB:", mb, "IC:", ic, "IH:", ih, "IW:", iw);
+            "MB:", b->mb, "IC:", b->c, "IH:", b->h, "IW:", b->w);
 
     return xnor_nn_success;
 }

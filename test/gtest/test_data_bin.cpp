@@ -4,7 +4,12 @@
 #include "common.hpp"
 
 TEST(DataBinFloatToFloat, simple_precalculated) {
-    const int MB = 1, IC = 2, IH = 3, IW = 3;
+    const int MB = 1;
+    const int IC = 2, OC = 2;
+    const int IH = 3, IW = 3;
+    const int KH = 3, KW = 3;
+    const int SH = 1, SW = 1;
+    const int PH = 1, PW = 1;
 
     const float P = 1.f;
     const float N = -1.f;
@@ -42,9 +47,14 @@ TEST(DataBinFloatToFloat, simple_precalculated) {
     size_t sz_src_bin;
     void *actual_src_bin = NULL;
 
+    xnor_nn_convolution_t convolution;
     xnor_nn_data_binarizer_t src_binarizer;
 
-    st = xnor_nn_init_data_binarizer(&src_binarizer, MB, IC, IH, IW);
+    st = xnor_nn_init_convolution(&convolution,
+            MB, OC, IC, IH, IW, KH, KW, SH, SW, PH, PW);
+    if (st != xnor_nn_success) goto label;
+
+    st = xnor_nn_init_data_binarizer(&src_binarizer, &convolution);
     if (st != xnor_nn_success) goto label;
 
     sz_src_bin = src_binarizer.size(&src_binarizer);

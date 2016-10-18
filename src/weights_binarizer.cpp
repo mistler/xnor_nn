@@ -65,17 +65,17 @@ xnor_nn_status_t weights_bin_dispatch(
 }
 
 xnor_nn_status_t xnor_nn_init_weights_binarizer(xnor_nn_weights_binarizer_t *b,
-        int oc, int ic, int kh, int kw) {
-    b->kw = kw;
-    b->kh = kh;
-    b->ic = ic;
-    b->oc = oc;
+        const xnor_nn_convolution_t *c) {
+    b->oc = c->oc;
+    b->ic = c->ic;
+    b->kh = c->kh;
+    b->kw = c->kw;
 
     b->size = sz;
     b->execute = weights_bin_dispatch;
 
     Logger::info("weights_binarizer:", "create:",
-            "OC:", oc, "IC:", ic, "KH:", kh, "KW:", kw);
+            "OC:", b->oc, "IC:", b->ic, "KH:", b->kh, "KW:", b->kw);
 
     return xnor_nn_success;
 }

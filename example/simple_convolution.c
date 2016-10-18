@@ -37,14 +37,14 @@ int main(void){
     }
 
     // Setup
-    st = xnor_nn_init_data_binarizer(&src_binarizer, MB, IC, IH, IW);
-    if (st != xnor_nn_success) goto label;
-
-    st = xnor_nn_init_weights_binarizer(&weights_binarizer, OC, IC, KH, KW);
-    if (st != xnor_nn_success) goto label;
-
     st = xnor_nn_init_convolution(&convolution,
             MB, OC, IC, IH, IW, KH, KW, SH, SW, PH, PW);
+    if (st != xnor_nn_success) goto label;
+
+    st = xnor_nn_init_data_binarizer(&src_binarizer, &convolution);
+    if (st != xnor_nn_success) goto label;
+
+    st = xnor_nn_init_weights_binarizer(&weights_binarizer, &convolution);
     if (st != xnor_nn_success) goto label;
 
     // Internal data

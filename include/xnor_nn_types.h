@@ -37,6 +37,8 @@ typedef struct {
     int kh, kw;
     int ph, pw;
 
+    void *workspace;
+
     xnor_nn_status_t (*forward)(const void *self,
             const void *src, const void *weights, void *dst);
 } xnor_nn_convolution_t;
