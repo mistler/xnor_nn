@@ -22,20 +22,23 @@ xnor_nn_status_t fwd_xnor_on_float(
     const float khw = 1.f / KH / KW;
     std::vector<float> k(OH*OW, 0.f);
 
+#   pragma omp parallel for collapse(2) schedule(static)
     for (int oh = 0; oh < OH; oh++)
-    for (int ow = 0; ow < OW; ow++)
-    for (int kh = 0; kh < KH; kh++)
-    for (int kw = 0; kw < KW; kw++) {
-        if (oh*SH + kh < (PH > 0 ? PH : 0)) continue;
-        if (ow*SW + kw < (PW > 0 ? PW : 0)) continue;
+    for (int ow = 0; ow < OW; ow++) {
+        float *k_ = k.data() + oh*OW + ow;
+        for (int kh = 0; kh < KH; kh++)
+        for (int kw = 0; kw < KW; kw++) {
+            if (oh*SH + kh < (PH > 0 ? PH : 0)) continue;
+            if (ow*SW + kw < (PW > 0 ? PW : 0)) continue;
 
-        if (oh*SH + kh >= IH + PH) continue;
-        if (ow*SW + kw >= IW + PW) continue;
+            if (oh*SH + kh >= IH + PH) continue;
+            if (ow*SW + kw >= IW + PW) continue;
 
-        const int ih = oh * SH - PH + kh;
-        const int iw = ow * SW - PW + kw;
+            const int ih = oh * SH - PH + kh;
+            const int iw = ow * SW - PW + kw;
 
-        k[oh*OW + ow] += a[ih*IW + iw] * khw;
+            *k_ += a[ih*IW + iw] * khw;
+        }
     }
 
 #   pragma omp parallel for collapse(2) schedule(static)
