@@ -28,7 +28,7 @@ TEST(DataWeightsFloatToFloat, simple_precalculated) {
         P, N, N
     };
     // Precalculated src
-    const float expected_weights_bin[OC*IC*KH*KW] = {
+    const float expected_weights_bin[OC*IC*KH*KW + 1] = {
         P, P, P,
         N, N, P,
         P, N, N,
@@ -43,7 +43,10 @@ TEST(DataWeightsFloatToFloat, simple_precalculated) {
 
         P, P, P,
         N, N, P,
-        P, N, N
+        P, N, N,
+
+        // Alpha
+        P,
     };
 
     // Binarizer setup
@@ -71,6 +74,10 @@ TEST(DataWeightsFloatToFloat, simple_precalculated) {
     // Check result
     xnor_nn::test::check_weights(OC, IC, KH, KW,
             (float*)actual_weights_bin, expected_weights_bin);
+
+    xnor_nn::test::check_weights(1, 1, 1, 1,
+            (float*)actual_weights_bin + OC*IC*KH*KW,
+            expected_weights_bin + OC*IC*KH*KW);
 
 label:
     xnor_nn_memory_free(actual_weights_bin);
