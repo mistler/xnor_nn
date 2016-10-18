@@ -22,7 +22,7 @@ xnor_nn_status_t copy_on_float(const float *from, float *to,
         int OC, int IC, int KH, int KW) {
     int elems = OC*IC*KH*KW;
 
-#   pragma omp parallel for
+#   pragma omp parallel for schedule(static)
     for(int i = 0; i < elems; i++) to[i] = from[i];
 
     const float cckhw = 1.f / elems;

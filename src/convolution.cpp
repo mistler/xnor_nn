@@ -38,7 +38,7 @@ xnor_nn_status_t fwd_xnor_on_float(
         k[oh*OW + ow] += a[ih*IW + iw] * khw;
     }
 
-#   pragma omp parallel for collapse(2)
+#   pragma omp parallel for collapse(2) schedule(static)
     for (int mb = 0; mb < MB; mb++)
     for (int oc = 0; oc < OC; oc++)
     for (int oh = 0; oh < OH; oh++)
