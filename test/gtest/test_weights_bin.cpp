@@ -75,8 +75,7 @@ TEST(DataWeightsFloatToFloat, simple_precalculated) {
     xnor_nn::test::check_weights(OC, IC, KH, KW,
             (float*)actual_weights_bin, expected_weights_bin);
 
-    xnor_nn::test::check_arrays(1,
-            (float*)actual_weights_bin + OC*IC*KH*KW,
+    xnor_nn::test::check_arrays(1, (float*)actual_weights_bin + OC*IC*KH*KW,
             expected_weights_bin + OC*IC*KH*KW);
 
 label:
