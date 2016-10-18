@@ -20,14 +20,19 @@ TEST(DataBinFloatToFloat, simple_precalculated) {
         P, P, P
     };
     // Precalculated src
-    const float expected_src_bin[MB*IC*IH*IW] = {
+    const float expected_src_bin[MB*IC*IH*IW + IH*IW] = {
         P, P, P,
         N, P, N,
         N, N, N,
 
         N, N, N,
         N, N, N,
-        P, P, P
+        P, P, P,
+
+        // A
+        P, P, P,
+        P, P, P,
+        P, P, P,
     };
 
     // Binarizer setup
@@ -54,6 +59,11 @@ TEST(DataBinFloatToFloat, simple_precalculated) {
     // Check result
     xnor_nn::test::check_data(MB, IC, IH, IW,
             (float*)actual_src_bin, expected_src_bin);
+
+    // Check A
+    xnor_nn::test::check_data(1, 1, IH, IW,
+            (float*)actual_src_bin + MB*IC*IH*IW,
+            expected_src_bin + MB*IC*IH*IW);
 
 label:
     xnor_nn_memory_free(actual_src_bin);
