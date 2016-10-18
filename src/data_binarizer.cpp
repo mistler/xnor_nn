@@ -26,6 +26,7 @@ xnor_nn_status_t copy_on_float(const float *from, float *to,
     for(int i = 0; i < elems; i++) to[i] = from[i];
 
     // Calculate A
+#   pragma omp parallel for collapse(2) schedule(static)
     for (int ih = 0; ih < IH; ih++)
     for (int iw = 0; iw < IW; iw++) {
         float *a = to + elems + ih*IW + iw;
