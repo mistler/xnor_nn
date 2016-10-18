@@ -61,8 +61,7 @@ TEST(DataBinFloatToFloat, simple_precalculated) {
             (float*)actual_src_bin, expected_src_bin);
 
     // Check A
-    xnor_nn::test::check_data(1, 1, IH, IW,
-            (float*)actual_src_bin + MB*IC*IH*IW,
+    xnor_nn::test::check_arrays(IH*IW, (float*)actual_src_bin + MB*IC*IH*IW,
             expected_src_bin + MB*IC*IH*IW);
 
 label:
