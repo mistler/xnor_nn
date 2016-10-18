@@ -1,5 +1,7 @@
 #include "xnor_nn.h"
 
+#include <cmath>
+
 #include "utils/logger.hpp"
 #include "utils/timer.hpp"
 
@@ -11,7 +13,8 @@ size_t sz(const void *s){
     const xnor_nn_weights_binarizer_t *self =
         (const xnor_nn_weights_binarizer_t*)s;
 
-    size_t elems = self->oc * self->ic * self->kh * self->kw;
+    size_t elems = self->oc * self->ic * self->kh * self->kw; // Kernels
+    elems += 1; // Alpha
     return elems * sizeof(float);
 }
 
@@ -21,6 +24,13 @@ xnor_nn_status_t copy_on_float(const float *from, float *to,
 
 #   pragma omp parallel for
     for(int i = 0; i < elems; i++) to[i] = from[i];
+
+    const float cckhw = 1.f / elems;
+
+    // Calculate alpha
+    float *alpha = to + elems;
+    *alpha = 0.f;
+    for (int i = 0; i < elems; i++) *alpha += std::fabs(from[i]) * cckhw;
 
     return xnor_nn_success;
 }

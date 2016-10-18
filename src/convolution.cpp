@@ -15,33 +15,13 @@ xnor_nn_status_t fwd_xnor_on_float(
         int MB, int IC, int IH, int IW,
         int OC, int OH, int OW,
         int KH, int KW, int SH, int SW, int PH, int PW) {
-    const float c = 1.f / IC;
-    const float khw = 1.f / KH / KW;
-    const float cckhw = 1.f / OC / IC / KH / KW;
-
-    float alpha = 0.f;
-    std::vector<float> a(IH*IW, 0.f);
-    std::vector<float> k(OH*OW, 0.f);
-
-    // Calculate A
-    for (int mb = 0; mb < MB; mb++)
-    for (int ih = 0; ih < IH; ih++)
-    for (int iw = 0; iw < IW; iw++)
-    for (int ic = 0; ic < IC; ic++) {
-        int src_idx = ((mb*IC + ic)*IH + ih)*IW + iw;
-        a[ih*IW + iw] += std::fabs(src[src_idx]) * c;
-    }
-
-    // Calculate alpha
-    for (int oc = 0; oc < OC; oc++)
-    for (int ic = 0; ic < IC; ic++)
-    for (int kh = 0; kh < KH; kh++)
-    for (int kw = 0; kw < KW; kw++) {
-        int weights_idx = ((oc*IC + ic)*KH + kh)*KW + kw;
-        alpha += std::fabs(weights[weights_idx]) * cckhw;
-    }
+    const float *a = src + MB*IC*IH*IW;
+    const float alpha = weights[OC*IC*KH*KW];
 
     // Calculate K
+    const float khw = 1.f / KH / KW;
+    std::vector<float> k(OH*OW, 0.f);
+
     for (int oh = 0; oh < OH; oh++)
     for (int ow = 0; ow < OW; ow++)
     for (int kh = 0; kh < KH; kh++)

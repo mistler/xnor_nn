@@ -1,5 +1,7 @@
 #include "xnor_nn.h"
 
+#include <cmath>
+
 #include "utils/logger.hpp"
 #include "utils/timer.hpp"
 
@@ -10,16 +12,30 @@ namespace {
 size_t sz(const void *s){
     const xnor_nn_data_binarizer_t *self = (const xnor_nn_data_binarizer_t*)s;
 
-    size_t elems = self->mb * self->c * self->h * self->w;
+    size_t elems = self->mb * self->c * self->h * self->w; // Data
+    elems += self->h * self->w; // A
     return elems * sizeof(float);
 }
 
 xnor_nn_status_t copy_on_float(const float *from, float *to,
         int MB, int IC, int IH, int IW) {
     int elems = MB*IC*IH*IW;
+    const float c = 1.f / IC;
 
 #   pragma omp parallel for
     for(int i = 0; i < elems; i++) to[i] = from[i];
+
+    // Calculate A
+    for (int ih = 0; ih < IH; ih++)
+    for (int iw = 0; iw < IW; iw++) {
+        float *a = to + elems + ih*IW + iw;
+        *a = 0.f;
+        for (int mb = 0; mb < MB; mb++)
+        for (int ic = 0; ic < IC; ic++) {
+            int src_idx = ((mb*IC + ic)*IH + ih)*IW + iw;
+            *a += std::fabs(from[src_idx]) * c;
+        }
+    }
 
     return xnor_nn_success;
 }
