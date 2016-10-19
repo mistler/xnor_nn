@@ -62,7 +62,10 @@ int main(void){
 
     // Execution
     for (int i = 0; i < 3; i++) {
-        st = src_binarizer.execute(&src_binarizer, src_usr, src_bin);
+        st = src_binarizer.binarize(&src_binarizer, src_usr, src_bin);
+        if (st != xnor_nn_success) goto label;
+
+        st = src_binarizer.calculate_k(&src_binarizer, src_bin);
         if (st != xnor_nn_success) goto label;
 
         st = convolution.forward(&convolution, src_bin, weights_bin, dst);

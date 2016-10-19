@@ -63,7 +63,10 @@ TEST(DataBinFloatToFloat, simple_precalculated) {
     if (st != xnor_nn_success) goto label;
 
     // Execution
-    st = src_binarizer.execute(&src_binarizer, src, actual_src_bin);
+    st = src_binarizer.binarize(&src_binarizer, src, actual_src_bin);
+    if (st != xnor_nn_success) goto label;
+
+    st = src_binarizer.calculate_k(&src_binarizer, actual_src_bin);
     if (st != xnor_nn_success) goto label;
 
     // Check result

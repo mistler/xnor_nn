@@ -14,10 +14,12 @@ typedef enum {
 } xnor_nn_status_t;
 
 typedef struct {
-    int mb, c, h, w;
+    int mb, ic, ih, iw;
+    int oh, ow, kh, kw, sh, sw, ph, pw;
 
-    xnor_nn_status_t (*execute)(const void *self,
+    xnor_nn_status_t (*binarize)(const void *self,
             const void *from, void *to);
+    xnor_nn_status_t (*calculate_k)(const void *self, void *to);
     size_t (*size)(const void *self);
 } xnor_nn_data_binarizer_t;
 
