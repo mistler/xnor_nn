@@ -7,6 +7,7 @@ TEST(DataBinFloatToFloat, simple_precalculated) {
     const int MB = 1;
     const int IC = 2, OC = 2;
     const int IH = 3, IW = 3;
+    const int OH = 3, OW = 3;
     const int KH = 3, KW = 3;
     const int SH = 1, SW = 1;
     const int PH = 1, PW = 1;
@@ -25,7 +26,7 @@ TEST(DataBinFloatToFloat, simple_precalculated) {
         P, P, P
     };
     // Precalculated src
-    const float expected_src_bin[MB*IC*IH*IW + IH*IW] = {
+    const float expected_src_bin[MB*IC*IH*IW + IH*IW + OH*OW] = {
         P, P, P,
         N, P, N,
         N, N, N,
@@ -38,6 +39,11 @@ TEST(DataBinFloatToFloat, simple_precalculated) {
         P, P, P,
         P, P, P,
         P, P, P,
+
+        // K
+        4.f / 9.f, 6.f / 9.f, 4.f / 9.f,
+        6.f / 9.f, 9.f / 9.f, 6.f / 9.f,
+        4.f / 9.f, 6.f / 9.f, 4.f / 9.f,
     };
 
     // Binarizer setup
@@ -76,6 +82,11 @@ TEST(DataBinFloatToFloat, simple_precalculated) {
     // Check A
     xnor_nn::test::check_arrays(IH*IW, (float*)actual_src_bin + MB*IC*IH*IW,
             expected_src_bin + MB*IC*IH*IW);
+
+    // Check K
+    xnor_nn::test::check_arrays(OH*OW,
+            (float*)actual_src_bin + MB*IC*IH*IW + IH*IW,
+            expected_src_bin + MB*IC*IH*IW + IH*IW);
 
 label:
     xnor_nn_memory_free(actual_src_bin);
