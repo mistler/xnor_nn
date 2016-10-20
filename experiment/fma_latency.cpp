@@ -37,7 +37,23 @@ int main() {
 
     for (int k = 0; k < N; k++)
     for (int i = 0; i < ELEMS; i++) {
-        c[i] += a[i]*b[i];
+        asm volatile (
+            "mov %1, %%rax\n\t"
+            "mov %2, %%rbx\n\t"
+            "mov %0, %%rcx\n\t"
+            "vmovss (%%rcx), %%xmm0\n\t"
+            "vmovss (%%rax), %%xmm1\n\t"
+            "vmovss (%%rbx), %%xmm2\n\t"
+            "vmulss %%xmm3, %%xmm2, %%xmm1\n\t"
+            "vaddss %%xmm4, %%xmm3, %%xmm0\n\t"
+            "vmovss %%xmm4, (%%rcx)"
+            :
+            : "r" (c+i), "r" (a+i), "r" (b+i)
+            : "%xmm0", "%xmm1", "%xmm2", "%xmm3", "%xmm4",
+            "%rax", "%rbx", "%rcx"
+        );
+
+        //c[i] += a[i]*b[i];
     }
 
     t = rdtsc() - t;
