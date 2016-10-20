@@ -1,13 +1,11 @@
 #include <cstdio>
 #include "timer.hpp"
 
-#if 0
 inline unsigned long long rdtsc() {
     unsigned int lo, hi;
     asm volatile("rdtsc\n" : "=a"(lo), "=d"(hi));
     return ((unsigned long long)hi << 32) | lo;
 }
-#endif
 
 int main() {
     const int ELEMS = 256 * 512; // 512k
@@ -30,21 +28,23 @@ int main() {
 
     // Warm up
     for (int w = 0; w < WARM_UP; w++)
-    for (int i = 0; i < ELEMS; i++)
+    for (int i = 0; i < ELEMS; i++) {
         c[i] += a[i]*b[i];
+    }
 
     timer.start();
-    // unsigned long long t = rdtsc();
+    unsigned long long t = rdtsc();
 
     for (int k = 0; k < N; k++)
-    for (int i = 0; i < ELEMS; i++)
+    for (int i = 0; i < ELEMS; i++) {
         c[i] += a[i]*b[i];
+    }
 
-    // t = rdtsc() - t;
+    t = rdtsc() - t;
     timer.stop();
 
-    //printf("%lf\n", (double)t / N / ELEMS);
-    printf("%lf\n", (double)timer.micros() / N);
+    printf("cpu: %lf ticks\n", (double)t / N / ELEMS);
+    printf("timer: %lf micros\n", (double)timer.micros() / N / ELEMS);
 
     delete[] a;
     delete[] b;
