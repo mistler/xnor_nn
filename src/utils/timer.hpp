@@ -1,36 +1,38 @@
 #ifndef TIMER_HPP
 #define TIMER_HPP
 
-#include <ctime>
+#include <chrono>
 
 namespace xnor_nn{
 namespace utils{
 
 class Timer{
 public:
-    Timer(const clockid_t clock_type = CLOCK_REALTIME) : type(clock_type){}
-
     void start(){
-        clock_gettime(type, &s);
+        s = std::chrono::high_resolution_clock::now();
     }
 
     void stop(){
-        clock_gettime(type, &e);
+        e = std::chrono::high_resolution_clock::now();
     }
 
-    long long int millis(){
-        return (long long int)(e.tv_sec - s.tv_sec) * 1000 +
-            (e.tv_nsec - s.tv_nsec) / 1000000L;
+    double millis(){
+        return std::chrono::duration_cast<
+            std::chrono::nanoseconds>(e-s).count() / 1000.0 / 1000.0;
     }
 
-    long long int micros(){
-        return (long long int)(e.tv_sec - s.tv_sec) * 10000 +
-            (e.tv_nsec - s.tv_nsec) / 100000L;
+    double micros(){
+        return std::chrono::duration_cast<
+            std::chrono::nanoseconds>(e-s).count() / 1000.0;
+    }
+
+    double nanos(){
+        return std::chrono::duration_cast<
+            std::chrono::nanoseconds>(e-s).count();
     }
 
 private:
-    struct timespec s, e;
-    clockid_t type;
+    std::chrono::high_resolution_clock::time_point s, e;
 };
 
 }
