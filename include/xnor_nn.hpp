@@ -50,7 +50,7 @@ private:
     xnor_nn_weights_binarizer_t weights_binarizer_;
 
     std::unique_ptr<data_t[]> src_;
-    std::unique_ptr<const data_t[]> weights_;
+    std::unique_ptr<data_t[]> weights_;
 
     void check_status(xnor_nn_status_t status) {
         if (status == xnor_nn_success) return;
