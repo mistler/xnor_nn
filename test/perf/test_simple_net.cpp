@@ -43,7 +43,7 @@ static inline void measure_time(F &f, std::string msg) {
     xnor_nn::utils::Timer timer;
 
     double time = 0.0;
-    std::cout << msg << "..." << std::endl;
+    std::cout << msg << "... ";
     for (int n = 0; n < N_EXECUTIONS; n++) {
         clean_cache(more_than_cache, more_than_cache_size);
         timer.start();
@@ -60,7 +60,12 @@ static inline void measure_time(F &f, std::string msg) {
 int main(){
     const std::vector<convolution_params> params =
     {
-        { 8, 64, 128, 13, 13, 3, 3, 1, 1, 1, 1 },
+        // AlexNet
+        { 1, 3, 64, 224, 224, 11, 11, 4, 4, 2, 2 },
+        { 1, 64, 192, 27, 27, 5, 5, 1, 1, 2, 2 },
+        { 1, 192, 384, 13, 13, 3, 3, 1, 1, 1, 1 },
+        { 1, 384, 256, 13, 13, 3, 3, 1, 1, 1, 1 },
+        { 1, 256, 256, 13, 13, 3, 3, 1, 1, 1, 1 },
     };
 
     const int enough = 1024*1024*256;
