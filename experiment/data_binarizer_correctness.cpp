@@ -53,7 +53,10 @@ int main() {
     for (int ih = 0; ih < IH; ih++)
     for (int iw = 0; iw < IW; iw++) {
         for (int ic = 0; ic < OC; ic++)
-            printf("%X ", to[(ih*IW + iw)*OC + ic]);
+        for (int c = SZ - 1; c >= 0; c--) {
+            unsigned char ch = (to[(ih*IW + iw)*OC + ic] & (1 << c)) >> c;
+            printf("%d", ch);
+        }
         printf("\n");
     }
 
