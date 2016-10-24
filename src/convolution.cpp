@@ -56,27 +56,26 @@ xnor_nn_status_t fwd_xnor_on_float(
 }
 
 // TODO: dispatch at init time
-xnor_nn_status_t convolution_dispatch(const void *s,
+xnor_nn_status_t convolution_dispatch(const xnor_nn_convolution_t *s,
         const void *src_, const void *weights_, void *dst_) {
-    const xnor_nn_convolution_t *self = (const xnor_nn_convolution_t*)s;
 
     const float *src = (const float*)src_;
     const float *weights = (const float*)weights_;
     float *dst = (float*)dst_;
 
-    const int MB = self->mb;
-    const int IW = self->iw;
-    const int IH = self->ih;
-    const int IC = self->ic;
-    const int OW = self->ow;
-    const int OH = self->oh;
-    const int OC = self->oc;
-    const int SW = self->sw;
-    const int SH = self->sh;
-    const int KW = self->kw;
-    const int KH = self->kh;
-    const int PW = self->pw;
-    const int PH = self->ph;
+    const int MB = s->mb;
+    const int IW = s->iw;
+    const int IH = s->ih;
+    const int IC = s->ic;
+    const int OW = s->ow;
+    const int OH = s->oh;
+    const int OC = s->oc;
+    const int SW = s->sw;
+    const int SH = s->sh;
+    const int KW = s->kw;
+    const int KH = s->kh;
+    const int PW = s->pw;
+    const int PH = s->ph;
 
     const float alpha = src[MB*IC*IH*IW];
     const float *k = src + MB*IC*IH*IW + IH*IW;

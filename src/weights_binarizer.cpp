@@ -9,11 +9,8 @@ using Logger = xnor_nn::utils::Logger;
 
 namespace {
 
-size_t sz(const void *s){
-    const xnor_nn_weights_binarizer_t *self =
-        (const xnor_nn_weights_binarizer_t*)s;
-
-    size_t elems = self->oc * self->ic * self->kh * self->kw; // Kernels
+size_t sz(const xnor_nn_weights_binarizer_t *s){
+    size_t elems = s->oc * s->ic * s->kh * s->kw; // Kernels
     elems += 1; // Alpha
     return elems * sizeof(float);
 }
@@ -36,18 +33,15 @@ xnor_nn_status_t copy_on_float(const float *from, float *to,
 }
 
 // TODO: dispatch at init time
-xnor_nn_status_t weights_bin_dispatch(
-        const void *s, const void *from, void *to) {
-    const xnor_nn_weights_binarizer_t *self =
-        (const xnor_nn_weights_binarizer_t*)s;
-
+xnor_nn_status_t weights_bin_dispatch(const xnor_nn_weights_binarizer_t *s,
+        const void *from, void *to) {
     const float *f = (const float*)from;
     float *t = (float*)to;
 
-    const int OC = self->oc;
-    const int IC = self->ic;
-    const int KH = self->kh;
-    const int KW = self->kw;
+    const int OC = s->oc;
+    const int IC = s->ic;
+    const int KH = s->kh;
+    const int KW = s->kw;
 
     xnor_nn::utils::Timer timer;
     timer.start();

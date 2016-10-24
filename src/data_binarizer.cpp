@@ -9,9 +9,7 @@ using Logger = xnor_nn::utils::Logger;
 
 namespace {
 
-size_t sz(const void *self){
-    const xnor_nn_data_binarizer_t *s = (const xnor_nn_data_binarizer_t*)self;
-
+size_t sz(const xnor_nn_data_binarizer_t *s){
     size_t elems = s->mb * s->ic * s->ih * s->iw; // Data
     elems += s->ih * s->iw; // A
     elems += s->oh * s->ow; // K
@@ -95,10 +93,8 @@ xnor_nn_status_t calculate_k(const float *from, float *a, float *k,
 }
 
 // TODO: dispatch at init time
-xnor_nn_status_t binarize_dispatch(const void *self,
+xnor_nn_status_t binarize_dispatch(const xnor_nn_data_binarizer_t *s,
         const void *from, void *to) {
-    const xnor_nn_data_binarizer_t *s = (const xnor_nn_data_binarizer_t*)self;
-
     const float *f = (const float*)from;
     float *t = (float*)to;
 
@@ -121,10 +117,8 @@ xnor_nn_status_t binarize_dispatch(const void *self,
 }
 
 // TODO: dispatch at init time
-xnor_nn_status_t calculate_k_dispatch(const void *self,
+xnor_nn_status_t calculate_k_dispatch(const xnor_nn_data_binarizer_t *s,
         const void *from, void *to) {
-    const xnor_nn_data_binarizer_t *s = (const xnor_nn_data_binarizer_t*)self;
-
     const int MB = s->mb;
     const int IC = s->ic;
     const int IH = s->ih;
