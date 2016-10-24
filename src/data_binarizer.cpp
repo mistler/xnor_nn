@@ -42,6 +42,29 @@ xnor_nn_status_t copy_on_float(const float *from, float *to,
     return xnor_nn_success;
 }
 
+/*
+xnor_nn_status_t binarize_char(const float *from, unsigned char *to,
+        int MB, int IC, int IH, int IW) {
+    const int SZ = sizeof(unsigned char);
+
+#   pragma omp parallel for collapse(3) schedule(static)
+    for (int mb = 0; mb < MB; mb++)
+    for (int ih = 0; ih < IH; ih++)
+    for (int iw = 0; iw < IW; iw++)
+    for (int oc = 0; oc < OC / SZ; oc++) {
+        unsigned char out{0};
+        for (int ic = 0; ic < SZ; ic++) {
+            int from_idx = ((mb*IC + oc*SZ + ic)*IH + ih)*IW + iw;
+            char tmp = from[from_idx] >> (sizeof(float)-1);
+            out |= tmp;
+            out <<= 1;
+        }
+    }
+
+    return xnor_nn_success;
+}
+*/
+
 xnor_nn_status_t calculate_k(const float *a, float *k, int IH, int IW,
         int OH, int OW, int KH, int KW, int SH, int SW, int PH, int PW) {
     const float khw = 1.f / KH / KW;
