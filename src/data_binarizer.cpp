@@ -9,11 +9,28 @@ using Logger = xnor_nn::utils::Logger;
 
 namespace {
 
+size_t data_size(const xnor_nn_data_binarizer_t *s) {
+    return s->mb * s->ic * s->ih * s->iw * sizeof(float);
+}
+
+size_t a_offset(const xnor_nn_data_binarizer_t *s) {
+    return data_size(s);
+}
+
+size_t a_size(const xnor_nn_data_binarizer_t *s) {
+    return s->ih * s->iw * sizeof(float);
+}
+
+size_t k_offset(const xnor_nn_data_binarizer_t *s) {
+    return a_offset(s) + a_size(s);
+}
+
+size_t k_size(const xnor_nn_data_binarizer_t *s) {
+    return s->oh * s->ow * sizeof(float);
+}
+
 size_t sz(const xnor_nn_data_binarizer_t *s){
-    size_t elems = s->mb * s->ic * s->ih * s->iw; // Data
-    elems += s->ih * s->iw; // A
-    elems += s->oh * s->ow; // K
-    return elems * sizeof(float);
+    return data_size(s) + a_size(s) + k_size(s);
 }
 
 xnor_nn_status_t copy_on_float(const float *from, float *to,
@@ -133,11 +150,8 @@ xnor_nn_status_t calculate_k_dispatch(const xnor_nn_data_binarizer_t *s,
     const int PH = s->ph;
     const int PW = s->pw;
 
-    const int elems = MB*IC*IH*IW;
-    const int a_elems = IH*IW;
-
-    float *a_ptr = (float*)to + elems;
-    float *k_ptr = (float*)to + elems + a_elems;
+    float *a_ptr = (float*)to + a_offset(s)/sizeof(float);
+    float *k_ptr = (float*)to + k_offset(s)/sizeof(float);
 
     xnor_nn::utils::Timer timer;
     timer.start();
