@@ -1,13 +1,15 @@
 #include <cstdio>
 
+#define DIV_R_UP(a, b) ((a) + (b) - 1) / (b)
+
 int main() {
-    const int IC = 256;
+    const int IC = 252;
     const int IH = 2;
-    const int IW = 2;
+    const int IW = 3;
     const int SZ = 8;
 
     float * __restrict__ from = new float[IC*IH*IW];
-    unsigned char * __restrict__ to = new unsigned char[IC/SZ*IH*IW];
+    unsigned char * __restrict__ to = new unsigned char[DIV_R_UP(IC, SZ)*IH*IW];
 
     unsigned int * __restrict__ from_i = ((unsigned int*)from);
 
@@ -29,26 +31,29 @@ int main() {
     }
     */
 
-#   pragma ivdep
+    const int OC = DIV_R_UP(IC, SZ);
+
     for (int ih = 0; ih < IH; ih++)
     for (int iw = 0; iw < IW; iw++)
-    for (int oc = 0; oc < IC / SZ; oc++) {
+    for (int oc = 0; oc < OC; oc++) {
         unsigned char out{0};
-        for (int ic = 0; ic < SZ; ic++) {
-            int from_idx = (ih*IW + iw)*IC + oc*SZ + ic;
+        const int LEN = oc == OC - 1 ? (IC % SZ) : SZ;
+        for (int ic = 0; ic < LEN; ic++) {
+            int from_idx = (ic*IH + ih)*IW + iw;
             char tmp = from_i[from_idx] >> 31;
             out <<= 1;
             out |= tmp;
         }
-        int to_idx = (oc*IH + ih)*IW + iw;
+        if (LEN != SZ) out <<= SZ-LEN;
+        int to_idx = (ih*IW + iw)*OC + oc;
         to[to_idx] = out;
     }
 
 
     for (int ih = 0; ih < IH; ih++)
     for (int iw = 0; iw < IW; iw++) {
-        for (int ic = 0; ic < IC / SZ; ic++)
-            printf("%X ", to[(ic*IH + ih)*IW + iw]);
+        for (int ic = 0; ic < OC; ic++)
+            printf("%X ", to[(ih*IW + iw)*OC + ic]);
         printf("\n");
     }
 
