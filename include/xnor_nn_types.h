@@ -19,7 +19,8 @@ typedef struct {
 
     xnor_nn_status_t (*binarize)(const void *self,
             const void *from, void *to);
-    xnor_nn_status_t (*calculate_k)(const void *self, void *to);
+    xnor_nn_status_t (*calculate_k)(const void *self,
+            const void *from, void *to);
     size_t (*size)(const void *self);
 } xnor_nn_data_binarizer_t;
 

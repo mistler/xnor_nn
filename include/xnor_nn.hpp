@@ -37,7 +37,8 @@ public:
 
     void forward(const void *src, void *dst) {
         check_status(src_binarizer_.binarize(&src_binarizer_, src, &src_[0]));
-        check_status(src_binarizer_.calculate_k(&src_binarizer_, &src_[0]));
+        check_status(src_binarizer_.calculate_k(&src_binarizer_,
+                    src, &src_[0]));
         check_status(convolution_.forward(
                     &convolution_, &src_[0], &weights_[0], dst));
     }
@@ -50,7 +51,7 @@ private:
     xnor_nn_weights_binarizer_t weights_binarizer_;
 
     std::unique_ptr<data_t[]> src_;
-    std::unique_ptr<const data_t[]> weights_;
+    std::unique_ptr<data_t[]> weights_;
 
     void check_status(xnor_nn_status_t status) {
         if (status == xnor_nn_success) return;
