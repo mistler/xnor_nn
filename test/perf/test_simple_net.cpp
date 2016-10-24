@@ -1,5 +1,6 @@
 #include <vector>
 #include <algorithm>
+#include <functional>
 #include <iostream>
 #include <cmath>
 
@@ -22,13 +23,38 @@ typedef struct {
             << ", SW: " << SW
             << ", PH: " << PH
             << ", PW: " << PW
-            << std::endl << std::endl;
+            << std::endl;
     }
 } convolution_params;
 
-void cache_clean(const char *more_than_cache, int more_than_cache_size) {
-    (void)more_than_cache;
-    (void)more_than_cache_size;
+static inline void clean_cache(char *more_than_cache, int more_than_cache_size) {
+#   pragma omp parallel for
+    for (int i = 0; i < more_than_cache_size; i++)
+        more_than_cache[i]++;
+}
+
+template<typename F>
+static inline void measure_time(F &f, std::string msg) {
+    const int N_EXECUTIONS = 3;
+
+    const int more_than_cache_size = 1024*1024*64;
+    static char more_than_cache[more_than_cache_size];
+
+    xnor_nn::utils::Timer timer;
+
+    double time = 0.0;
+    std::cout << msg << "..." << std::endl;
+    for (int n = 0; n < N_EXECUTIONS; n++) {
+        clean_cache(more_than_cache, more_than_cache_size);
+        timer.start();
+
+        xnor_nn_status_t st = f();
+        if (st != xnor_nn_success) abort();
+
+        timer.stop();
+        time += timer.millis();
+    }
+    std::cout << "Time: " << time << " ms." << std::endl;
 }
 
 int main(){
@@ -37,22 +63,13 @@ int main(){
         { 8, 64, 128, 13, 13, 3, 3, 1, 1, 1, 1 },
     };
 
-    const int N_EXECUTIONS = 5;
-
     const int enough = 1024*1024*256;
-    const int more_than_cache_size = 1024*1024*64;
 
     float *workspace = new float[enough/sizeof(float)];
     float *dst = new float[enough/sizeof(float)];
-    char *more_than_cache = new char[more_than_cache_size];
 
     std::generate(workspace, workspace + enough / sizeof(float),
             [&]() { static int i = 0; return std::sin(i++) * 10.f; });
-    std::generate(more_than_cache, more_than_cache + more_than_cache_size,
-            [&]() { static char i = 0; return i++; });
-
-    xnor_nn::utils::Timer timer;
-    double time;
 
     xnor_nn_status_t st;
     char st_msg[16];
@@ -67,7 +84,9 @@ int main(){
     void *src_bin = NULL, *weights_bin = NULL;
 
     // Main loop
+    int index = 0;
     for (const convolution_params &p : params) {
+        std::cout << ++index << " of " << params.size() << ": ";
         p.print(std::cout);
         st = xnor_nn_init_convolution(&convolution,
                 p.MB, p.OC, p.IC, p.IH, p.IW,
@@ -89,55 +108,29 @@ int main(){
         st = xnor_nn_memory_allocate(&weights_bin, sz_weights_bin);
         if (st != xnor_nn_success) goto label;
 
-        // Time weights
-        time = 0.0;
-        std::cout << "Binarizing weights..." << std::endl;
-        for (int n = 0; n < N_EXECUTIONS; n++) {
-            cache_clean(more_than_cache, more_than_cache_size);
-            timer.start();
+        // Warm up
+#       pragma omp parallel for schedule(static)
+        for (int s = 0; s < enough/(int)sizeof(float); s++)
+            dst[s] += dst[s]*0.001f;
 
-            st = weights_binarizer.execute(&weights_binarizer,
-                    workspace, weights_bin);
-            if (st != xnor_nn_success) goto label;
+        // Execute
+        auto f_weights_bin = std::bind(weights_binarizer.execute,
+                &weights_binarizer, workspace, weights_bin);
+        measure_time(f_weights_bin, "Weights binarizer");
 
-            timer.stop();
-            time += timer.millis();
-        }
-        std::cout << "Time: " << time << " ms." << std::endl << std::endl;
+        auto f_src_bin = std::bind(src_binarizer.binarize,
+                &src_binarizer, workspace, src_bin);
+        measure_time(f_src_bin, "Src binarizer");
 
-        // Time data bin
-        time = 0.0;
-        std::cout << "Binarizing data..." << std::endl;
-        for (int i = 0; i < N_EXECUTIONS; i++) {
-            cache_clean(more_than_cache, more_than_cache_size);
-            timer.start();
+        auto f_src_k = std::bind(src_binarizer.calculate_k,
+                &src_binarizer, src_bin);
+        measure_time(f_src_k, "Src binarizer calculate k");
 
-            st = src_binarizer.binarize(&src_binarizer, workspace, src_bin);
-            if (st != xnor_nn_success) goto label;
+        auto f_conv_exec = std::bind(convolution.forward,
+                &convolution, src_bin, weights_bin, dst);
+        measure_time(f_conv_exec, "Convolution");
 
-            st = src_binarizer.calculate_k(&src_binarizer, src_bin);
-            if (st != xnor_nn_success) goto label;
-
-            timer.stop();
-            time += timer.millis();
-        }
-        std::cout << "Time: " << time << " ms." << std::endl << std::endl;
-
-        // Time convolution forward
-        time = 0.0;
-        std::cout << "Forward convolution..." << std::endl;
-        for (int i = 0; i < N_EXECUTIONS; i++) {
-            cache_clean(more_than_cache, more_than_cache_size);
-            timer.start();
-
-            st = convolution.forward(&convolution, src_bin, weights_bin, dst);
-            if (st != xnor_nn_success) goto label;
-
-            timer.stop();
-            time += timer.millis();
-        }
-        std::cout << "Time: " << time << " ms." << std::endl << std::endl;
-
+        // Clean up
         xnor_nn_memory_free(src_bin);
         xnor_nn_memory_free(weights_bin);
         src_bin = NULL;
@@ -151,7 +144,7 @@ label:
     xnor_nn_memory_free(weights_bin);
 
     delete[] workspace;
-    delete[] more_than_cache;
+    delete[] dst;
 
     xnor_nn_get_status_message(st_msg, st);
     printf("%s\n", st_msg);
