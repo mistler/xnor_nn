@@ -37,7 +37,7 @@ int main(void){
     }
 
     // Setup
-    st = xnor_nn_init_convolution(&convolution,
+    st = xnor_nn_init_convolution(&convolution, xnor_nn_algorithm_reference,
             MB, OC, IC, IH, IW, KH, KW, SH, SW, PH, PW);
     if (st != xnor_nn_success) goto label;
 

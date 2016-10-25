@@ -64,7 +64,7 @@ TEST(DataWeightsFloatToFloat, simple_precalculated) {
     xnor_nn_convolution_t convolution;
     xnor_nn_weights_binarizer_t weights_binarizer;
 
-    st = xnor_nn_init_convolution(&convolution,
+    st = xnor_nn_init_convolution(&convolution, xnor_nn_algorithm_reference,
             MB, OC, IC, IH, IW, KH, KW, SH, SW, PH, PW);
     if (st != xnor_nn_success) goto label;
 

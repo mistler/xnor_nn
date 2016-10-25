@@ -57,8 +57,8 @@ TEST(ConvolutionXnorFwd, simple_precalculated) {
     float actual_dst[MB*OC*OH*OW] = { 0.f };
 
     // Convolution setup
-    xnor_nn::Convolution convolution{MB, OC, IC, IH, IW,
-            KH, KW, SH, SW, PH, PW, weights};
+    xnor_nn::Convolution convolution{xnor_nn_algorithm_reference,
+            MB, OC, IC, IH, IW, KH, KW, SH, SW, PH, PW, weights};
 
     // Execution
     convolution.forward(src, actual_dst);

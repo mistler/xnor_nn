@@ -10,10 +10,11 @@ namespace xnor_nn {
 
 class Convolution {
 public:
-    Convolution(int MB, int OC, int IC, int IH, int IW,
+    Convolution(const xnor_nn_algorithm_t algorithm,
+            int MB, int OC, int IC, int IH, int IW,
             int KH, int KW, int SH, int SW, int PH, int PW,
             const void *weights) {
-        check_status(xnor_nn_init_convolution(&convolution_,
+        check_status(xnor_nn_init_convolution(&convolution_, algorithm,
                     MB, OC, IC, IH, IW, KH, KW, SH, SW, PH, PW));
         check_status(xnor_nn_init_data_binarizer(
                     &src_binarizer_, &convolution_));

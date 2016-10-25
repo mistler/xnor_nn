@@ -10,7 +10,7 @@ using Logger = xnor_nn::utils::Logger;
 namespace {
 
 size_t data_size(const xnor_nn_data_binarizer_t *s) {
-    return s->mb * s->ic * s->ih * s->iw * sizeof(float);
+    return s->c->mb * s->c->ic * s->c->ih * s->c->iw * sizeof(float);
 }
 
 size_t a_offset(const xnor_nn_data_binarizer_t *s) {
@@ -18,7 +18,7 @@ size_t a_offset(const xnor_nn_data_binarizer_t *s) {
 }
 
 size_t a_size(const xnor_nn_data_binarizer_t *s) {
-    return s->ih * s->iw * sizeof(float);
+    return s->c->ih * s->c->iw * sizeof(float);
 }
 
 size_t k_offset(const xnor_nn_data_binarizer_t *s) {
@@ -26,7 +26,7 @@ size_t k_offset(const xnor_nn_data_binarizer_t *s) {
 }
 
 size_t k_size(const xnor_nn_data_binarizer_t *s) {
-    return s->oh * s->ow * sizeof(float);
+    return s->c->oh * s->c->ow * sizeof(float);
 }
 
 size_t sz(const xnor_nn_data_binarizer_t *s){
@@ -43,28 +43,33 @@ xnor_nn_status_t copy_on_float(const float *from, float *to,
     return xnor_nn_success;
 }
 
-/*
+#if 0
 xnor_nn_status_t binarize_char(const float *from, unsigned char *to,
         int MB, int IC, int IH, int IW) {
-    const int SZ = sizeof(unsigned char);
+    const int SZ = 8;
+    const int OC = (IC + SZ - 1) / SZ;
 
 #   pragma omp parallel for collapse(3) schedule(static)
     for (int mb = 0; mb < MB; mb++)
     for (int ih = 0; ih < IH; ih++)
     for (int iw = 0; iw < IW; iw++)
-    for (int oc = 0; oc < OC / SZ; oc++) {
+    for (int oc = 0; oc < OC; oc++) {
         unsigned char out{0};
-        for (int ic = 0; ic < SZ; ic++) {
-            int from_idx = ((mb*IC + oc*SZ + ic)*IH + ih)*IW + iw;
-            char tmp = from[from_idx] >> (sizeof(float)-1);
-            out |= tmp;
+        const int LEN = oc == OC - 1 ? (IC % SZ) : SZ;
+        for (int ic = 0; ic < LEN; ic++) {
+            int from_idx = (ic*IH + ih)*IW + iw;
+            char tmp = from_i[from_idx] >> 31;
             out <<= 1;
+            out |= tmp;
         }
+        if (LEN != SZ) out <<= SZ-LEN;
+        int to_idx = (ih*IW + iw)*OC + oc;
+        to[to_idx] = out;
     }
 
     return xnor_nn_success;
 }
-*/
+#endif
 
 xnor_nn_status_t calculate_k(const float *from, float *a, float *k,
         int MB, int IC, int IH, int IW, int OH, int OW,
@@ -112,18 +117,30 @@ xnor_nn_status_t calculate_k(const float *from, float *a, float *k,
 // TODO: dispatch at init time
 xnor_nn_status_t binarize_dispatch(const xnor_nn_data_binarizer_t *s,
         const void *from, void *to) {
-    const float *f = (const float*)from;
-    float *t = (float*)to;
+    const int MB = s->c->mb;
+    const int IC = s->c->ic;
+    const int IH = s->c->ih;
+    const int IW = s->c->iw;
 
-    const int MB = s->mb;
-    const int IC = s->ic;
-    const int IH = s->ih;
-    const int IW = s->iw;
+    xnor_nn_status_t st;
 
     xnor_nn::utils::Timer timer;
     timer.start();
 
-    xnor_nn_status_t st = copy_on_float(f, t, MB, IC, IH, IW);
+    switch (s->c->algorithm) {
+    case xnor_nn_algorithm_reference:
+    {
+        st = copy_on_float((float*)from, (float*)to, MB, IC, IH, IW);
+        break;
+    }
+    case xnor_nn_algorithm_optimized:
+    {
+        /*
+        st = binarize_char((float*)from, (unsigned char*)t, MB, IC, IH, IW);
+        */
+        break;
+    }
+    }
 
     timer.stop();
     Logger::info("data_binarizer:", "binarize:",
@@ -136,28 +153,41 @@ xnor_nn_status_t binarize_dispatch(const xnor_nn_data_binarizer_t *s,
 // TODO: dispatch at init time
 xnor_nn_status_t calculate_k_dispatch(const xnor_nn_data_binarizer_t *s,
         const void *from, void *to) {
-    const int MB = s->mb;
-    const int IC = s->ic;
-    const int IH = s->ih;
-    const int IW = s->iw;
+    (void)calculate_k;
 
-    const int OH = s->oh;
-    const int OW = s->ow;
-    const int KH = s->kh;
-    const int KW = s->kw;
-    const int SH = s->sh;
-    const int SW = s->sw;
-    const int PH = s->ph;
-    const int PW = s->pw;
+    const int MB = s->c->mb;
+    const int IC = s->c->ic;
+    const int IH = s->c->ih;
+    const int IW = s->c->iw;
 
-    float *a_ptr = (float*)to + a_offset(s)/sizeof(float);
-    float *k_ptr = (float*)to + k_offset(s)/sizeof(float);
+    const int OH = s->c->oh;
+    const int OW = s->c->ow;
+    const int KH = s->c->kh;
+    const int KW = s->c->kw;
+    const int SH = s->c->sh;
+    const int SW = s->c->sw;
+    const int PH = s->c->ph;
+    const int PW = s->c->pw;
+
+    xnor_nn_status_t st;
 
     xnor_nn::utils::Timer timer;
     timer.start();
 
-    xnor_nn_status_t st = calculate_k((float*)from, a_ptr, k_ptr,
+    switch (s->c->algorithm) {
+    case xnor_nn_algorithm_reference:
+    {
+        float *a_ptr = (float*)to + a_offset(s)/sizeof(float);
+        float *k_ptr = (float*)to + k_offset(s)/sizeof(float);
+        st = calculate_k((float*)from, a_ptr, k_ptr,
             MB, IC, IH, IW, OH, OW, KH, KW, SH, SW, PH, PW);
+        break;
+    }
+    case xnor_nn_algorithm_optimized:
+    {
+        break;
+    }
+    }
 
     timer.stop();
     Logger::info("data_binarizer:", "calculate_k:",
@@ -172,27 +202,15 @@ xnor_nn_status_t calculate_k_dispatch(const xnor_nn_data_binarizer_t *s,
 
 xnor_nn_status_t xnor_nn_init_data_binarizer(xnor_nn_data_binarizer_t *b,
         const xnor_nn_convolution_t *c) {
-    b->mb = c->mb;
-    b->ic = c->ic;
-    b->ih = c->ih;
-    b->iw = c->iw;
-
-    b->oh = c->oh;
-    b->ow = c->ow;
-    b->kh = c->kh;
-    b->kw = c->kw;
-    b->sh = c->sh;
-    b->sw = c->sw;
-    b->ph = c->ph;
-    b->pw = c->pw;
+    b->c = c;
 
     b->size = sz;
     b->binarize = binarize_dispatch;
     b->calculate_k = calculate_k_dispatch;
 
     Logger::info("data_binarizer:", "create:",
-            "MB:", b->mb, "IC:", b->ic, "IH:", b->ih, "IW:", b->iw,
-            "OH:", b->oh, "OW:", b->ow);
+            "MB:", c->mb, "IC:", c->ic, "IH:", c->ih, "IW:", c->iw,
+            "OH:", c->oh, "OW:", c->ow);
 
     return xnor_nn_success;
 }

@@ -77,14 +77,25 @@ xnor_nn_status_t convolution_dispatch(const xnor_nn_convolution_t *s,
     const int PW = s->pw;
     const int PH = s->ph;
 
-    const float alpha = src[MB*IC*IH*IW];
-    const float *k = src + MB*IC*IH*IW + IH*IW;
+    xnor_nn_status_t st;
 
     xnor_nn::utils::Timer timer;
     timer.start();
 
-    xnor_nn_status_t st = fwd_xnor_on_float(src, weights, dst, alpha, k,
-            MB, IC, IH, IW, OC, OH, OW, KH, KW, SH, SW, PH, PW);
+    switch (s->algorithm) {
+    case xnor_nn_algorithm_reference:
+    {
+        const float alpha = src[MB*IC*IH*IW];
+        const float *k = src + MB*IC*IH*IW + IH*IW;
+        st = fwd_xnor_on_float(src, weights, dst, alpha, k,
+                MB, IC, IH, IW, OC, OH, OW, KH, KW, SH, SW, PH, PW);
+        break;
+    }
+    case xnor_nn_algorithm_optimized:
+    {
+        break;
+    }
+    }
 
     timer.stop();
     Logger::info("convolution:", "execute:",
@@ -99,10 +110,13 @@ xnor_nn_status_t convolution_dispatch(const xnor_nn_convolution_t *s,
 }
 
 xnor_nn_status_t xnor_nn_init_convolution(xnor_nn_convolution_t *c,
+        const xnor_nn_algorithm_t algorithm,
         int mb, int oc, int ic, int ih, int iw,
         int kh, int kw, int sh, int sw, int ph, int pw) {
     const int oh = (ih + 2*ph - kh) / sh + 1;
     const int ow = (iw + 2*pw - kw) / sw + 1;
+
+    c->algorithm = algorithm;
 
     c->mb = mb;
 

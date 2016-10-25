@@ -15,6 +15,7 @@ xnor_nn_status_t xnor_nn_memory_allocate(void **ptr, size_t sz);
 void xnor_nn_memory_free(void *ptr);
 
 xnor_nn_status_t xnor_nn_init_convolution(xnor_nn_convolution_t *c,
+        const xnor_nn_algorithm_t algorithm,
         int mb, int oc, int ic, int ih, int iw,
         int kh, int kw, int sh, int sw, int ph, int pw);
 

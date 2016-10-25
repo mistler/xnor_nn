@@ -10,7 +10,7 @@ using Logger = xnor_nn::utils::Logger;
 namespace {
 
 size_t sz(const xnor_nn_weights_binarizer_t *s){
-    size_t elems = s->oc * s->ic * s->kh * s->kw; // Kernels
+    size_t elems = s->c->oc * s->c->ic * s->c->kh * s->c->kw; // Kernels
     elems += 1; // Alpha
     return elems * sizeof(float);
 }
@@ -35,18 +35,29 @@ xnor_nn_status_t copy_on_float(const float *from, float *to,
 // TODO: dispatch at init time
 xnor_nn_status_t weights_bin_dispatch(const xnor_nn_weights_binarizer_t *s,
         const void *from, void *to) {
-    const float *f = (const float*)from;
-    float *t = (float*)to;
+    const int OC = s->c->oc;
+    const int IC = s->c->ic;
+    const int KH = s->c->kh;
+    const int KW = s->c->kw;
 
-    const int OC = s->oc;
-    const int IC = s->ic;
-    const int KH = s->kh;
-    const int KW = s->kw;
+    xnor_nn_status_t st;
 
     xnor_nn::utils::Timer timer;
     timer.start();
 
-    xnor_nn_status_t st = copy_on_float(f, t, OC, IC, KH, KW);
+    switch (s->c->algorithm) {
+    case xnor_nn_algorithm_reference:
+    {
+        const float *f = (const float*)from;
+        float *t = (float*)to;
+        st = copy_on_float(f, t, OC, IC, KH, KW);
+        break;
+    }
+    case xnor_nn_algorithm_optimized:
+    {
+        break;
+    }
+    }
 
     timer.stop();
     Logger::info("weights_binarizer:", "execute:",
@@ -60,16 +71,13 @@ xnor_nn_status_t weights_bin_dispatch(const xnor_nn_weights_binarizer_t *s,
 
 xnor_nn_status_t xnor_nn_init_weights_binarizer(xnor_nn_weights_binarizer_t *b,
         const xnor_nn_convolution_t *c) {
-    b->oc = c->oc;
-    b->ic = c->ic;
-    b->kh = c->kh;
-    b->kw = c->kw;
+    b->c = c;
 
     b->size = sz;
     b->execute = weights_bin_dispatch;
 
     Logger::info("weights_binarizer:", "create:",
-            "OC:", b->oc, "IC:", b->ic, "KH:", b->kh, "KW:", b->kw);
+            "OC:", c->oc, "IC:", c->ic, "KH:", c->kh, "KW:", c->kw);
 
     return xnor_nn_success;
 }
