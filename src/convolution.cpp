@@ -12,10 +12,10 @@ namespace {
 
 xnor_nn_status_t fwd_xnor_on_float(
         const float *src, const float *weights, float *dst,
+        float alpha, const float *k,
         int MB, int IC, int IH, int IW,
         int OC, int OH, int OW,
-        int KH, int KW, int SH, int SW, int PH, int PW,
-        float alpha, const float *k) {
+        int KH, int KW, int SH, int SW, int PH, int PW) {
 
 #   pragma omp parallel for collapse(2) schedule(static)
     for (int mb = 0; mb < MB; mb++)
@@ -83,8 +83,8 @@ xnor_nn_status_t convolution_dispatch(const xnor_nn_convolution_t *s,
     xnor_nn::utils::Timer timer;
     timer.start();
 
-    xnor_nn_status_t st = fwd_xnor_on_float(src, weights, dst,
-            MB, IC, IH, IW, OC, OH, OW, KH, KW, SH, SW, PH, PW, alpha, k);
+    xnor_nn_status_t st = fwd_xnor_on_float(src, weights, dst, alpha, k,
+            MB, IC, IH, IW, OC, OH, OW, KH, KW, SH, SW, PH, PW);
 
     timer.stop();
     Logger::info("convolution:", "execute:",
