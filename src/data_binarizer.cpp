@@ -43,8 +43,7 @@ xnor_nn_status_t copy_on_float(const float *from, float *to,
     return xnor_nn_success;
 }
 
-#if 0
-xnor_nn_status_t binarize_char(const float *from, unsigned char *to,
+xnor_nn_status_t binarize_char(const unsigned int *from, unsigned char *to,
         int MB, int IC, int IH, int IW) {
     const int SZ = 8;
     const int OC = (IC + SZ - 1) / SZ;
@@ -58,7 +57,7 @@ xnor_nn_status_t binarize_char(const float *from, unsigned char *to,
         const int LEN = oc == OC - 1 ? (IC % SZ) : SZ;
         for (int ic = 0; ic < LEN; ic++) {
             int from_idx = (ic*IH + ih)*IW + iw;
-            char tmp = from_i[from_idx] >> 31;
+            char tmp = from[from_idx] >> 31;
             out <<= 1;
             out |= tmp;
         }
@@ -69,7 +68,6 @@ xnor_nn_status_t binarize_char(const float *from, unsigned char *to,
 
     return xnor_nn_success;
 }
-#endif
 
 xnor_nn_status_t calculate_k(const float *from, float *a, float *k,
         int MB, int IC, int IH, int IW, int OH, int OW,
@@ -135,9 +133,8 @@ xnor_nn_status_t binarize_dispatch(const xnor_nn_data_binarizer_t *s,
     }
     case xnor_nn_algorithm_optimized:
     {
-        /*
-        st = binarize_char((float*)from, (unsigned char*)t, MB, IC, IH, IW);
-        */
+        st = binarize_char((unsigned int*)from, (unsigned char*)to,
+                MB, IC, IH, IW);
         break;
     }
     }
