@@ -57,11 +57,11 @@ xnor_nn_status_t fwd_xnor_on_float(
 
 // TODO: dispatch at init time
 xnor_nn_status_t convolution_dispatch(const xnor_nn_convolution_t *s,
-        const void *src_, const void *weights_, void *dst_) {
+        xnor_nn_resources_t res) {
 
-    const float *src = (const float*)src_;
-    const float *weights = (const float*)weights_;
-    float *dst = (float*)dst_;
+    const float *src = (const float*)res[xnor_nn_resource_bin_src];
+    const float *weights = (const float*)res[xnor_nn_resource_bin_weights];
+    float *dst = (float*)res[xnor_nn_resource_user_dst];
 
     const int MB = s->mb;
     const int IW = s->iw;
@@ -85,8 +85,8 @@ xnor_nn_status_t convolution_dispatch(const xnor_nn_convolution_t *s,
     switch (s->algorithm) {
     case xnor_nn_algorithm_reference:
     {
-        const float alpha = src[MB*IC*IH*IW];
-        const float *k = src + MB*IC*IH*IW + IH*IW;
+        const float alpha = *(float*)(&res[xnor_nn_resource_alpha]);
+        const float *k = (float*)res[xnor_nn_resource_k];
         st = fwd_xnor_on_float(src, weights, dst, alpha, k,
                 MB, IC, IH, IW, OC, OH, OW, KH, KW, SH, SW, PH, PW);
         break;

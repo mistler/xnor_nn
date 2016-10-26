@@ -12,10 +12,7 @@ int main(void){
     const int SH = 1, SW = 1;
     const int PH = 1, PW = 1;
 
-    void *src_usr = NULL, *weights_usr = NULL;
-    void *src_bin = NULL, *weights_bin = NULL;
-    // TODO: dst allignment
-    void *dst = NULL;
+    xnor_nn_resources_t res = {0};
 
     xnor_nn_data_binarizer_t src_binarizer;
     xnor_nn_weights_binarizer_t weights_binarizer;
@@ -24,14 +21,13 @@ int main(void){
     xnor_nn_status_t st;
     char st_msg[16];
 
-    size_t sz_src_bin;
-    size_t sz_weights_bin;
-
     // Usr data
-    src_usr = malloc(sizeof(float)*MB*IC*IH*IW);
-    weights_usr = malloc(sizeof(float)*OC*IC*KH*KW);
-    dst = malloc(sizeof(float)*MB*OC*OH*OW);
-    if (!src_usr || !weights_usr || !dst) {
+    res[xnor_nn_resource_user_src] = malloc(sizeof(float)*MB*IC*IH*IW);
+    res[xnor_nn_resource_user_weights] = malloc(sizeof(float)*OC*IC*KH*KW);
+    res[xnor_nn_resource_user_dst] = malloc(sizeof(float)*MB*OC*OH*OW);
+    if (!res[xnor_nn_resource_user_src] ||
+            !res[xnor_nn_resource_user_weights] ||
+            !res[xnor_nn_resource_user_dst]) {
         st = xnor_nn_error_memory;
         goto label;
     }
@@ -47,38 +43,30 @@ int main(void){
     st = xnor_nn_init_weights_binarizer(&weights_binarizer, &convolution);
     if (st != xnor_nn_success) goto label;
 
-    // Internal data
-    sz_src_bin = src_binarizer.size(&src_binarizer);
-    sz_weights_bin = weights_binarizer.size(&weights_binarizer);
-
-    st = xnor_nn_memory_allocate(&src_bin, sz_src_bin);
-    if (st != xnor_nn_success) goto label;
-    st = xnor_nn_memory_allocate(&weights_bin, sz_weights_bin);
+    st = xnor_nn_allocate_resources(&convolution, res);
     if (st != xnor_nn_success) goto label;
 
-    st = weights_binarizer.execute(&weights_binarizer,
-            weights_usr, weights_bin);
+    st = weights_binarizer.execute(&weights_binarizer, res);
     if (st != xnor_nn_success) goto label;
 
-    // Execution
+    // Execute
     for (int i = 0; i < 3; i++) {
-        st = src_binarizer.binarize(&src_binarizer, src_usr, src_bin);
+        st = src_binarizer.binarize(&src_binarizer, res);
         if (st != xnor_nn_success) goto label;
 
-        st = src_binarizer.calculate_k(&src_binarizer, src_usr, src_bin);
+        st = src_binarizer.calculate_k(&src_binarizer, res);
         if (st != xnor_nn_success) goto label;
 
-        st = convolution.forward(&convolution, src_bin, weights_bin, dst);
+        st = convolution.forward(&convolution, res);
         if (st != xnor_nn_success) goto label;
     }
 
 label:
-    free(src_usr);
-    free(weights_usr);
-    free(dst);
+    free(res[xnor_nn_resource_user_src]);
+    free(res[xnor_nn_resource_user_weights]);
+    free(res[xnor_nn_resource_user_dst]);
 
-    xnor_nn_memory_free(src_bin);
-    xnor_nn_memory_free(weights_bin);
+    xnor_nn_free_resources(res);
 
     xnor_nn_get_status_message(st_msg, st);
     printf("%s\n", st_msg);
