@@ -23,31 +23,14 @@ void xnor_nn_memory_free(void *ptr) {
 xnor_nn_status_t xnor_nn_allocate_resources(const xnor_nn_convolution_t *c,
         xnor_nn_resources_t res) {
     try {
-        switch (c->algorithm) {
-        case xnor_nn_algorithm_reference: {
-            xnor_nn_memory_allocate(res + xnor_nn_resource_bin_src,
-                    c->mb * c->ic * c->ih * c->iw * sizeof(float));
-            xnor_nn_memory_allocate(res + xnor_nn_resource_bin_weights,
-                    c->oc * c->ic * c->kh * c->kw * sizeof(float));
-            xnor_nn_memory_allocate(res + xnor_nn_resource_a,
-                    c->ih * c->iw * sizeof(float));
-            xnor_nn_memory_allocate(res + xnor_nn_resource_k,
-                    c->oh * c->ow * sizeof(float));
-            break;
-        }
-        case xnor_nn_algorithm_optimized: {
-            const size_t BIC = (c->ic + 8 - 1) / 8;
-            xnor_nn_memory_allocate(res + xnor_nn_resource_bin_src,
-                    c->mb * BIC * c->ih * c->iw);
-            xnor_nn_memory_allocate(res + xnor_nn_resource_bin_weights,
-                    c->oc * c->ic * c->kh * c->kw * sizeof(float));
-            xnor_nn_memory_allocate(res + xnor_nn_resource_a,
-                    c->ih * c->iw * sizeof(float));
-            xnor_nn_memory_allocate(res + xnor_nn_resource_k,
-                    c->oh * c->ow * sizeof(float));
-            break;
-        }
-        }
+        xnor_nn_memory_allocate(res + xnor_nn_resource_bin_src,
+                c->size_bin_src);
+        xnor_nn_memory_allocate(res + xnor_nn_resource_bin_weights,
+                c->size_bin_weights);
+        xnor_nn_memory_allocate(res + xnor_nn_resource_a,
+                c->size_a);
+        xnor_nn_memory_allocate(res + xnor_nn_resource_k,
+                c->size_k);
     } catch (int err) {
         xnor_nn_free_resources(res);
         return xnor_nn_error_memory;

@@ -64,6 +64,11 @@ struct xnor_nn_convolution_ {
     int kh, kw;
     int ph, pw;
 
+    size_t size_bin_src;
+    size_t size_bin_weights;
+    size_t size_a;
+    size_t size_k;
+
     xnor_nn_status_t (*forward)(const xnor_nn_convolution_t *self,
             xnor_nn_resources_t res);
 };
