@@ -36,9 +36,7 @@ static inline void clean_cache(char *more_than_cache, int more_than_cache_size) 
 }
 
 template<typename F>
-static inline void measure_time(F &f, std::string msg) {
-    const int N_EXECUTIONS = 3;
-
+static inline void measure_time(F &f, std::string msg, int N = 32) {
     const int more_than_cache_size = 1024*1024*64;
     static char more_than_cache[more_than_cache_size];
 
@@ -46,7 +44,7 @@ static inline void measure_time(F &f, std::string msg) {
 
     double time = 0.0;
     std::cout << msg << "... ";
-    for (int n = 0; n < N_EXECUTIONS; n++) {
+    for (int n = 0; n < N; n++) {
         clean_cache(more_than_cache, more_than_cache_size);
         timer.start();
 
@@ -56,7 +54,7 @@ static inline void measure_time(F &f, std::string msg) {
         timer.stop();
         time += timer.millis();
     }
-    std::cout << "Time: " << time << " ms." << std::endl;
+    std::cout << "Time: " << time / N << " ms." << std::endl;
 }
 
 int main(){
@@ -124,7 +122,7 @@ int main(){
 
         auto f_conv_exec = std::bind(convolution.forward,
                 &convolution, res);
-        measure_time(f_conv_exec, "Convolution forward");
+        measure_time(f_conv_exec, "Convolution forward", 4);
 
         std::cout << std::endl;
 
