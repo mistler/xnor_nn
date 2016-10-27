@@ -15,7 +15,7 @@ TEST(DataWeightsFloatToFloat, simple_precalculated) {
     const float N = -1.f;
 
     // Usr weights (just random)
-    const float weights[OC*IC*KH*KW] = {
+    const float weights[] = {
         P, P, P,
         N, N, P,
         P, N, N,
@@ -32,8 +32,9 @@ TEST(DataWeightsFloatToFloat, simple_precalculated) {
         N, N, P,
         P, N, N
     };
-    // Precalculated src
-    const float expected_weights_bin[OC*IC*KH*KW + 1] = {
+
+    // Precalculated weights
+    const float expected_weights_bin[] = {
         P, P, P,
         N, N, P,
         P, N, N,
@@ -49,47 +50,41 @@ TEST(DataWeightsFloatToFloat, simple_precalculated) {
         P, P, P,
         N, N, P,
         P, N, N,
-
-        // Alpha
-        P,
     };
 
+    // Precalculated alpha
+    const float alpha = P;
+
     // Binarizer setup
+    xnor_nn_resources_t res = {0};
+    float *actual_alpha = (float*)(&res[xnor_nn_resource_alpha]);
+
     xnor_nn_status_t st;
     char st_msg[16];
 
-    size_t sz_weights_bin;
-    void *actual_weights_bin = NULL;
-
     xnor_nn_convolution_t convolution;
-    xnor_nn_weights_binarizer_t weights_binarizer;
 
-    st = xnor_nn_init_convolution(&convolution,
+    st = xnor_nn_init_convolution(&convolution, xnor_nn_algorithm_reference,
             MB, OC, IC, IH, IW, KH, KW, SH, SW, PH, PW);
     if (st != xnor_nn_success) goto label;
 
-    st = xnor_nn_init_weights_binarizer(&weights_binarizer, &convolution);
+    st = xnor_nn_allocate_resources(&convolution, res);
     if (st != xnor_nn_success) goto label;
 
-    sz_weights_bin = weights_binarizer.size(&weights_binarizer);
-
-    st = xnor_nn_memory_allocate(&actual_weights_bin, sz_weights_bin);
-    if (st != xnor_nn_success) goto label;
+    res[xnor_nn_resource_user_weights] = (void*)weights;
 
     // Execution
-    st = weights_binarizer.execute(&weights_binarizer,
-            weights, actual_weights_bin);
+    st = convolution.binarize_weights(&convolution, res);
     if (st != xnor_nn_success) goto label;
 
     // Check result
     xnor_nn::test::check_weights(OC, IC, KH, KW,
-            (float*)actual_weights_bin, expected_weights_bin);
+            (float*)res[xnor_nn_resource_bin_weights], expected_weights_bin);
 
-    xnor_nn::test::check_arrays(1, (float*)actual_weights_bin + OC*IC*KH*KW,
-            expected_weights_bin + OC*IC*KH*KW);
+    xnor_nn::test::check_value(*actual_alpha, alpha);
 
 label:
-    xnor_nn_memory_free(actual_weights_bin);
+    xnor_nn_free_resources(res);
 
     EXPECT_EQ(st, xnor_nn_success);
     xnor_nn_get_status_message(st_msg, st);

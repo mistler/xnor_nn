@@ -10,47 +10,42 @@ namespace xnor_nn {
 
 class Convolution {
 public:
-    Convolution(int MB, int OC, int IC, int IH, int IW,
+    Convolution(const xnor_nn_algorithm_t algorithm,
+            int MB, int OC, int IC, int IH, int IW,
             int KH, int KW, int SH, int SW, int PH, int PW,
-            const void *weights) {
-        check_status(xnor_nn_init_convolution(&convolution_,
+            const void *weights) : res_{0} {
+        check_status(xnor_nn_init_convolution(&convolution_, algorithm,
                     MB, OC, IC, IH, IW, KH, KW, SH, SW, PH, PW));
-        check_status(xnor_nn_init_data_binarizer(
-                    &src_binarizer_, &convolution_));
-        check_status(xnor_nn_init_weights_binarizer(
-                    &weights_binarizer_, &convolution_));
 
         // Internal memory
-        size_t sz_src_bin = src_binarizer_.size(&src_binarizer_);
-        size_t sz_weights_bin =weights_binarizer_.size(&weights_binarizer_);
-        void *src_bin = nullptr;
-        void *weights_bin = nullptr;
-        check_status(xnor_nn_memory_allocate(&src_bin, sz_src_bin));
-        check_status(xnor_nn_memory_allocate(&weights_bin, sz_weights_bin));
-        src_.reset((data_t*)src_bin);
-        weights_.reset((data_t*)weights_bin);
+        check_status(xnor_nn_allocate_resources(&convolution_, res_));
 
         // Prepare weights
-        check_status(weights_binarizer_.execute(&weights_binarizer_,
-                weights, weights_bin));
+        res_[xnor_nn_resource_user_weights] = (void*)weights;
+        check_status(convolution_.binarize_weights(&convolution_, res_));
     }
 
+    ~Convolution() {
+        xnor_nn_free_resources(res_);
+    }
+
+
     void forward(const void *src, void *dst) {
-        check_status(src_binarizer_.binarize(&src_binarizer_, src, &src_[0]));
-        check_status(src_binarizer_.calculate_k(&src_binarizer_, &src_[0]));
-        check_status(convolution_.forward(
-                    &convolution_, &src_[0], &weights_[0], dst));
+        res_[xnor_nn_resource_user_src] = const_cast<void*>(src);
+        res_[xnor_nn_resource_user_dst] = dst;
+        check_status(convolution_.binarize_data(&convolution_, res_));
+        check_status(convolution_.calculate_k(&convolution_, res_));
+        check_status(convolution_.forward(&convolution_, res_));
+        res_[xnor_nn_resource_user_src] = 0;
+        res_[xnor_nn_resource_user_dst] = 0;
     }
 
 private:
     typedef char data_t;
 
     xnor_nn_convolution_t convolution_;
-    xnor_nn_data_binarizer_t src_binarizer_;
-    xnor_nn_weights_binarizer_t weights_binarizer_;
 
-    std::unique_ptr<data_t[]> src_;
-    std::unique_ptr<data_t[]> weights_;
+    xnor_nn_resources_t res_;
 
     void check_status(xnor_nn_status_t status) {
         if (status == xnor_nn_success) return;

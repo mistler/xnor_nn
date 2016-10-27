@@ -16,5 +16,5 @@ target_link_libraries(${APP_NAME} xnor_nn)
 add_custom_target(
     perf
     COMMAND ./${APP_NAME}
-    DEPENDS ${APP_NAME}
+    DEPENDS ${LIB_NAME}
 )

@@ -19,6 +19,9 @@ void check_weights(int OC, int IC, int KH, int KW,
 template <typename T>
 void check_arrays(int elems, const T *actual, const T *expected);
 
+template <typename T>
+void check_value(const T &actual, const T &expected);
+
 
 template<> void check_data<float>(int MB, int C, int H, int W,
         const float *actual, const float *expected) {
@@ -59,6 +62,11 @@ template<> void check_arrays<float>(int elems,
         EXPECT_NEAR(expected[i], actual[i], ERR) << "i: " << i << ", elems: "
             << elems;
     }
+}
+
+template<> void check_value<float>(const float &actual, const float &expected) {
+    const float ERR = 1e-5f;
+    EXPECT_NEAR(expected, actual, ERR);
 }
 
 }
