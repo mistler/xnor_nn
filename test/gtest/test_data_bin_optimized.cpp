@@ -28,9 +28,9 @@ TEST(DataBinFloatToFloat, optimized_precalculated) {
 
     // Precalculated src
     const unsigned char expected_src_bin[] = {
-        0x8, 0x8, 0x8,
-        0x0, 0x8, 0x0,
-        0x4, 0x4, 0x4,
+        0x40u, 0x40u, 0x40u,
+        0xC0u, 0x40u, 0xC0u,
+        0x80u, 0x80u, 0x80u,
     };
 
     // Precalculated a
@@ -72,11 +72,8 @@ TEST(DataBinFloatToFloat, optimized_precalculated) {
     if (st != xnor_nn_success) goto label;
 
     // Check result
-    /*
-    xnor_nn::test::check_data(MB, IC, IH, IW,
+    xnor_nn::test::check_data(MB, (IC + 8 - 1) / 8, IH, IW,
             (unsigned char*)res[xnor_nn_resource_bin_src], expected_src_bin);
-    */
-    (void)expected_src_bin;
 
     // Check A
     xnor_nn::test::check_arrays(IH*IW, (float*)res[xnor_nn_resource_a],
