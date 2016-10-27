@@ -54,13 +54,9 @@ TEST(DataBinFloatToFloat, optimized_precalculated) {
     char st_msg[16];
 
     xnor_nn_convolution_t convolution;
-    xnor_nn_data_binarizer_t src_binarizer;
 
     st = xnor_nn_init_convolution(&convolution, xnor_nn_algorithm_optimized,
             MB, OC, IC, IH, IW, KH, KW, SH, SW, PH, PW);
-    if (st != xnor_nn_success) goto label;
-
-    st = xnor_nn_init_data_binarizer(&src_binarizer, &convolution);
     if (st != xnor_nn_success) goto label;
 
     st = xnor_nn_allocate_resources(&convolution, res);
@@ -69,10 +65,10 @@ TEST(DataBinFloatToFloat, optimized_precalculated) {
     res[xnor_nn_resource_user_src] = (void*)src;
 
     // Execution
-    st = src_binarizer.binarize(&src_binarizer, res);
+    st = convolution.binarize_data(&convolution, res);
     if (st != xnor_nn_success) goto label;
 
-    st = src_binarizer.calculate_k(&src_binarizer, res);
+    st = convolution.calculate_k(&convolution, res);
     if (st != xnor_nn_success) goto label;
 
     // Check result

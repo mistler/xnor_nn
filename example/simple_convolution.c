@@ -14,8 +14,6 @@ int main(void){
 
     xnor_nn_resources_t res = {0};
 
-    xnor_nn_data_binarizer_t src_binarizer;
-    xnor_nn_weights_binarizer_t weights_binarizer;
     xnor_nn_convolution_t convolution;
 
     xnor_nn_status_t st;
@@ -37,24 +35,18 @@ int main(void){
             MB, OC, IC, IH, IW, KH, KW, SH, SW, PH, PW);
     if (st != xnor_nn_success) goto label;
 
-    st = xnor_nn_init_data_binarizer(&src_binarizer, &convolution);
-    if (st != xnor_nn_success) goto label;
-
-    st = xnor_nn_init_weights_binarizer(&weights_binarizer, &convolution);
-    if (st != xnor_nn_success) goto label;
-
     st = xnor_nn_allocate_resources(&convolution, res);
     if (st != xnor_nn_success) goto label;
 
-    st = weights_binarizer.execute(&weights_binarizer, res);
+    st = convolution.binarize_weights(&convolution, res);
     if (st != xnor_nn_success) goto label;
 
     // Execute
     for (int i = 0; i < 3; i++) {
-        st = src_binarizer.binarize(&src_binarizer, res);
+        st = convolution.binarize_data(&convolution, res);
         if (st != xnor_nn_success) goto label;
 
-        st = src_binarizer.calculate_k(&src_binarizer, res);
+        st = convolution.calculate_k(&convolution, res);
         if (st != xnor_nn_success) goto label;
 
         st = convolution.forward(&convolution, res);

@@ -11,6 +11,7 @@ typedef enum {
     xnor_nn_success,
     xnor_nn_error_memory,
     xnor_nn_error_invalid_input,
+    xnor_nn_unimplemented,
 } xnor_nn_status_t;
 
 typedef enum {
@@ -38,21 +39,8 @@ typedef struct xnor_nn_data_binarizer_ xnor_nn_data_binarizer_t;
 typedef struct xnor_nn_weights_binarizer_ xnor_nn_weights_binarizer_t;
 typedef struct xnor_nn_convolution_ xnor_nn_convolution_t;
 
-struct xnor_nn_data_binarizer_ {
-    const xnor_nn_convolution_t *c;
-
-    xnor_nn_status_t (*binarize)(const xnor_nn_data_binarizer_t *self,
-            xnor_nn_resources_t res);
-    xnor_nn_status_t (*calculate_k)(const xnor_nn_data_binarizer_t *self,
-            xnor_nn_resources_t res);
-};
-
-struct xnor_nn_weights_binarizer_ {
-    const xnor_nn_convolution_t *c;
-
-    xnor_nn_status_t (*execute)(const xnor_nn_weights_binarizer_t *self,
-            xnor_nn_resources_t res);
-};
+typedef xnor_nn_status_t(*executor)(const xnor_nn_convolution_t *self,
+        xnor_nn_resources_t res);
 
 struct xnor_nn_convolution_ {
     xnor_nn_algorithm_t algorithm;
@@ -66,8 +54,10 @@ struct xnor_nn_convolution_ {
 
     size_t resource_size[xnor_nn_resource_number];
 
-    xnor_nn_status_t (*forward)(const xnor_nn_convolution_t *self,
-            xnor_nn_resources_t res);
+    executor binarize_weights;
+    executor binarize_data;
+    executor calculate_k;
+    executor forward;
 };
 
 #ifdef __cplusplus

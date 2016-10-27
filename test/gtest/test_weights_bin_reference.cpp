@@ -63,13 +63,9 @@ TEST(DataWeightsFloatToFloat, simple_precalculated) {
     char st_msg[16];
 
     xnor_nn_convolution_t convolution;
-    xnor_nn_weights_binarizer_t weights_binarizer;
 
     st = xnor_nn_init_convolution(&convolution, xnor_nn_algorithm_reference,
             MB, OC, IC, IH, IW, KH, KW, SH, SW, PH, PW);
-    if (st != xnor_nn_success) goto label;
-
-    st = xnor_nn_init_weights_binarizer(&weights_binarizer, &convolution);
     if (st != xnor_nn_success) goto label;
 
     st = xnor_nn_allocate_resources(&convolution, res);
@@ -78,7 +74,7 @@ TEST(DataWeightsFloatToFloat, simple_precalculated) {
     res[xnor_nn_resource_user_weights] = (void*)weights;
 
     // Execution
-    st = weights_binarizer.execute(&weights_binarizer, res);
+    st = convolution.binarize_weights(&convolution, res);
     if (st != xnor_nn_success) goto label;
 
     // Check result
