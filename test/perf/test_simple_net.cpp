@@ -1,5 +1,4 @@
 #include <vector>
-#include <algorithm>
 #include <functional>
 #include <iostream>
 #include <cmath>
@@ -73,8 +72,9 @@ int main(){
     float *workspace = new float[enough];
     float *dst = new float[enough];
 
-    std::generate(workspace, workspace + enough,
-            [&]() { static int i = 0; return std::sin(i++) * 10.f; });
+#   pragma omp parallel for schedule(static)
+    for (int i = 0; i < enough; i++)
+        workspace[i] = 37.f * (27 - (i % 53));
 
     xnor_nn_status_t st;
     char st_msg[16];
