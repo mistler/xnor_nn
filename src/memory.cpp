@@ -24,13 +24,13 @@ xnor_nn_status_t xnor_nn_allocate_resources(const xnor_nn_convolution_t *c,
         xnor_nn_resources_t res) {
     try {
         xnor_nn_memory_allocate(res + xnor_nn_resource_bin_src,
-                c->size_bin_src);
+                c->resource_size[xnor_nn_resource_bin_src]);
         xnor_nn_memory_allocate(res + xnor_nn_resource_bin_weights,
-                c->size_bin_weights);
+                c->resource_size[xnor_nn_resource_bin_weights]);
         xnor_nn_memory_allocate(res + xnor_nn_resource_a,
-                c->size_a);
+                c->resource_size[xnor_nn_resource_a]);
         xnor_nn_memory_allocate(res + xnor_nn_resource_k,
-                c->size_k);
+                c->resource_size[xnor_nn_resource_k]);
     } catch (int err) {
         xnor_nn_free_resources(res);
         return xnor_nn_error_memory;

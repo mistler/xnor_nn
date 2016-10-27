@@ -139,18 +139,22 @@ xnor_nn_status_t xnor_nn_init_convolution(xnor_nn_convolution_t *c,
 
     switch (c->algorithm) {
     case xnor_nn_algorithm_reference: {
-        c->size_bin_src = c->mb * c->ic * c->ih * c->iw * sizeof(float);
-        c->size_bin_weights = c->oc * c->ic * c->kh * c->kw * sizeof(float);
-        c->size_a = c->ih * c->iw * sizeof(float);
-        c->size_k = c->oh * c->ow * sizeof(float);
+        c->resource_size[xnor_nn_resource_bin_src] =
+            c->mb * c->ic * c->ih * c->iw * sizeof(float);
+        c->resource_size[xnor_nn_resource_bin_weights] =
+            c->oc * c->ic * c->kh * c->kw * sizeof(float);
+        c->resource_size[xnor_nn_resource_a] = c->ih * c->iw * sizeof(float);
+        c->resource_size[xnor_nn_resource_k] = c->oh * c->ow * sizeof(float);
         break;
     }
     case xnor_nn_algorithm_optimized: {
         const size_t BIC = (c->ic + 8 - 1) / 8;
-        c->size_bin_src = c->mb * BIC * c->ih * c->iw;
-        c->size_bin_weights = c->oc * c->ic * c->kh * c->kw * sizeof(float);
-        c->size_a = c->ih * c->iw * sizeof(float);
-        c->size_k = c->oh * c->ow * sizeof(float);
+        c->resource_size[xnor_nn_resource_bin_src] =
+            c->mb * BIC * c->ih * c->iw;
+        c->resource_size[xnor_nn_resource_bin_weights] =
+            c->oc * c->ic * c->kh * c->kw * sizeof(float);
+        c->resource_size[xnor_nn_resource_a] = c->ih * c->iw * sizeof(float);
+        c->resource_size[xnor_nn_resource_k] = c->oh * c->ow * sizeof(float);
         break;
     }
     }
