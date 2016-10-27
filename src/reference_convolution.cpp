@@ -1,11 +1,4 @@
-#include <cmath>
-
 #include "binarize_data.h"
-
-#include "utils/logger.hpp"
-#include "utils/timer.hpp"
-
-using Logger = xnor_nn::utils::Logger;
 
 xnor_nn_status_t reference_convolution_forward(
         const float *src, const float *weights, float *dst,

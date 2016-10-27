@@ -2,11 +2,6 @@
 
 #include "binarize_weights.h"
 
-#include "utils/logger.hpp"
-#include "utils/timer.hpp"
-
-using Logger = xnor_nn::utils::Logger;
-
 xnor_nn_status_t reference_weights_copy_on_float(const float *from, float *to,
         float *alpha, int OC, int IC, int KH, int KW) {
     int elems = OC*IC*KH*KW;
