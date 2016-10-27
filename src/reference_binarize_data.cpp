@@ -31,7 +31,7 @@ xnor_nn_status_t direct_binarize_char(const unsigned int *from, unsigned char *t
         const int LEN = oc == OC - 1 ? (IC % SZ) : SZ;
         for (int ic = 0; ic < LEN; ic++) {
             int from_idx = (ic*IH + ih)*IW + iw;
-            char tmp = from[from_idx] >> 31;
+            char tmp = (~from[from_idx]) >> 31;
             out <<= 1;
             out |= tmp;
         }

@@ -28,9 +28,9 @@ TEST(DataBinFloatToFloat, optimized_precalculated) {
 
     // Precalculated src
     const unsigned char expected_src_bin[] = {
-        0x40u, 0x40u, 0x40u,
-        0xC0u, 0x40u, 0xC0u,
         0x80u, 0x80u, 0x80u,
+        0x00u, 0x80u, 0x00u,
+        0x40u, 0x40u, 0x40u,
     };
 
     // Precalculated a
@@ -74,6 +74,8 @@ TEST(DataBinFloatToFloat, optimized_precalculated) {
     // Check result
     xnor_nn::test::check_data(MB, (IC + 8 - 1) / 8, IH, IW,
             (unsigned char*)res[xnor_nn_resource_bin_src], expected_src_bin);
+    xnor_nn::test::check_data(MB, IC, IH, IW,
+            (unsigned char*)res[xnor_nn_resource_bin_src], src);
 
     // Check A
     xnor_nn::test::check_arrays(IH*IW, (float*)res[xnor_nn_resource_a],
