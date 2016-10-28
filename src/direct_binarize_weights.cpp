@@ -24,7 +24,17 @@ xnor_nn_status_t direct_binarize_weights_char(const float *from,
             out <<= 1;
             out |= tmp;
         }
-        if (LEN != SZ) out <<= SZ-LEN;
+        if (LEN != SZ) {
+            // Dirty hack! As this data is fake we want it to have
+            // zero influence to the dst after convolution, so lets fill it
+            // with ONES and after ~(src^weights) it will be ZERO
+            // because corresponding values in src are zeros
+            // before the convolution forward.
+            for (int i = 0; i < SZ-LEN; i++) {
+                out <<= 1;
+                out |= (unsigned char)1;
+            }
+        }
         int to_idx = ((kh*KW + kw)*OC + oc)*BIC + bic;
         to[to_idx] = out;
     }
