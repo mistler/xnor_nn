@@ -29,12 +29,19 @@ xnor_nn_status_t dispatch_binarize_weights(const xnor_nn_convolution_t *c,
 
     switch (c->algorithm) {
     case xnor_nn_algorithm_reference:
-    case xnor_nn_algorithm_optimized:
     {
         const float *f = (float*)res[xnor_nn_resource_user_weights];
         float *t = (float*)res[xnor_nn_resource_bin_weights];
         float *alpha = (float*)&(res[xnor_nn_resource_alpha]);
         st = reference_weights_copy_on_float(f, t, alpha, OC, IC, KH, KW);
+        break;
+    }
+    case xnor_nn_algorithm_optimized:
+    {
+        const float *f = (float*)res[xnor_nn_resource_user_weights];
+        unsigned char *t = (unsigned char*)res[xnor_nn_resource_bin_weights];
+        float *alpha = (float*)&(res[xnor_nn_resource_alpha]);
+        st = direct_binarize_weights_char(f, t, alpha, OC, IC, KH, KW);
         break;
     }
     }
@@ -223,7 +230,7 @@ xnor_nn_status_t xnor_nn_init_convolution(xnor_nn_convolution_t *c,
         c->resource_size[xnor_nn_resource_bin_src] =
             c->mb * BIC * c->ih * c->iw;
         c->resource_size[xnor_nn_resource_bin_weights] =
-            c->oc * c->ic * c->kh * c->kw * sizeof(float);
+            c->oc * BIC * c->kh * c->kw * sizeof(float);
         c->resource_size[xnor_nn_resource_a] = c->ih * c->iw * sizeof(float);
         c->resource_size[xnor_nn_resource_k] = c->oh * c->ow * sizeof(float);
         break;

@@ -90,6 +90,41 @@ template<> void check_weights<float, float>(int OC, int IC, int KH, int KW,
     }
 }
 
+template<> void check_weights<unsigned char, unsigned char>(
+        int OC, int IC, int KH, int KW,
+        const unsigned char *a, const unsigned char *e) {
+    int wrong = 0;
+    for (int oc = 0; oc < OC; oc++)
+    for (int ic = 0; ic < IC; ic++)
+    for (int kh = 0; kh < KH; kh++)
+    for (int kw = 0; kw < KW; kw++) {
+        float actual = a[((kh*KW + kw)*OC + oc)*IC + ic];
+        float expected = e[((kh*KW + kw)*OC + oc)*IC + ic];
+        EXPECT_EQ(expected, actual) << "oc: " << oc << ", ic: "
+            << ic << ", kh: " << kh << ", kw: " << kw << ". wrong/total: "
+            << ++wrong << "/" << OC*IC*KH*KW;
+    }
+}
+
+template<> void check_weights<unsigned char, float>(
+        int OC, int IC, int KH, int KW,
+        const unsigned char *a, const float *e) {
+    const int BIC = (IC + 8 - 1) / 8;
+    int wrong = 0;
+    for (int kh = 0; kh < KH; kh++)
+    for (int kw = 0; kw < KW; kw++)
+    for (int oc = 0; oc < OC; oc++)
+    for (int ic = 0; ic < IC; ic++) {
+        bool actual = a[((kh*KW + kw)*OC + oc)*BIC + (ic / 8)] &
+            ((unsigned char)128) >> (ic % 8);
+        bool expected = !(bool)
+            (((unsigned int*)e)[((oc*IC + ic)*KH + kh)*KW + kw] >> 31);
+        EXPECT_EQ(expected, actual) << "oc: " << oc << ", ic: "
+            << ic << ", kh: " << kh << ", kw: " << kw << ". wrong/total: "
+            << ++wrong << "/" << OC*IC*KH*KW;
+    }
+}
+
 template<> void check_arrays<float, float>(int elems,
         const float *actual, const float *expected) {
     const float ERR = 1e-5f;
