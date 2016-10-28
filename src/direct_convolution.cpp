@@ -17,18 +17,18 @@ xnor_nn_status_t direct_convolution_forward(
         int dst_idx = ((mb*OC + oc)*OH + oh)*OW + ow;
         float *d = dst + dst_idx;
         *d = 0.f;
-        for (int bic = 0; bic < BIC; bic++) {
-            for (int kh = 0; kh < KH; kh++)
-            for (int kw = 0; kw < KW; kw++) {
-                if (oh*SH + kh < (PH > 0 ? PH : 0)) continue;
-                if (ow*SW + kw < (PW > 0 ? PW : 0)) continue;
+        for (int kh = 0; kh < KH; kh++)
+        for (int kw = 0; kw < KW; kw++) {
+            if (oh*SH + kh < (PH > 0 ? PH : 0)) continue;
+            if (ow*SW + kw < (PW > 0 ? PW : 0)) continue;
 
-                if (oh*SH + kh >= IH + PH) continue;
-                if (ow*SW + kw >= IW + PW) continue;
+            if (oh*SH + kh >= IH + PH) continue;
+            if (ow*SW + kw >= IW + PW) continue;
 
-                const int ih = oh * SH - PH + kh;
-                const int iw = ow * SW - PW + kw;
+            const int ih = oh * SH - PH + kh;
+            const int iw = ow * SW - PW + kw;
 
+            for (int bic = 0; bic < BIC; bic++) {
                 int src_idx = ((mb*IH + ih)*IW + iw)*BIC + bic;
                 int weights_idx = ((kh*KW + kw)*OC + oc)*BIC + bic;
 
