@@ -137,10 +137,6 @@ xnor_nn_status_t dispatch_calculate_k(const xnor_nn_convolution_t *c,
 
 xnor_nn_status_t dispatch_forward(const xnor_nn_convolution_t *c,
         xnor_nn_resources_t res) {
-    const float *src = (const float*)res[xnor_nn_resource_bin_src];
-    const float *weights = (const float*)res[xnor_nn_resource_bin_weights];
-    float *dst = (float*)res[xnor_nn_resource_user_dst];
-
     const int MB = c->mb;
     const int IW = c->iw;
     const int IH = c->ih;
@@ -162,11 +158,28 @@ xnor_nn_status_t dispatch_forward(const xnor_nn_convolution_t *c,
 
     switch (c->algorithm) {
     case xnor_nn_algorithm_reference:
-    case xnor_nn_algorithm_optimized:
     {
+        const float *src = (const float*)res[xnor_nn_resource_bin_src];
+        const float *weights = (const float*)res[xnor_nn_resource_bin_weights];
+        float *dst = (float*)res[xnor_nn_resource_user_dst];
+
         const float alpha = *(float*)(&res[xnor_nn_resource_alpha]);
         const float *k = (float*)res[xnor_nn_resource_k];
         st = reference_convolution_forward(src, weights, dst, alpha, k,
+                MB, IC, IH, IW, OC, OH, OW, KH, KW, SH, SW, PH, PW);
+        break;
+    }
+    case xnor_nn_algorithm_optimized:
+    {
+        const unsigned char *src =
+            (const unsigned char*)res[xnor_nn_resource_bin_src];
+        const unsigned char *weights =
+            (const unsigned char*)res[xnor_nn_resource_bin_weights];
+        float *dst = (float*)res[xnor_nn_resource_user_dst];
+
+        const float alpha = *(float*)(&res[xnor_nn_resource_alpha]);
+        const float *k = (float*)res[xnor_nn_resource_k];
+        st = direct_convolution_forward(src, weights, dst, alpha, k,
                 MB, IC, IH, IW, OC, OH, OW, KH, KW, SH, SW, PH, PW);
         break;
     }

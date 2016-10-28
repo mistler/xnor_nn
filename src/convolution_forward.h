@@ -10,4 +10,11 @@ xnor_nn_status_t reference_convolution_forward(
         int OC, int OH, int OW,
         int KH, int KW, int SH, int SW, int PH, int PW);
 
+xnor_nn_status_t direct_convolution_forward(
+        const unsigned char *src, const unsigned char *weights, float *dst,
+        float alpha, const float *k,
+        int MB, int IC, int IH, int IW,
+        int OC, int OH, int OW,
+        int KH, int KW, int SH, int SW, int PH, int PW);
+
 #endif
