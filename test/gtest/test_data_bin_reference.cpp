@@ -3,7 +3,7 @@
 #include "gtest.h"
 #include "common.hpp"
 
-TEST(DataBinFloatToFloat, simple_precalculated) {
+TEST(DataBinarizationReference, simple_precalculated) {
     const int MB = 1;
     const int IC = 2, OC = 2;
     const int IH = 3, IW = 3;

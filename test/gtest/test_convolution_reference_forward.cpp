@@ -3,7 +3,7 @@
 #include "gtest.h"
 #include "common.hpp"
 
-TEST(ConvolutionXnorFwd, simple_precalculated) {
+TEST(ConvolutionForwardReference, simple_precalculated) {
     const int MB = 1;
     const int IC = 2, OC = 2;
     const int IH = 3, IW = 3;
