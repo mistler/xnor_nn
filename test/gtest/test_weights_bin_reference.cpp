@@ -78,7 +78,7 @@ TEST(WeightsBinarizationReference, simple_precalculated) {
     if (st != xnor_nn_success) goto label;
 
     // Check result
-    xnor_nn::test::check_weights(OC, IC, KH, KW,
+    xnor_nn::test::check_4d(OC, IC, KH, KW,
             (float*)res[xnor_nn_resource_bin_weights], expected_weights_bin);
 
     xnor_nn::test::check_value(*actual_alpha, alpha);

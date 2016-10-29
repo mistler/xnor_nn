@@ -74,7 +74,7 @@ TEST(WeightsBinarizationDirectChar, optimized_precalculated) {
     if (st != xnor_nn_success) goto label;
 
     // Check result
-    xnor_nn::test::check_weights(OC, (IC + 8 - 1) / 8, KH, KW,
+    xnor_nn::test::check_4d(OC, (IC + 8 - 1) / 8, KH, KW,
             (unsigned char*)res[xnor_nn_resource_bin_weights],
             expected_weights_bin);
     xnor_nn::test::check_weights(OC, IC, KH, KW,

@@ -64,5 +64,5 @@ TEST(ConvolutionForwardOptimized, optimized_precalculated) {
     convolution.forward(src, actual_dst);
 
     // Check result
-    xnor_nn::test::check_data(MB, OC, OH, OW, actual_dst, expected_dst);
+    xnor_nn::test::check_4d(MB, OC, OH, OW, actual_dst, expected_dst);
 }

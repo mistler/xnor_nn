@@ -72,7 +72,7 @@ TEST(DataBinarizationDirectChar, optimized_precalculated) {
     if (st != xnor_nn_success) goto label;
 
     // Check result
-    xnor_nn::test::check_data(MB, (IC + 8 - 1) / 8, IH, IW,
+    xnor_nn::test::check_4d(MB, IH, IW, (IC + 8 - 1) / 8,
             (unsigned char*)res[xnor_nn_resource_bin_src], expected_src_bin);
     xnor_nn::test::check_data(MB, IC, IH, IW,
             (unsigned char*)res[xnor_nn_resource_bin_src], src);

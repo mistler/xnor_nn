@@ -75,7 +75,7 @@ TEST(DataBinarizationReference, simple_precalculated) {
     if (st != xnor_nn_success) goto label;
 
     // Check result
-    xnor_nn::test::check_data(MB, IC, IH, IW,
+    xnor_nn::test::check_4d(MB, IC, IH, IW,
             (float*)res[xnor_nn_resource_bin_src], expected_src_bin);
 
     // Check A
