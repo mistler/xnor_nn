@@ -1,9 +1,17 @@
 #include <cmath>
 
-#include "binarize_data.h"
+#include "implementation.hpp"
 
-xnor_nn_status_t reference_data_copy_on_float(const float *from, float *to,
-        int MB, int IC, int IH, int IW) {
+xnor_nn_status_t reference_data_copy_on_float(
+        const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
+    const float *from = (float*)res[xnor_nn_resource_user_src];
+    float *to = (float *)res[xnor_nn_resource_bin_src];
+
+    const int MB = c->mb;
+    const int IC = c->ic;
+    const int IH = c->ih;
+    const int IW = c->iw;
+
     const int elems = MB*IC*IH*IW;
 
 #   pragma omp parallel for schedule(static)
@@ -12,11 +20,27 @@ xnor_nn_status_t reference_data_copy_on_float(const float *from, float *to,
     return xnor_nn_success;
 }
 
-xnor_nn_status_t reference_calculate_k(const float *from, float *a, float *k,
-        int MB, int IC, int IH, int IW, int OH, int OW,
-        int KH, int KW, int SH, int SW, int PH, int PW) {
-    const float c = 1.f / IC;
-    const float khw = 1.f / KH / KW;
+xnor_nn_status_t reference_calculate_k(
+        const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
+    const float *from = (float*)res[xnor_nn_resource_user_src];
+    float *a = (float*)res[xnor_nn_resource_a];
+    float *k = (float*)res[xnor_nn_resource_k];
+
+    const int MB = c->mb;
+    const int IC = c->ic;
+    const int IH = c->ih;
+    const int IW = c->iw;
+    const int OH = c->oh;
+    const int OW = c->ow;
+    const int KH = c->kh;
+    const int KW = c->kw;
+    const int SH = c->sh;
+    const int SW = c->sw;
+    const int PH = c->ph;
+    const int PW = c->pw;
+
+    const float C = 1.f / IC;
+    const float KHW = 1.f / KH / KW;
 
     // Calculate A
 #   pragma omp parallel for collapse(2) schedule(static)
@@ -27,7 +51,7 @@ xnor_nn_status_t reference_calculate_k(const float *from, float *a, float *k,
         for (int mb = 0; mb < MB; mb++)
         for (int ic = 0; ic < IC; ic++) {
             int src_idx = ((mb*IC + ic)*IH + ih)*IW + iw;
-            *a_curr += std::fabs(from[src_idx]) * c;
+            *a_curr += std::fabs(from[src_idx]) * C;
         }
     }
 
@@ -48,7 +72,7 @@ xnor_nn_status_t reference_calculate_k(const float *from, float *a, float *k,
             const int ih = oh * SH - PH + kh;
             const int iw = ow * SW - PW + kw;
 
-            *k_curr += a[ih*IW + iw] * khw;
+            *k_curr += a[ih*IW + iw] * KHW;
         }
     }
 

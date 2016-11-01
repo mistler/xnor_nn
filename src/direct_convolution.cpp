@@ -1,11 +1,28 @@
-#include "binarize_data.h"
+#include "implementation.hpp"
 
 xnor_nn_status_t direct_convolution_forward(
-        const unsigned char *src, const unsigned char *weights, float *dst,
-        float alpha, const float *k,
-        int MB, int IC, int IH, int IW,
-        int OC, int OH, int OW,
-        int KH, int KW, int SH, int SW, int PH, int PW) {
+        const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
+    const unsigned char *src = (unsigned char*)res[xnor_nn_resource_bin_src];
+    const unsigned char *weights =
+        (unsigned char*)res[xnor_nn_resource_bin_weights];
+    float *dst = (float*)res[xnor_nn_resource_user_dst];
+    float *alpha = (float*)&res[xnor_nn_resource_alpha];
+    const float *k = (float*)res[xnor_nn_resource_k];
+
+    const int MB = c->mb;
+    const int IC = c->ic;
+    const int IH = c->ih;
+    const int IW = c->iw;
+    const int OC = c->oc;
+    const int OH = c->oh;
+    const int OW = c->ow;
+    const int KH = c->kh;
+    const int KW = c->kw;
+    const int SH = c->sh;
+    const int SW = c->sw;
+    const int PH = c->ph;
+    const int PW = c->pw;
+
     const int BIC = (IC + 8 - 1) / 8;
 
     // TODO: potentially loops can be reordered
@@ -39,7 +56,7 @@ xnor_nn_status_t direct_convolution_forward(
                 *d += __builtin_popcount((unsigned int)result);
             }
         }
-        *d *= alpha;
+        *d *= *alpha;
         *d *= k[oh*OW + ow];
     }
 

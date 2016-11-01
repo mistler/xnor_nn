@@ -1,15 +1,22 @@
 #include <cmath>
 
-#include "binarize_weights.h"
+#include "implementation.hpp"
 
-xnor_nn_status_t direct_binarize_weights_char(const float *from,
-        unsigned char *to, float *alpha,
-        int OC, int IC, int KH, int KW) {
+xnor_nn_status_t direct_binarize_weights_char(
+        const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
+    const float *from = (float*)res[xnor_nn_resource_user_weights];
+    unsigned char *to = (unsigned char*)res[xnor_nn_resource_bin_weights];
+    float *alpha = (float*)&res[xnor_nn_resource_alpha];
+    const unsigned int *f = (unsigned int*)from;
+
+    const int OC = c->oc;
+    const int IC = c->ic;
+    const int KH = c->kh;
+    const int KW = c->kw;
+
     const int elems = OC*IC*KH*KW;
     const int SZ = 8;
     const int BIC = (IC + SZ - 1) / SZ;
-
-    const unsigned int *f = (unsigned int*)from;
 
 #   pragma omp parallel for collapse(3) schedule(static)
     for (int kh = 0; kh < KH; kh++)

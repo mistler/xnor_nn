@@ -39,7 +39,7 @@ typedef struct xnor_nn_data_binarizer_ xnor_nn_data_binarizer_t;
 typedef struct xnor_nn_weights_binarizer_ xnor_nn_weights_binarizer_t;
 typedef struct xnor_nn_convolution_ xnor_nn_convolution_t;
 
-typedef xnor_nn_status_t(*executor)(const xnor_nn_convolution_t *self,
+typedef xnor_nn_status_t(*xnor_nn_executor_t)(const xnor_nn_convolution_t *self,
         xnor_nn_resources_t res);
 
 struct xnor_nn_convolution_ {
@@ -52,12 +52,15 @@ struct xnor_nn_convolution_ {
     int kh, kw;
     int ph, pw;
 
+    int vector_length;
+    int sizeof_element;
+
     size_t resource_size[xnor_nn_resource_number];
 
-    executor binarize_weights;
-    executor binarize_data;
-    executor calculate_k;
-    executor forward;
+    xnor_nn_executor_t binarize_weights;
+    xnor_nn_executor_t binarize_data;
+    xnor_nn_executor_t calculate_k;
+    xnor_nn_executor_t forward;
 };
 
 #ifdef __cplusplus

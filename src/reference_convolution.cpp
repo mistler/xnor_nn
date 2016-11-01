@@ -1,11 +1,26 @@
-#include "binarize_data.h"
+#include "implementation.hpp"
 
 xnor_nn_status_t reference_convolution_forward(
-        const float *src, const float *weights, float *dst,
-        float alpha, const float *k,
-        int MB, int IC, int IH, int IW,
-        int OC, int OH, int OW,
-        int KH, int KW, int SH, int SW, int PH, int PW) {
+        const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
+    const float *src = (float *)res[xnor_nn_resource_bin_src];
+    const float *weights = (float*)res[xnor_nn_resource_bin_weights];
+    float *dst = (float*)res[xnor_nn_resource_user_dst];
+    float *alpha = (float*)&res[xnor_nn_resource_alpha];
+    const float *k = (float*)res[xnor_nn_resource_k];
+
+    const int MB = c->mb;
+    const int IC = c->ic;
+    const int IH = c->ih;
+    const int IW = c->iw;
+    const int OC = c->oc;
+    const int OH = c->oh;
+    const int OW = c->ow;
+    const int KH = c->kh;
+    const int KW = c->kw;
+    const int SH = c->sh;
+    const int SW = c->sw;
+    const int PH = c->ph;
+    const int PW = c->pw;
 
 #   pragma omp parallel for collapse(2) schedule(static)
     for (int mb = 0; mb < MB; mb++)
@@ -38,7 +53,7 @@ xnor_nn_status_t reference_convolution_forward(
                 *d += result;
             }
         }
-        *d *= alpha;
+        *d *= *alpha;
         *d *= k[oh*OW + ow];
     }
 

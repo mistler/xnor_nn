@@ -1,7 +1,15 @@
-#include "binarize_data.h"
+#include "implementation.hpp"
 
-xnor_nn_status_t direct_binarize_char(const unsigned int *from, unsigned char *to,
-        int MB, int IC, int IH, int IW) {
+xnor_nn_status_t direct_binarize_data_char(
+        const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
+    const unsigned int *from = (unsigned int*)res[xnor_nn_resource_user_src];
+    unsigned char *to = (unsigned char*)res[xnor_nn_resource_bin_src];
+
+    const int MB = c->mb;
+    const int IC = c->ic;
+    const int IH = c->ih;
+    const int IW = c->iw;
+
     const int SZ = 8;
     const int BIC = (IC + SZ - 1) / SZ;
 
