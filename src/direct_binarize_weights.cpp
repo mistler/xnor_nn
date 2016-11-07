@@ -15,35 +15,41 @@ xnor_nn_status_t direct_binarize_weights_char(
     const int KW = c->kw;
 
     const int elems = OC*IC*KH*KW;
-    const int SZ = 8;
-    const int BIC = (IC + SZ - 1) / SZ;
+    const int SZ = c->sizeof_element * 8;
+    const int BIC = c->bic;
+    const int AIC = c->aic;
 
 #   pragma omp parallel for collapse(3) schedule(static)
     for (int kh = 0; kh < KH; kh++)
     for (int kw = 0; kw < KW; kw++)
-    for (int oc = 0; oc < OC; oc++)
-    for (int bic = 0; bic < BIC; bic++) {
-        unsigned char out{0};
-        const int LEN = bic == BIC - 1 ? (IC % SZ) : SZ;
-        for (int ic = 0; ic < LEN; ic++) {
-            int from_idx = ((oc*IC + ic)*KH + kh)*KW + kw;
-            char tmp = (~f[from_idx]) >> 31;
-            out <<= 1;
-            out |= tmp;
-        }
-        if (LEN != SZ) {
-            // Dirty hack! As this data is fake we want it to have
-            // zero influence to the dst after convolution, so lets fill it
-            // with ONES and after ~(src^weights) it will be ZERO
-            // because corresponding values in src are zeros
-            // before the convolution forward.
-            for (int i = 0; i < SZ-LEN; i++) {
+    for (int oc = 0; oc < OC; oc++) {
+        for (int bic = 0; bic < BIC; bic++) {
+            unsigned char out{0};
+            const int LEN = bic == BIC - 1 ? (IC % SZ) : SZ;
+            for (int ic = 0; ic < LEN; ic++) {
+                int from_idx = ((oc*IC + ic)*KH + kh)*KW + kw;
+                char tmp = (~f[from_idx]) >> 31;
                 out <<= 1;
-                out |= (unsigned char)1;
+                out |= tmp;
             }
+            if (LEN != SZ) {
+                // Dirty hack! As this data is fake we want it to have
+                // zero influence to the dst after convolution, so lets fill it
+                // with ONES and after ~(src^weights) it will be ZERO
+                // because corresponding values in src are zeros
+                // before the convolution forward.
+                for (int i = 0; i < SZ-LEN; i++) {
+                    out <<= 1;
+                    out |= (unsigned char)1;
+                }
+            }
+            int to_idx = ((kh*KW + kw)*OC + oc)*AIC + bic;
+            to[to_idx] = out;
         }
-        int to_idx = ((kh*KW + kw)*OC + oc)*BIC + bic;
-        to[to_idx] = out;
+        for (int r = 0; r < AIC - BIC; r++) {
+            int to_idx = ((kh*KW + kw)*OC + oc)*AIC + BIC + r;
+            to[to_idx] = 0xFFu;
+        }
     }
 
     // Calculate alpha

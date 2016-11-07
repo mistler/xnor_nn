@@ -109,10 +109,16 @@ xnor_nn_status_t xnor_nn_init_convolution(xnor_nn_convolution_t *c,
     c->pw = pw;
     c->ph = ph;
 
+    c->aic = ic;
+    c->bic = ic;
+
     switch (c->algorithm) {
     case xnor_nn_algorithm_reference: {
         const size_t ELEM_SIZE = sizeof(float);
         const size_t VEC_LENGTH = 1;
+
+        c->sizeof_element = ELEM_SIZE;
+        c->vector_length = VEC_LENGTH;
 
         c->resource_size[xnor_nn_resource_bin_src] =
             c->mb * c->ic * c->ih * c->iw * ELEM_SIZE;
@@ -120,9 +126,6 @@ xnor_nn_status_t xnor_nn_init_convolution(xnor_nn_convolution_t *c,
             c->oc * c->ic * c->kh * c->kw * ELEM_SIZE;
         c->resource_size[xnor_nn_resource_a] = c->ih * c->iw * sizeof(float);
         c->resource_size[xnor_nn_resource_k] = c->oh * c->ow * sizeof(float);
-
-        c->sizeof_element = ELEM_SIZE;
-        c->vector_length = VEC_LENGTH;
         break;
     }
     case xnor_nn_algorithm_optimized: {
@@ -131,15 +134,17 @@ xnor_nn_status_t xnor_nn_init_convolution(xnor_nn_convolution_t *c,
         const size_t VEC_LENGTH = 2;
         const size_t BIC = (c->ic + BITS - 1) / BITS;
 
-        c->resource_size[xnor_nn_resource_bin_src] =
-            c->mb * BIC * c->ih * c->iw * ELEM_SIZE;
-        c->resource_size[xnor_nn_resource_bin_weights] =
-            c->oc * BIC * c->kh * c->kw * ELEM_SIZE;
-        c->resource_size[xnor_nn_resource_a] = c->ih * c->iw * sizeof(float);
-        c->resource_size[xnor_nn_resource_k] = c->oh * c->ow * sizeof(float);
-
         c->sizeof_element = ELEM_SIZE;
         c->vector_length = VEC_LENGTH;
+        c->bic = BIC;
+        c->aic = BIC + (VEC_LENGTH - (BIC % VEC_LENGTH));
+
+        c->resource_size[xnor_nn_resource_bin_src] =
+            c->mb * c->aic * c->ih * c->iw * ELEM_SIZE;
+        c->resource_size[xnor_nn_resource_bin_weights] =
+            c->oc * c->aic * c->kh * c->kw * ELEM_SIZE;
+        c->resource_size[xnor_nn_resource_a] = c->ih * c->iw * sizeof(float);
+        c->resource_size[xnor_nn_resource_k] = c->oh * c->ow * sizeof(float);
         break;
     }
     }

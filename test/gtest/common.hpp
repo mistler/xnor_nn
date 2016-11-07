@@ -9,11 +9,11 @@ namespace xnor_nn {
 namespace test {
 
 template <typename A, typename E>
-void check_data(int MB, int C, int H, int W,
+void check_data(int MB, int C, int H, int W, int AC,
         const A *actual, const E *expected);
 
 template <typename A, typename E>
-void check_weights(int OC, int IC, int KH, int KW,
+void check_weights(int OC, int IC, int KH, int KW, int AC,
         const A *actual, const E *expected);
 
 template <typename T>
@@ -42,17 +42,16 @@ template<> void check_4d<unsigned char>(int S3, int S2, int S1, int S0,
 }
 
 template<typename T> void check_data(
-        int MB, int C, int H, int W,
+        int MB, int C, int H, int W, int AC,
         const T *a, const float *e) {
     const int SZ = sizeof(T) * 8;
-    const int OC = (C + SZ - 1) / SZ;
 
     int wrong = 0;
     for (int mb = 0; mb < MB; mb++)
     for (int h = 0; h < H; h++)
     for (int w = 0; w < W; w++)
     for (int c = 0; c < C; c++) {
-        bool actual = a[((mb*H + h)*W + w)*OC + (c / SZ)] &
+        bool actual = a[((mb*H + h)*W + w)*AC + (c / SZ)] &
             ((T)1) << (SZ - 1 - (c % SZ));
         bool expected = !(bool)
             (((unsigned int*)e)[((mb*C + c)*H + h)*W + w] >> 31);
@@ -63,17 +62,16 @@ template<typename T> void check_data(
 }
 
 template<typename T> void check_weights(
-        int OC, int IC, int KH, int KW,
+        int OC, int IC, int KH, int KW, int AC,
         const T *a, const float *e) {
     const int SZ = sizeof(T) * 8;
-    const int BIC = (IC + SZ - 1) / SZ;
 
     int wrong = 0;
     for (int kh = 0; kh < KH; kh++)
     for (int kw = 0; kw < KW; kw++)
     for (int oc = 0; oc < OC; oc++)
     for (int ic = 0; ic < IC; ic++) {
-        bool actual = a[((kh*KW + kw)*OC + oc)*BIC + (ic / SZ)] &
+        bool actual = a[((kh*KW + kw)*OC + oc)*AC + (ic / SZ)] &
             ((T)1) << (SZ - 1 - (ic % SZ));
         bool expected = !(bool)
             (((unsigned int*)e)[((oc*IC + ic)*KH + kh)*KW + kw] >> 31);

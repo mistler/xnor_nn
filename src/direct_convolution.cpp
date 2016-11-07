@@ -10,7 +10,6 @@ xnor_nn_status_t direct_convolution_forward(
     const float *k = (float*)res[xnor_nn_resource_k];
 
     const int MB = c->mb;
-    const int IC = c->ic;
     const int IH = c->ih;
     const int IW = c->iw;
     const int OC = c->oc;
@@ -23,7 +22,7 @@ xnor_nn_status_t direct_convolution_forward(
     const int PH = c->ph;
     const int PW = c->pw;
 
-    const int BIC = (IC + 8 - 1) / 8;
+    const int AIC = c->aic;
 
     // TODO: potentially loops can be reordered
 #   pragma omp parallel for collapse(2) schedule(static)
@@ -45,9 +44,9 @@ xnor_nn_status_t direct_convolution_forward(
             const int ih = oh * SH - PH + kh;
             const int iw = ow * SW - PW + kw;
 
-            for (int bic = 0; bic < BIC; bic++) {
-                int src_idx = ((mb*IH + ih)*IW + iw)*BIC + bic;
-                int weights_idx = ((kh*KW + kw)*OC + oc)*BIC + bic;
+            for (int v = 0; v < AIC; v++) {
+                int src_idx = ((mb*IH + ih)*IW + iw)*AIC + v;
+                int weights_idx = ((kh*KW + kw)*OC + oc)*AIC + v;
 
                 unsigned char bsrc = src[src_idx];
                 unsigned char bweights = weights[weights_idx];

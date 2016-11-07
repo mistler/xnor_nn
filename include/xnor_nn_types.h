@@ -52,6 +52,8 @@ struct xnor_nn_convolution_ {
     int kh, kw;
     int ph, pw;
 
+    int bic, aic;
+
     int vector_length;
     int sizeof_element;
 
