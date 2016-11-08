@@ -26,12 +26,14 @@ TEST(DataBinarizationDirectChar, optimized_precalculated) {
         P, P, P
     };
 
+    /*
     // Precalculated src
     const unsigned char expected_src_bin[] = {
         0x80u, 0x00u, 0x80u, 0x00u, 0x80u, 0x00u,
         0x00u, 0x00u, 0x80u, 0x00u, 0x00u, 0x00u,
         0x40u, 0x00u, 0x40u, 0x00u, 0x40u, 0x00u,
     };
+    */
 
     // Precalculated a
     const float expected_a[] = {
@@ -72,8 +74,10 @@ TEST(DataBinarizationDirectChar, optimized_precalculated) {
     if (st != xnor_nn_success) goto label;
 
     // Check result
+    /*
     xnor_nn::test::check_4d(MB, IH, IW, convolution.aic,
             (unsigned char*)res[xnor_nn_resource_bin_src], expected_src_bin);
+    */
     xnor_nn::test::check_data(MB, IC, IH, IW, convolution.aic,
             (unsigned char*)res[xnor_nn_resource_bin_src], src);
 

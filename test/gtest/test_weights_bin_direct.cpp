@@ -33,6 +33,7 @@ TEST(WeightsBinarizationDirectChar, optimized_precalculated) {
         P, N, N
     };
 
+    /*
     // Precalculated weights
     const unsigned char expected_weights_bin[] = {
         0xFFu, 0xFFu, 0x7Fu, 0xFFu,
@@ -47,6 +48,7 @@ TEST(WeightsBinarizationDirectChar, optimized_precalculated) {
         0x7Fu, 0xFFu, 0x3Fu, 0xFFu,
         0x7Fu, 0xFFu, 0x3Fu, 0xFFu,
     };
+    */
 
     // Precalculated alpha
     const float alpha = P;
@@ -74,9 +76,11 @@ TEST(WeightsBinarizationDirectChar, optimized_precalculated) {
     if (st != xnor_nn_success) goto label;
 
     // Check result
+    /*
     xnor_nn::test::check_4d(OC, convolution.aic, KH, KW,
             (unsigned char*)res[xnor_nn_resource_bin_weights],
             expected_weights_bin);
+    */
     xnor_nn::test::check_weights(OC, IC, KH, KW, convolution.aic,
             (unsigned char*)res[xnor_nn_resource_bin_weights], weights);
 
