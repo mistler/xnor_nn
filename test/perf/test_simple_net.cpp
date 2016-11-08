@@ -57,14 +57,15 @@ static inline void measure_time(F &f, std::string msg, int N = 32) {
 }
 
 int main(){
+    const xnor_nn_algorithm_t alg = xnor_nn_algorithm_optimized;
     const std::vector<convolution_params> params =
     {
         // AlexNet
-        { 1, 3, 64, 224, 224, 11, 11, 4, 4, 2, 2, xnor_nn_algorithm_reference },
-        { 1, 64, 192, 27, 27, 5, 5, 1, 1, 2, 2, xnor_nn_algorithm_reference },
-        { 1, 192, 384, 13, 13, 3, 3, 1, 1, 1, 1, xnor_nn_algorithm_reference },
-        { 1, 384, 256, 13, 13, 3, 3, 1, 1, 1, 1, xnor_nn_algorithm_reference },
-        { 1, 256, 256, 13, 13, 3, 3, 1, 1, 1, 1, xnor_nn_algorithm_reference },
+        { 1, 3, 64, 224, 224, 11, 11, 4, 4, 2, 2, alg },
+        { 1, 64, 192, 27, 27, 5, 5, 1, 1, 2, 2, alg },
+        { 1, 192, 384, 13, 13, 3, 3, 1, 1, 1, 1, alg },
+        { 1, 384, 256, 13, 13, 3, 3, 1, 1, 1, 1, alg },
+        { 1, 256, 256, 13, 13, 3, 3, 1, 1, 1, 1, alg },
     };
 
     const int enough = 256*1024*256; // 256mb on float
