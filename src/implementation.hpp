@@ -1,7 +1,6 @@
 #ifndef IMPLEMENTATION_HPP
 #define IMPLEMENTATION_HPP
 
-#include <unordered_map>
 #include <string>
 
 #include "xnor_nn_types.h"
