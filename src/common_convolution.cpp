@@ -131,7 +131,7 @@ xnor_nn_status_t xnor_nn_init_convolution(xnor_nn_convolution_t *c,
     case xnor_nn_algorithm_optimized: {
         const size_t ELEM_SIZE = sizeof(char);
         const size_t BITS = ELEM_SIZE * 8;
-        const size_t VEC_LENGTH = 2;
+        const size_t VEC_LENGTH = 256;
         const size_t BIC = (c->ic + BITS - 1) / BITS;
 
         c->sizeof_element = ELEM_SIZE;

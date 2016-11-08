@@ -2,9 +2,9 @@
 
 xnor_nn_status_t direct_convolution_forward(
         const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
-    const unsigned char *src = (unsigned char*)res[xnor_nn_resource_bin_src];
-    const unsigned char *weights =
-        (unsigned char*)res[xnor_nn_resource_bin_weights];
+    const unsigned int *src = (unsigned int*)res[xnor_nn_resource_bin_src];
+    const unsigned int *weights =
+        (unsigned int*)res[xnor_nn_resource_bin_weights];
     float *dst = (float*)res[xnor_nn_resource_user_dst];
     float *alpha = (float*)&res[xnor_nn_resource_alpha];
     const float *k = (float*)res[xnor_nn_resource_k];
@@ -23,6 +23,7 @@ xnor_nn_status_t direct_convolution_forward(
     const int PW = c->pw;
 
     const int AIC = c->aic;
+    const int VEC_LENGTH = c->vector_length;
 
     // TODO: potentially loops can be reordered
 #   pragma omp parallel for collapse(2) schedule(static)
@@ -44,15 +45,17 @@ xnor_nn_status_t direct_convolution_forward(
             const int ih = oh * SH - PH + kh;
             const int iw = ow * SW - PW + kw;
 
-            for (int v = 0; v < AIC; v++) {
-                int src_idx = ((mb*IH + ih)*IW + iw)*AIC + v;
-                int weights_idx = ((kh*KW + kw)*OC + oc)*AIC + v;
+            for (int aic = 0; aic < AIC / VEC_LENGTH; aic++)
+            for (int v = 0; v < VEC_LENGTH / 4; v++) {
+                int src_idx = ((mb*IH + ih)*IW + iw)*AIC/4 + aic*VEC_LENGTH/4 + v;
+                int weights_idx =
+                    ((kh*KW + kw)*OC + oc)*AIC/4 + aic*VEC_LENGTH/4 + v;
 
-                unsigned char bsrc = src[src_idx];
-                unsigned char bweights = weights[weights_idx];
+                unsigned int bsrc = src[src_idx];
+                unsigned int bweights = weights[weights_idx];
 
-                unsigned char result = ~(bsrc ^ bweights);
-                *d += __builtin_popcount((unsigned int)result);
+                unsigned int result = ~(bsrc ^ bweights);
+                *d += __builtin_popcount(result);
             }
         }
         *d *= *alpha;
