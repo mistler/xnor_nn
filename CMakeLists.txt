@@ -10,7 +10,7 @@ endif()
 
 set(OPENMP_FLAGS "-fopenmp")
 set(CCXX_WARN_FLAGS "-Wall -Werror -Wno-unknown-pragmas")
-set(CMAKE_CCXX_FLAGS "${CMAKE_CCXX_FLAGS} -mtune=native ${OPENMP_FLAGS} ${CCXX_WARN_FLAGS}")
+set(CMAKE_CCXX_FLAGS "${CMAKE_CCXX_FLAGS} -march=native ${OPENMP_FLAGS} ${CCXX_WARN_FLAGS}")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CMAKE_CCXX_FLAGS} -std=c11")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CCXX_FLAGS} -std=c++11")
 
