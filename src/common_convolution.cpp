@@ -24,8 +24,12 @@ xnor_nn_status_t dispatch_binarize_weights(const xnor_nn_convolution_t *c,
     xnor_nn_status_t st = ex(c, res);
 
     timer.stop();
-    Logger::info("weights_binarizer:", "execute:",
-            "time:", timer.millis(), "ms");
+    Logger::info("Binarize weights:", "MB:", c->mb, "IC:", c->ic,
+            "IH:", c->ih, "IW:", c->iw,
+            "OC:", c->oc, "OH:", c->oh, "OW:", c->ow,
+            "KH:", c->kh, "KW:", c->kw, "SH:", c->sh, "SW:", c->sw,
+            "PH:", c->ph, "PW:", c->pw,
+            "execute:", "time:", timer.millis(), "ms");
 
     return st;
 }
@@ -40,8 +44,12 @@ xnor_nn_status_t dispatch_binarize_data(const xnor_nn_convolution_t *c,
     xnor_nn_status_t st = ex(c, res);
 
     timer.stop();
-    Logger::info("data_binarizer:", "binarize:",
-            "time:", timer.millis(), "ms");
+    Logger::info("Binarize data:", "MB:", c->mb, "IC:", c->ic,
+            "IH:", c->ih, "IW:", c->iw,
+            "OC:", c->oc, "OH:", c->oh, "OW:", c->ow,
+            "KH:", c->kh, "KW:", c->kw, "SH:", c->sh, "SW:", c->sw,
+            "PH:", c->ph, "PW:", c->pw,
+            "execute:", "time:", timer.millis(), "ms");
 
     return st;
 }
@@ -56,8 +64,12 @@ xnor_nn_status_t dispatch_calculate_k(const xnor_nn_convolution_t *c,
     xnor_nn_status_t st = ex(c, res);
 
     timer.stop();
-    Logger::info("data_binarizer:", "calculate_k:",
-            "time:", timer.millis(), "ms");
+    Logger::info("Calculate K:", "MB:", c->mb, "IC:", c->ic,
+            "IH:", c->ih, "IW:", c->iw,
+            "OC:", c->oc, "OH:", c->oh, "OW:", c->ow,
+            "KH:", c->kh, "KW:", c->kw, "SH:", c->sh, "SW:", c->sw,
+            "PH:", c->ph, "PW:", c->pw,
+            "execute:", "time:", timer.millis(), "ms");
 
     return st;
 
@@ -75,8 +87,12 @@ xnor_nn_status_t dispatch_forward(const xnor_nn_convolution_t *c,
     xnor_nn_status_t st = ex(c, res);
 
     timer.stop();
-    Logger::info("convolution:", "execute:",
-            "time:", timer.millis(), "ms");
+    Logger::info("Convolution forward:", "MB:", c->mb, "IC:", c->ic,
+            "IH:", c->ih, "IW:", c->iw,
+            "OC:", c->oc, "OH:", c->oh, "OW:", c->ow,
+            "KH:", c->kh, "KW:", c->kw, "SH:", c->sh, "SW:", c->sw,
+            "PH:", c->ph, "PW:", c->pw,
+            "execute:", "time:", timer.millis(), "ms");
 
     return st;
 }
