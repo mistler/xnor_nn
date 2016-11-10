@@ -24,6 +24,9 @@ xnor_nn_status_t direct_convolution_forward(
 
     const int AIC = c->aic;
     const int VEC_LENGTH = c->vector_length;
+    const int ELEM_SIZE = 4;
+
+    const int VECTORS_IN_AIC = AIC / VEC_LENGTH;
 
     // TODO: potentially loops can be reordered
 #   pragma omp parallel for collapse(2) schedule(static)
@@ -45,14 +48,18 @@ xnor_nn_status_t direct_convolution_forward(
             const int ih = oh * SH - PH + kh;
             const int iw = ow * SW - PW + kw;
 
-            for (int aic = 0; aic < AIC / VEC_LENGTH; aic++)
-            for (int v = 0; v < VEC_LENGTH / 4; v++) {
-                int src_idx = ((mb*IH + ih)*IW + iw)*AIC/4 + aic*VEC_LENGTH/4 + v;
-                int weights_idx =
-                    ((kh*KW + kw)*OC + oc)*AIC/4 + aic*VEC_LENGTH/4 + v;
+            const unsigned int *src_ic =
+                src + ((mb*IH + ih)*IW + iw)*AIC/ELEM_SIZE;
+            const unsigned int *weights_ic =
+                weights + ((kh*KW + kw)*OC + oc)*AIC/ELEM_SIZE;
 
-                unsigned int bsrc = src[src_idx];
-                unsigned int bweights = weights[weights_idx];
+            for (int aic = 0; aic < VECTORS_IN_AIC; aic++)
+            for (int v = 0; v < VEC_LENGTH / ELEM_SIZE; v++) {
+                int src_idx = aic*VEC_LENGTH/ELEM_SIZE + v;
+                int weights_idx = aic*VEC_LENGTH/ELEM_SIZE + v;
+
+                unsigned int bsrc = src_ic[src_idx];
+                unsigned int bweights = weights_ic[weights_idx];
 
                 unsigned int result = ~(bsrc ^ bweights);
                 *d += __builtin_popcount(result);
