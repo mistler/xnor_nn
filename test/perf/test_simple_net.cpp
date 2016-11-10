@@ -69,13 +69,12 @@ int main(){
         { MB, 256, 256, 13, 13, 3, 3, 1, 1, 1, 1, alg },
     };
 
-    const int enough = 256*1024*512; // 512mb on float
+    const int enough = 256*1024*384; // 384mb on float
 
     float *workspace = new float[enough];
     float *dst = new float[enough];
 
 #   pragma omp parallel for schedule(static)
-    for (int k = 0; k < 8; k++)
     for (int i = 0; i < enough; i++)
         workspace[i] = 37.f * (27 - (i % 53));
 
@@ -106,9 +105,10 @@ int main(){
         if (st != xnor_nn_success) goto label;
 
         // Warm up
-#       pragma omp parallel for schedule(static)
-        for (int s = 0; s < enough; s++)
-            dst[s] += dst[s]*0.001f;
+#       pragma omp parallel for collapse(2) schedule(static)
+        for (int k = 0; k < 8; k++)
+        for (int s = 1; s < enough; s++)
+            workspace[s-1] += workspace[s]*0.001f;
 
         // Execute
         auto f_weights_bin = std::bind(convolution.binarize_weights,
