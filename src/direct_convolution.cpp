@@ -116,10 +116,6 @@ xnor_nn_status_t direct_convolution_forward(
 
     const int VECTORS_IN_AIC = AIC / VEC_LENGTH;
 
-    const uint32_t o = (uint32_t)(-1);
-    uint32_t ones[8] = {o,o,o,o,o,o,o,o};
-    uint32x4_t v_ones = vld1q_u32(ones);
-
     // TODO: potentially loops can be reordered
 #   pragma omp parallel for collapse(3) schedule(static)
     for (int mb = 0; mb < MB; mb++)
@@ -129,7 +125,7 @@ xnor_nn_status_t direct_convolution_forward(
         int dst_idx = ((mb*OC + oc)*OH + oh)*OW + ow;
         float *d = dst + dst_idx;
         *d = 0.f;
-        int dst_i = 0;
+        long long int dst_i = 0;
         for (int kh = 0; kh < KH; kh++)
         for (int kw = 0; kw < KW; kw++) {
             if (oh*SH + kh < (PH > 0 ? PH : 0)) continue;
@@ -152,12 +148,14 @@ xnor_nn_status_t direct_convolution_forward(
                     vld1q_u32(weights_ic + aic*VEC_LENGTH/ELEM_SIZE);
 
                 uint32x4_t v_xor = veorq_u32(v_src, v_weights);
-                uint32x4_t v_xnor = veorq_u32(v_xor, v_ones);
+                uint32x4_t v_xnor = vmvnq_u32(v_xor);
 
-                dst_i += __builtin_popcount(vgetq_lane_u32(v_xnor, 0));
-                dst_i += __builtin_popcount(vgetq_lane_u32(v_xnor, 1));
-                dst_i += __builtin_popcount(vgetq_lane_u32(v_xnor, 2));
-                dst_i += __builtin_popcount(vgetq_lane_u32(v_xnor, 3));
+                uint8x16_t v_cnt16 = vcntq_u8(vreinterpretq_u8_u32(v_xnor));
+                uint16x8_t v_cnt8 = vpaddlq_u8(v_cnt16);
+                uint32x4_t v_cnt4 = vpaddlq_u16(v_cnt8);
+                uint64x2_t v_cnt2 = vpaddlq_u32(v_cnt4);
+                dst_i += vgetq_lane_u64(v_cnt2, 0);
+                dst_i += vgetq_lane_u64(v_cnt2, 1);
             }
         }
         *d = (float)dst_i * *alpha * k[oh*OW + ow];
