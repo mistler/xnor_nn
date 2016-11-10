@@ -35,8 +35,8 @@ static inline void clean_cache(char *more_than_cache, int more_than_cache_size) 
 }
 
 template<typename F>
-static inline void measure_time(F &f, std::string msg, int N = 32) {
-    const int more_than_cache_size = 1024*1024*64;
+static inline void measure_time(F &f, std::string msg, int N = 64) {
+    const int more_than_cache_size = 1024*1024*4; // 16mb
     static char more_than_cache[more_than_cache_size];
 
     xnor_nn::utils::Timer timer;
@@ -58,22 +58,24 @@ static inline void measure_time(F &f, std::string msg, int N = 32) {
 
 int main(){
     const xnor_nn_algorithm_t alg = xnor_nn_algorithm_optimized;
+    const int MB = 1;
     const std::vector<convolution_params> params =
     {
         // AlexNet
-        { 1, 3, 64, 224, 224, 11, 11, 4, 4, 2, 2, alg },
-        { 1, 64, 192, 27, 27, 5, 5, 1, 1, 2, 2, alg },
-        { 1, 192, 384, 13, 13, 3, 3, 1, 1, 1, 1, alg },
-        { 1, 384, 256, 13, 13, 3, 3, 1, 1, 1, 1, alg },
-        { 1, 256, 256, 13, 13, 3, 3, 1, 1, 1, 1, alg },
+        { MB, 3, 64, 224, 224, 11, 11, 4, 4, 2, 2, alg },
+        { MB, 64, 192, 27, 27, 5, 5, 1, 1, 2, 2, alg },
+        { MB, 192, 384, 13, 13, 3, 3, 1, 1, 1, 1, alg },
+        { MB, 384, 256, 13, 13, 3, 3, 1, 1, 1, 1, alg },
+        { MB, 256, 256, 13, 13, 3, 3, 1, 1, 1, 1, alg },
     };
 
-    const int enough = 256*1024*256; // 256mb on float
+    const int enough = 256*1024*512; // 512mb on float
 
     float *workspace = new float[enough];
     float *dst = new float[enough];
 
 #   pragma omp parallel for schedule(static)
+    for (int k = 0; k < 8; k++)
     for (int i = 0; i < enough; i++)
         workspace[i] = 37.f * (27 - (i % 53));
 
@@ -123,7 +125,7 @@ int main(){
 
         auto f_conv_exec = std::bind(convolution.forward,
                 &convolution, res);
-        measure_time(f_conv_exec, "Convolution forward", 4);
+        measure_time(f_conv_exec, "Convolution forward");
 
         std::cout << std::endl;
 
