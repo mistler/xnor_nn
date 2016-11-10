@@ -37,9 +37,9 @@ xnor_nn_status_t direct_convolution_forward(
     // TODO: potentially loops can be reordered
 #   pragma omp parallel for collapse(3) schedule(static)
     for (int mb = 0; mb < MB; mb++)
+    for (int oc = 0; oc < OC; oc++)
     for (int oh = 0; oh < OH; oh++)
-    for (int ow = 0; ow < OW; ow++)
-    for (int oc = 0; oc < OC; oc++) {
+    for (int ow = 0; ow < OW; ow++) {
         int dst_idx = ((mb*OC + oc)*OH + oh)*OW + ow;
         float *d = dst + dst_idx;
         *d = 0.f;
@@ -83,7 +83,89 @@ xnor_nn_status_t direct_convolution_forward(
 
     return xnor_nn_success;
 }
+
 #elif defined __arm__
+
+#include <arm_neon.h>
+
+xnor_nn_status_t direct_convolution_forward(
+        const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
+    const unsigned int *src = (unsigned int*)res[xnor_nn_resource_bin_src];
+    const unsigned int *weights =
+        (unsigned int*)res[xnor_nn_resource_bin_weights];
+    float *dst = (float*)res[xnor_nn_resource_user_dst];
+    float *alpha = (float*)&res[xnor_nn_resource_alpha];
+    const float *k = (float*)res[xnor_nn_resource_k];
+
+    const int MB = c->mb;
+    const int IH = c->ih;
+    const int IW = c->iw;
+    const int OC = c->oc;
+    const int OH = c->oh;
+    const int OW = c->ow;
+    const int KH = c->kh;
+    const int KW = c->kw;
+    const int SH = c->sh;
+    const int SW = c->sw;
+    const int PH = c->ph;
+    const int PW = c->pw;
+
+    const int AIC = c->aic;
+    const int VEC_LENGTH = c->vector_length;
+    const int ELEM_SIZE = 4;
+
+    const int VECTORS_IN_AIC = AIC / VEC_LENGTH;
+
+    int ones[8] = {-1,-1,-1,-1,-1,-1,-1,-1};
+    uint32x4_t v_ones = vld1q_u32(ones);
+
+    // TODO: potentially loops can be reordered
+#   pragma omp parallel for collapse(3) schedule(static)
+    for (int mb = 0; mb < MB; mb++)
+    for (int oc = 0; oc < OC; oc++)
+    for (int oh = 0; oh < OH; oh++)
+    for (int ow = 0; ow < OW; ow++) {
+        int dst_idx = ((mb*OC + oc)*OH + oh)*OW + ow;
+        float *d = dst + dst_idx;
+        *d = 0.f;
+        int dst_i = 0;
+        for (int kh = 0; kh < KH; kh++)
+        for (int kw = 0; kw < KW; kw++) {
+            if (oh*SH + kh < (PH > 0 ? PH : 0)) continue;
+            if (ow*SW + kw < (PW > 0 ? PW : 0)) continue;
+
+            if (oh*SH + kh >= IH + PH) continue;
+            if (ow*SW + kw >= IW + PW) continue;
+
+            const int ih = oh * SH - PH + kh;
+            const int iw = ow * SW - PW + kw;
+
+            const unsigned int *src_ic =
+                src + ((mb*IH + ih)*IW + iw)*AIC/ELEM_SIZE;
+            const unsigned int *weights_ic =
+                weights + ((kh*KW + kw)*OC + oc)*AIC/ELEM_SIZE;
+
+            for (int aic = 0; aic < VECTORS_IN_AIC; aic++) {
+                uint32x4_t v_src = vld1q_u32(src_ic + aic*VEC_LENGTH/ELEM_SIZE);
+                uint32x4_t v_weights =
+                    vld1q_u32(weights_ic + aic*VEC_LENGTH/ELEM_SIZE);
+
+                uint32x4_t v_xor = veorq_u32(v_src, v_weights);
+                __m128i v_xnor = veorq_u32(v_xor, v_ones);
+
+                dst_i += __builtin_popcount(vgetq_lane_s32(v_xnor, 0));
+                dst_i += __builtin_popcount(vgetq_lane_s32(v_xnor, 1));
+                dst_i += __builtin_popcount(vgetq_lane_s32(v_xnor, 2));
+                dst_i += __builtin_popcount(vgetq_lane_s32(v_xnor, 3));
+            }
+        }
+        *d = (float)dst_i * *alpha * k[oh*OW + ow];
+    }
+
+    return xnor_nn_success;
+}
+
+#elif
 
 xnor_nn_status_t direct_convolution_forward(
         const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
@@ -116,9 +198,9 @@ xnor_nn_status_t direct_convolution_forward(
     // TODO: potentially loops can be reordered
 #   pragma omp parallel for collapse(3) schedule(static)
     for (int mb = 0; mb < MB; mb++)
+    for (int oc = 0; oc < OC; oc++)
     for (int oh = 0; oh < OH; oh++)
-    for (int ow = 0; ow < OW; ow++)
-    for (int oc = 0; oc < OC; oc++) {
+    for (int ow = 0; ow < OW; ow++) {
         int dst_idx = ((mb*OC + oc)*OH + oh)*OW + ow;
         float *d = dst + dst_idx;
         *d = 0.f;
