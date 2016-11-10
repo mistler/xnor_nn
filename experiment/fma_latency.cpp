@@ -37,6 +37,7 @@ int main() {
 
     for (int k = 0; k < N; k++)
     for (int i = 0; i < ELEMS; i++) {
+#if 0
         asm volatile (
             "mov %1, %%rax\n\t"
             "mov %2, %%rbx\n\t"
@@ -52,8 +53,9 @@ int main() {
             : "%xmm0", "%xmm1", "%xmm2", "%xmm3", "%xmm4",
             "%rax", "%rbx", "%rcx"
         );
-
-        //c[i] += a[i]*b[i];
+#else
+        c[i] += a[i]*b[i];
+#endif
     }
 
     t = rdtsc() - t;
