@@ -1,10 +1,9 @@
 #include <cstdio>
 
 int main() {
-    const int IC = 256*10000;
+    const int IC = 256*1000;
     const int IH = 8;
     const int IW = 8;
-    const int SZ = 8;
 
     unsigned int * __restrict__ from1 = new unsigned int[IC*IH*IW];
     unsigned int * __restrict__ from2 = new unsigned int[IC*IH*IW];
@@ -19,8 +18,6 @@ int main() {
         from1[from_idx] = from2[from_idx] = (current_value = -current_value);
     }
 
-
-#   pragma ivdep
     for (int ih = 0; ih < IH; ih++)
     for (int iw = 0; iw < IW; iw++) {
         int to_idx = ih*IW + iw;
