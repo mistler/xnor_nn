@@ -116,7 +116,8 @@ xnor_nn_status_t direct_convolution_forward(
 
     const int VECTORS_IN_AIC = AIC / VEC_LENGTH;
 
-    int ones[8] = {-1,-1,-1,-1,-1,-1,-1,-1};
+    const uint32_t o = (uint32_t)(-1);
+    uint32_t ones[8] = {o,o,o,o,o,o,o,o};
     uint32x4_t v_ones = vld1q_u32(ones);
 
     // TODO: potentially loops can be reordered
@@ -151,12 +152,12 @@ xnor_nn_status_t direct_convolution_forward(
                     vld1q_u32(weights_ic + aic*VEC_LENGTH/ELEM_SIZE);
 
                 uint32x4_t v_xor = veorq_u32(v_src, v_weights);
-                __m128i v_xnor = veorq_u32(v_xor, v_ones);
+                uint32x4_t v_xnor = veorq_u32(v_xor, v_ones);
 
-                dst_i += __builtin_popcount(vgetq_lane_s32(v_xnor, 0));
-                dst_i += __builtin_popcount(vgetq_lane_s32(v_xnor, 1));
-                dst_i += __builtin_popcount(vgetq_lane_s32(v_xnor, 2));
-                dst_i += __builtin_popcount(vgetq_lane_s32(v_xnor, 3));
+                dst_i += __builtin_popcount(vgetq_lane_u32(v_xnor, 0));
+                dst_i += __builtin_popcount(vgetq_lane_u32(v_xnor, 1));
+                dst_i += __builtin_popcount(vgetq_lane_u32(v_xnor, 2));
+                dst_i += __builtin_popcount(vgetq_lane_u32(v_xnor, 3));
             }
         }
         *d = (float)dst_i * *alpha * k[oh*OW + ow];
