@@ -8,9 +8,15 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "")
     set(CMAKE_BUILD_TYPE "Release")
 endif()
 
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
+    set(CCXX_ARCH_FLAGS "-mtune=native")
+else(CMAKE_SYSTEM_PROCESSOR MATCHES "(armv7)|(armv8)")
+    set(CCXX_ARCH_FLAGS "-mfpu=neon -mtune=native")
+endif()
+
 set(OPENMP_FLAGS "-fopenmp")
 set(CCXX_WARN_FLAGS "-Wall -Werror -Wno-unknown-pragmas")
-set(CMAKE_CCXX_FLAGS "${CMAKE_CCXX_FLAGS} -march=native ${OPENMP_FLAGS} ${CCXX_WARN_FLAGS}")
+set(CMAKE_CCXX_FLAGS "${CMAKE_CCXX_FLAGS} ${CCXX_ARCH_FLAGS} ${OPENMP_FLAGS} ${CCXX_WARN_FLAGS}")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CMAKE_CCXX_FLAGS} -std=c11")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CCXX_FLAGS} -std=c++11")
 
