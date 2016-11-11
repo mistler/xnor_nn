@@ -164,7 +164,7 @@ xnor_nn_status_t direct_convolution_forward(
     return xnor_nn_success;
 }
 
-#elif
+#else
 
 xnor_nn_status_t direct_convolution_forward(
         const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {

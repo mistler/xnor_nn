@@ -12,7 +12,7 @@
 #define VLEN 16
 #elif defined __arm__
 #define VLEN 16
-#elif
+#else
 #define VLEN 4
 #endif
 
