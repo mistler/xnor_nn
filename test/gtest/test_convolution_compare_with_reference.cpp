@@ -7,10 +7,10 @@ typedef struct {
     int mb;
     int ic, oc;
     int ih, iw;
-    int oh, ow;
     int kh, kw;
     int sh, sw;
     int ph, pw;
+    int oh, ow;
     xnor_nn_algorithm_t algorithm;
 } params_t;
 
@@ -37,6 +37,9 @@ class ConvolutionForwardOptimized : public ::testing::TestWithParam<params_t> {
 protected:
     virtual void SetUp() {
         params_t p = ::testing::TestWithParam<params_t>::GetParam();
+
+        p.oh = (p.ih + 2*p.ph - p.kh) / p.sh + 1;
+        p.ow = (p.iw + 2*p.pw - p.kw) / p.sw + 1;
 
         float *src = new float[p.mb*p.ic*p.ih*p.iw];
         float *weights = new float[p.oc*p.ic*p.kh*p.kw];
@@ -76,4 +79,8 @@ TEST_P(ConvolutionForwardOptimized, compare_with_reference)
 INSTANTIATE_TEST_CASE_P(TestConvolutionForward,
         ConvolutionForwardOptimized, ::testing::Values(
 params_t{ 3, 3, 64, 224, 224, 11, 11, 4, 4, 2, 2, xnor_nn_algorithm_optimized },
-params_t{ 3, 64, 192, 27, 27, 5, 5, 1, 1, 2, 2, xnor_nn_algorithm_optimized }));
+params_t{ 3, 64, 192, 27, 27, 5, 5, 1, 1, 2, 2, xnor_nn_algorithm_optimized },
+params_t{ 3, 192, 384, 13, 13, 3, 3, 1, 1, 1, 1, xnor_nn_algorithm_optimized },
+params_t{ 3, 384, 256, 13, 13, 3, 3, 1, 1, 1, 1, xnor_nn_algorithm_optimized },
+params_t{ 3, 256, 256, 13, 13, 3, 3, 1, 1, 1, 1, xnor_nn_algorithm_optimized }
+));
