@@ -23,6 +23,10 @@ namespace {
 // TODO: dispatch at init time
 xnor_nn_status_t dispatch_binarize_weights(const xnor_nn_convolution_t *c,
         xnor_nn_resources_t res) {
+    if (
+            res[xnor_nn_resource_user_weights] == nullptr
+            || res[xnor_nn_resource_bin_weights] == nullptr
+       ) return xnor_nn_error_invalid_input;
     xnor_nn_executor_t ex = get_executor(c->algorithm,
             operation_binarize_weights);
 
@@ -44,6 +48,10 @@ xnor_nn_status_t dispatch_binarize_weights(const xnor_nn_convolution_t *c,
 
 xnor_nn_status_t dispatch_binarize_data(const xnor_nn_convolution_t *c,
         xnor_nn_resources_t res) {
+    if (
+            res[xnor_nn_resource_user_src] == nullptr
+            || res[xnor_nn_resource_bin_src] == nullptr
+       ) return xnor_nn_error_invalid_input;
     xnor_nn_executor_t ex = get_executor(c->algorithm, operation_binarize_data);
 
     xnor_nn::utils::Timer timer;
@@ -64,6 +72,11 @@ xnor_nn_status_t dispatch_binarize_data(const xnor_nn_convolution_t *c,
 
 xnor_nn_status_t dispatch_calculate_k(const xnor_nn_convolution_t *c,
         xnor_nn_resources_t res) {
+    if (
+            res[xnor_nn_resource_user_src] == nullptr
+            || res[xnor_nn_resource_a] == nullptr
+            || res[xnor_nn_resource_k] == nullptr
+       ) return xnor_nn_error_invalid_input;
     xnor_nn_executor_t ex = get_executor(c->algorithm, operation_calculate_k);
 
     xnor_nn::utils::Timer timer;
@@ -85,7 +98,12 @@ xnor_nn_status_t dispatch_calculate_k(const xnor_nn_convolution_t *c,
 
 xnor_nn_status_t dispatch_forward(const xnor_nn_convolution_t *c,
         xnor_nn_resources_t res) {
-
+    if (
+            res[xnor_nn_resource_bin_src] == nullptr
+            || res[xnor_nn_resource_bin_weights] == nullptr
+            || res[xnor_nn_resource_user_dst] == nullptr
+            || res[xnor_nn_resource_k] == nullptr
+       ) return xnor_nn_error_invalid_input;
     xnor_nn_executor_t ex = get_executor(c->algorithm,
             operation_convolution_forward);
 
