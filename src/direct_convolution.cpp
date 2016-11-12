@@ -32,7 +32,7 @@ xnor_nn_status_t direct_convolution_forward(
     const int VECTORS_IN_AIC = AIC / VEC_LENGTH;
 
     int ones[8] = {-1,-1,-1,-1,-1,-1,-1,-1};
-    __m128i v_ones = _mm_load_si128((__m128i*)ones);
+    __m256 v_ones = _mm256_load_ps((float*)ones);
 
     // TODO: potentially loops can be reordered
 #   pragma omp parallel for collapse(3) schedule(static)
@@ -43,7 +43,7 @@ xnor_nn_status_t direct_convolution_forward(
         int dst_idx = ((mb*OC + oc)*OH + oh)*OW + ow;
         float *d = dst + dst_idx;
         *d = 0.f;
-        int dst_i = 0;
+        unsigned long long int dst_i = 0;
         for (int kh = 0; kh < KH; kh++)
         for (int kw = 0; kw < KW; kw++) {
             if (oh*SH + kh < (PH > 0 ? PH : 0)) continue;
@@ -61,21 +61,19 @@ xnor_nn_status_t direct_convolution_forward(
                 weights + ((kh*KW + kw)*OC + oc)*AIC/ELEM_SIZE;
 
             for (int aic = 0; aic < VECTORS_IN_AIC; aic++) {
-                __m128i *v_ptr_src =
-                    (__m128i*)(src_ic + aic*VEC_LENGTH/ELEM_SIZE);
-                __m128i *v_ptr_weights =
-                    (__m128i*)(weights_ic + aic*VEC_LENGTH/ELEM_SIZE);
+                __m256 v_src = _mm256_load_ps(
+                        (float*)src_ic + aic*VEC_LENGTH/ELEM_SIZE);
+                __m256 v_weights = _mm256_load_ps(
+                        (float*)weights_ic + aic*VEC_LENGTH/ELEM_SIZE);
 
-                __m128i v_src = _mm_load_si128(v_ptr_src);
-                __m128i v_weights = _mm_load_si128(v_ptr_weights);
+                __m256 v_xor = _mm256_xor_ps(v_src, v_weights);
+                __m256i v_xnor =
+                    _mm256_castps_si256(_mm256_xor_ps(v_xor, v_ones));
 
-                __m128i v_xor = _mm_xor_si128(v_src, v_weights);
-                __m128i v_xnor = _mm_xor_si128(v_xor, v_ones);
-
-                dst_i += __builtin_popcount(_mm_extract_epi32(v_xnor, 0));
-                dst_i += __builtin_popcount(_mm_extract_epi32(v_xnor, 1));
-                dst_i += __builtin_popcount(_mm_extract_epi32(v_xnor, 2));
-                dst_i += __builtin_popcount(_mm_extract_epi32(v_xnor, 3));
+                dst_i += __builtin_popcountll(_mm256_extract_epi64(v_xnor, 0));
+                dst_i += __builtin_popcountll(_mm256_extract_epi64(v_xnor, 1));
+                dst_i += __builtin_popcountll(_mm256_extract_epi64(v_xnor, 2));
+                dst_i += __builtin_popcountll(_mm256_extract_epi64(v_xnor, 3));
             }
         }
         *d = (float)dst_i * *alpha * k[oh*OW + ow];

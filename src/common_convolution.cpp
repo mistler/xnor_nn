@@ -9,7 +9,7 @@
 #include "utils/timer.hpp"
 
 #ifdef __x86_64__
-#define VLEN 16
+#define VLEN 32
 #elif defined __arm__
 #define VLEN 16
 #else
