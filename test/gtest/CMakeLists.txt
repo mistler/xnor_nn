@@ -5,8 +5,18 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/external/gtest
     )
 
-file(GLOB PRIM_TEST_CASES_SRC RELATIVE
-    ${CMAKE_SOURCE_DIR}/test/gtest test_*.cpp)
+file(GLOB PRIM_TEST_CASES_SRC RELATIVE ${CMAKE_SOURCE_DIR}/test/gtest
+    test_data_bin_reference.cpp
+    test_data_bin_direct.cpp
+
+    test_weights_bin_reference.cpp
+    test_weights_bin_direct.cpp
+
+    test_convolution_reference_forward.cpp
+    test_convolution_forward_optimized.cpp
+
+    test_convolution_compare_with_reference.cpp
+)
 
 foreach(TEST_FILE ${PRIM_TEST_CASES_SRC})
     get_filename_component (TEST_FILE_WE ${TEST_FILE} NAME_WE)
