@@ -131,6 +131,7 @@ int main(){
 
         // Clean up
         xnor_nn_free_resources(res);
+        xnor_nn_destroy_convolution(&convolution);
     }
 
 label:

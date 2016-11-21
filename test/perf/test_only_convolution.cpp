@@ -71,6 +71,8 @@ int main(){
 label:
     delete[] dst;
 
+    xnor_nn_destroy_convolution(&convolution);
+
     xnor_nn_get_status_message(st_msg, st);
     printf("%s\n", st_msg);
     return st != xnor_nn_success;

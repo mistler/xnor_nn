@@ -27,6 +27,7 @@ public:
 
     ~Convolution() {
         xnor_nn_free_resources(res_);
+        xnor_nn_destroy_convolution(&convolution_);
     }
 
 

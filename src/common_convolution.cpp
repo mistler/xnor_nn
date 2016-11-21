@@ -18,9 +18,7 @@
 
 using Logger = xnor_nn::utils::Logger;
 
-namespace {
-
-// TODO: dispatch at init time
+    /*
 xnor_nn_status_t dispatch_binarize_weights(const xnor_nn_convolution_t *c,
         xnor_nn_resources_t res) {
     if (
@@ -122,8 +120,8 @@ xnor_nn_status_t dispatch_forward(const xnor_nn_convolution_t *c,
 
     return st;
 }
+*/
 
-}
 
 xnor_nn_status_t xnor_nn_init_convolution(xnor_nn_convolution_t *c,
         const xnor_nn_algorithm_t algorithm,
@@ -191,10 +189,20 @@ xnor_nn_status_t xnor_nn_init_convolution(xnor_nn_convolution_t *c,
     }
     }
 
-    c->binarize_weights = dispatch_binarize_weights;
-    c->binarize_data = dispatch_binarize_data;
-    c->calculate_k = dispatch_calculate_k;
-    c->forward = dispatch_forward;
+    c->binarize_data = nullptr;
+    c->binarize_weights = nullptr;
+    c->calculate_k = nullptr;
+    c->forward = nullptr;
+
+    c->state =
+        (void*)new std::vector<xnor_nn::implementation::Implementation*>();
+
+    for (xnor_nn::implementation::Implementation *impl
+            : xnor_nn::implementation::Implementations()) {
+        if (impl->isApplicable(c)) {
+            impl->setupConvolution(c);
+        }
+    }
 
     Logger::info("convolution:", "create:",
             "MB:", mb, "IC:", ic, "IH:", ih, "IW:", iw,
@@ -202,4 +210,8 @@ xnor_nn_status_t xnor_nn_init_convolution(xnor_nn_convolution_t *c,
             "KH:", kh, "KW:", kw, "SH:", sh, "SW:", sw, "PH:", ph, "PW:", pw);
 
     return xnor_nn_success;
+}
+
+void xnor_nn_destroy_convolution(xnor_nn_convolution_t *c){
+    delete (std::vector<xnor_nn::implementation::Implementation*>*)c->state;
 }

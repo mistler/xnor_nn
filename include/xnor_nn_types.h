@@ -35,8 +35,6 @@ typedef enum {
 
 typedef void *xnor_nn_resources_t[xnor_nn_resource_number];
 
-typedef struct xnor_nn_data_binarizer_ xnor_nn_data_binarizer_t;
-typedef struct xnor_nn_weights_binarizer_ xnor_nn_weights_binarizer_t;
 typedef struct xnor_nn_convolution_ xnor_nn_convolution_t;
 
 typedef xnor_nn_status_t(*xnor_nn_executor_t)(const xnor_nn_convolution_t *self,
@@ -63,6 +61,8 @@ struct xnor_nn_convolution_ {
     xnor_nn_executor_t binarize_data;
     xnor_nn_executor_t calculate_k;
     xnor_nn_executor_t forward;
+
+    void *state;
 };
 
 #ifdef __cplusplus

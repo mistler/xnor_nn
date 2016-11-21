@@ -1,10 +1,32 @@
-#include "implementation.hpp"
+#include "direct_convolution.hpp"
+
+namespace xnor_nn {
+namespace implementation {
+
+bool DirectConvolution::isApplicable(
+        const xnor_nn_convolution_t *c) const {
+    if (c->forward != nullptr) return false;
+    if (c->algorithm != xnor_nn_algorithm_optimized) return false;
+    return true;
+}
+
+void DirectConvolution::setupConvolution(
+        xnor_nn_convolution_t *c) {
+    c->forward = exec;
+    ((std::vector<Implementation*>*)c->state)->push_back(this);
+}
+
+}
+}
 
 #ifdef __x86_64__
 #include <immintrin.h>
 
-xnor_nn_status_t direct_convolution_forward(
-        const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
+namespace xnor_nn {
+namespace implementation {
+
+xnor_nn_status_t DirectConvolution::exec(const xnor_nn_convolution_t *c,
+        xnor_nn_resources_t res) {
     const unsigned int *src = (unsigned int*)res[xnor_nn_resource_bin_src];
     const unsigned int *weights =
         (unsigned int*)res[xnor_nn_resource_bin_weights];
@@ -82,11 +104,17 @@ xnor_nn_status_t direct_convolution_forward(
     return xnor_nn_success;
 }
 
+}
+}
+
 #elif defined __arm__
 
 #include <arm_neon.h>
 
-xnor_nn_status_t direct_convolution_forward(
+namespace xnor_nn {
+namespace implementation {
+
+xnor_nn_status_t DirectConvolution::exec(
         const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
     const unsigned int *src = (unsigned int*)res[xnor_nn_resource_bin_src];
     const unsigned int *weights =
@@ -162,9 +190,15 @@ xnor_nn_status_t direct_convolution_forward(
     return xnor_nn_success;
 }
 
+}
+}
+
 #else
 
-xnor_nn_status_t direct_convolution_forward(
+namespace xnor_nn {
+namespace implementation {
+
+xnor_nn_status_t DirectConvolution::exec(
         const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
     const unsigned int *src = (unsigned int*)res[xnor_nn_resource_bin_src];
     const unsigned int *weights =
@@ -233,6 +267,9 @@ xnor_nn_status_t direct_convolution_forward(
     }
 
     return xnor_nn_success;
+}
+
+}
 }
 
 #endif

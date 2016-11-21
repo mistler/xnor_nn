@@ -1,6 +1,22 @@
-#include "implementation.hpp"
+#include "reference_convolution.hpp"
 
-xnor_nn_status_t reference_convolution_forward(
+namespace xnor_nn {
+namespace implementation {
+
+bool ReferenceConvolution::isApplicable(
+        const xnor_nn_convolution_t *c) const {
+    if (c->forward != nullptr) return false;
+    if (c->algorithm != xnor_nn_algorithm_reference) return false;
+    return true;
+}
+
+void ReferenceConvolution::setupConvolution(
+        xnor_nn_convolution_t *c) {
+    c->forward = exec;
+    ((std::vector<Implementation*>*)c->state)->push_back(this);
+}
+
+xnor_nn_status_t ReferenceConvolution::exec(
         const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
     const float *src = (float *)res[xnor_nn_resource_bin_src];
     const float *weights = (float*)res[xnor_nn_resource_bin_weights];
@@ -58,4 +74,7 @@ xnor_nn_status_t reference_convolution_forward(
     }
 
     return xnor_nn_success;
+}
+
+}
 }

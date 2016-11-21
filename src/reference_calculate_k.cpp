@@ -1,42 +1,23 @@
-#include "reference_binarize_data.hpp"
+#include "reference_calculate_k.hpp"
 
 #include <cmath>
 
 namespace xnor_nn {
 namespace implementation {
 
-bool ReferenceBinarizeDataCopyOnFloat::isApplicable(
+bool ReferenceCalculateK::isApplicable(
         const xnor_nn_convolution_t *c) const {
-    if (c->binarize_data != nullptr) return false;
-    if (c->algorithm != xnor_nn_algorithm_reference) return false;
+    if (c->calculate_k != nullptr) return false;
     return true;
 }
 
-void ReferenceBinarizeDataCopyOnFloat::setupConvolution(
+void ReferenceCalculateK::setupConvolution(
         xnor_nn_convolution_t *c) {
-    c->binarize_data = exec;
+    c->calculate_k = exec;
     ((std::vector<Implementation*>*)c->state)->push_back(this);
 }
 
-xnor_nn_status_t ReferenceBinarizeDataCopyOnFloat::exec(
-        const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
-    const float *from = (float*)res[xnor_nn_resource_user_src];
-    float *to = (float *)res[xnor_nn_resource_bin_src];
-
-    const int MB = c->mb;
-    const int IC = c->ic;
-    const int IH = c->ih;
-    const int IW = c->iw;
-
-    const int elems = MB*IC*IH*IW;
-
-#   pragma omp parallel for schedule(static)
-    for(int i = 0; i < elems; i++) to[i] = from[i];
-
-    return xnor_nn_success;
-}
-
-xnor_nn_status_t reference_calculate_k(
+xnor_nn_status_t ReferenceCalculateK::exec(
         const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
     const float *from = (float*)res[xnor_nn_resource_user_src];
     float *a = (float*)res[xnor_nn_resource_a];
