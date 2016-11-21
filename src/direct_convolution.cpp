@@ -13,8 +13,13 @@ bool DirectConvolution::isApplicable(
 void DirectConvolution::setupConvolution(
         xnor_nn_convolution_t *c) {
     c->forward = exec;
-    ((std::vector<Implementation*>*)c->state)->push_back(this);
+
+    std::vector<Implementation*> *vec =
+        (std::vector<Implementation*>*)c->state;
+    vec->push_back(new DirectConvolution);
 }
+
+DirectConvolution::~DirectConvolution() {}
 
 }
 }

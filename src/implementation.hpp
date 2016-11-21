@@ -10,6 +10,7 @@ namespace implementation {
 
 class Implementation {
 public:
+    virtual ~Implementation() {};
     virtual bool isApplicable(const xnor_nn_convolution_t *c) const = 0;
     virtual void setupConvolution(xnor_nn_convolution_t *c) = 0;
 };

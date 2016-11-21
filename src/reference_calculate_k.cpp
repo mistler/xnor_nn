@@ -14,8 +14,13 @@ bool ReferenceCalculateK::isApplicable(
 void ReferenceCalculateK::setupConvolution(
         xnor_nn_convolution_t *c) {
     c->calculate_k = exec;
-    ((std::vector<Implementation*>*)c->state)->push_back(this);
+
+    std::vector<Implementation*> *vec =
+        (std::vector<Implementation*>*)c->state;
+    vec->push_back(new ReferenceCalculateK);
 }
+
+ReferenceCalculateK::~ReferenceCalculateK() {}
 
 xnor_nn_status_t ReferenceCalculateK::exec(
         const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {

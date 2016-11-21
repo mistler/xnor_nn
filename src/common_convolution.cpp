@@ -213,5 +213,11 @@ xnor_nn_status_t xnor_nn_init_convolution(xnor_nn_convolution_t *c,
 }
 
 void xnor_nn_destroy_convolution(xnor_nn_convolution_t *c){
+    std::vector<xnor_nn::implementation::Implementation*> *vec =
+        (std::vector<xnor_nn::implementation::Implementation*>*)c->state;
+    while (!vec->empty()) {
+        delete vec->back();
+        vec->pop_back();
+    }
     delete (std::vector<xnor_nn::implementation::Implementation*>*)c->state;
 }
