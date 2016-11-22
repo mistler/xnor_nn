@@ -59,7 +59,7 @@ xnor_nn_status_t DirectConvolution::exec(const xnor_nn_convolution_t *c,
     const int VECTORS_IN_AIC = AIC / VEC_LENGTH;
 
     int ones[8] = {-1,-1,-1,-1,-1,-1,-1,-1};
-    __m256 v_ones = _mm256_load_ps((float*)ones);
+    __m256 v_ones = _mm256_loadu_ps((float*)ones);
 
     // TODO: potentially loops can be reordered
 #   pragma omp parallel for collapse(3) schedule(static)
