@@ -4,6 +4,7 @@
 #include "common.hpp"
 
 typedef struct {
+    xnor_nn_algorithm_t algorithm;
     int mb;
     int ic, oc;
     int ih, iw;
@@ -11,7 +12,6 @@ typedef struct {
     int sh, sw;
     int ph, pw;
     int oh, ow;
-    xnor_nn_algorithm_t algorithm;
 } params_t;
 
 static void fill_src(float *d, const params_t &p) {
@@ -78,9 +78,9 @@ TEST_P(ConvolutionForwardOptimized, compare_with_reference)
 
 INSTANTIATE_TEST_CASE_P(TestConvolutionForward,
         ConvolutionForwardOptimized, ::testing::Values(
-params_t{ 3, 3, 64, 224, 224, 11, 11, 4, 4, 2, 2, xnor_nn_algorithm_optimized },
-params_t{ 3, 64, 192, 27, 27, 5, 5, 1, 1, 2, 2, xnor_nn_algorithm_optimized },
-params_t{ 3, 192, 384, 13, 13, 3, 3, 1, 1, 1, 1, xnor_nn_algorithm_optimized },
-params_t{ 3, 384, 256, 13, 13, 3, 3, 1, 1, 1, 1, xnor_nn_algorithm_optimized },
-params_t{ 3, 256, 256, 13, 13, 3, 3, 1, 1, 1, 1, xnor_nn_algorithm_optimized }
+params_t{ xnor_nn_algorithm_optimized, 3, 3, 64, 224, 224, 11, 11, 4, 4, 2, 2 },
+params_t{ xnor_nn_algorithm_optimized, 3, 64, 192, 27, 27, 5, 5, 1, 1, 2, 2 },
+params_t{ xnor_nn_algorithm_optimized, 3, 192, 384, 13, 13, 3, 3, 1, 1, 1, 1 },
+params_t{ xnor_nn_algorithm_optimized, 3, 384, 256, 13, 13, 3, 3, 1, 1, 1, 1 },
+params_t{ xnor_nn_algorithm_optimized, 3, 256, 256, 13, 13, 3, 3, 1, 1, 1, 1 }
 ));
