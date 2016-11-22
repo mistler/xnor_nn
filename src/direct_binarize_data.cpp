@@ -31,7 +31,7 @@ xnor_nn_status_t DirectBinarizeDataChar::exec(
     const int IH = c->ih;
     const int IW = c->iw;
 
-    const int SZ = c->sizeof_element * 8;
+    const int SZ = 8;
     const int BIC = c->bic;
     const int AIC = c->aic;
 
@@ -41,9 +41,10 @@ xnor_nn_status_t DirectBinarizeDataChar::exec(
     for (int iw = 0; iw < IW; iw++) {
         for (int bic = 0; bic < BIC; bic++) {
             unsigned char out{0};
-            const int LEN = bic == BIC - 1 ? (IC % SZ) : SZ;
+            int LEN = bic == BIC - 1 ? (IC % SZ) : SZ;
+            if (LEN == 0) LEN = SZ;
             for (int ic = 0; ic < LEN; ic++) {
-                int from_idx = ((mb*IC + ic)*IH + ih)*IW + iw;
+                int from_idx = ((mb*IC + bic*SZ + ic)*IH + ih)*IW + iw;
                 char tmp = (~from[from_idx]) >> 31;
                 out <<= 1;
                 out |= tmp;

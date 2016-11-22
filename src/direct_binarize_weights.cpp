@@ -46,9 +46,10 @@ xnor_nn_status_t DirectBinarizeWeightsChar::exec(
     for (int oc = 0; oc < OC; oc++) {
         for (int bic = 0; bic < BIC; bic++) {
             unsigned char out{0};
-            const int LEN = bic == BIC - 1 ? (IC % SZ) : SZ;
+            int LEN = bic == BIC - 1 ? (IC % SZ) : SZ;
+            if (LEN == 0) LEN = SZ;
             for (int ic = 0; ic < LEN; ic++) {
-                int from_idx = ((oc*IC + ic)*KH + kh)*KW + kw;
+                int from_idx = ((oc*IC + bic*SZ + ic)*KH + kh)*KW + kw;
                 char tmp = (~f[from_idx]) >> 31;
                 out <<= 1;
                 out |= tmp;

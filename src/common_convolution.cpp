@@ -177,7 +177,7 @@ xnor_nn_status_t xnor_nn_init_convolution(xnor_nn_convolution_t *c,
         c->sizeof_element = ELEM_SIZE;
         c->vector_length = VEC_LENGTH;
         c->bic = BIC;
-        c->aic = BIC + (VEC_LENGTH - (BIC % VEC_LENGTH));
+        c->aic = ((BIC + VEC_LENGTH - 1) / VEC_LENGTH) * VEC_LENGTH;
 
         c->resource_size[xnor_nn_resource_bin_src] =
             c->mb * c->aic * c->ih * c->iw * ELEM_SIZE;

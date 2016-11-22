@@ -21,7 +21,7 @@ static void fill_src(float *d, const params_t &p) {
     for (int ih = 0; ih < p.ih; ih++)
     for (int iw = 0; iw < p.iw; iw++)
         d[((mb*p.ic + ic)*p.ih + ih)*p.iw + iw] =
-            0.33f + 3.14f*(19 - (iw+ih+ic+mb%37));
+            0.33f + 0.0023f*(19 - (iw+ih+ic+mb%37));
 }
 static void fill_weights(float *d, const params_t &p) {
 #   pragma omp parallel for collapse(3) schedule(static)
@@ -30,7 +30,7 @@ static void fill_weights(float *d, const params_t &p) {
     for (int kh = 0; kh < p.kh; kh++)
     for (int kw = 0; kw < p.kw; kw++)
         d[((oc*p.ic + ic)*p.kh + kh)*p.kw + kw] =
-            0.18f + 1.12f*(11 - (kw+kh+ic+oc%23));
+            0.18f + 0.017f*(11 - (kw+kh+ic+oc%23));
 }
 
 class ConvolutionForwardOptimized : public ::testing::TestWithParam<params_t> {
@@ -78,9 +78,9 @@ TEST_P(ConvolutionForwardOptimized, compare_with_reference)
 
 INSTANTIATE_TEST_CASE_P(TestConvolutionForward,
         ConvolutionForwardOptimized, ::testing::Values(
-params_t{ xnor_nn_algorithm_optimized, 3, 3, 64, 224, 224, 11, 11, 4, 4, 2, 2 },
-params_t{ xnor_nn_algorithm_optimized, 3, 64, 192, 27, 27, 5, 5, 1, 1, 2, 2 },
-params_t{ xnor_nn_algorithm_optimized, 3, 192, 384, 13, 13, 3, 3, 1, 1, 1, 1 },
-params_t{ xnor_nn_algorithm_optimized, 3, 384, 256, 13, 13, 3, 3, 1, 1, 1, 1 },
-params_t{ xnor_nn_algorithm_optimized, 3, 256, 256, 13, 13, 3, 3, 1, 1, 1, 1 }
+params_t{ xnor_nn_algorithm_optimized, 2, 3, 64, 224, 224, 11, 11, 4, 4, 2, 2 },
+params_t{ xnor_nn_algorithm_optimized, 2, 64, 192, 27, 27, 5, 5, 1, 1, 2, 2 },
+params_t{ xnor_nn_algorithm_optimized, 2, 192, 384, 13, 13, 3, 3, 1, 1, 1, 1 },
+params_t{ xnor_nn_algorithm_optimized, 2, 384, 256, 13, 13, 3, 3, 1, 1, 1, 1 },
+params_t{ xnor_nn_algorithm_optimized, 2, 256, 256, 13, 13, 3, 3, 1, 1, 1, 1 }
 ));
