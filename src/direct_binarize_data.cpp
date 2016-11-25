@@ -26,6 +26,10 @@ DirectBinarizeData::~DirectBinarizeData() {}
 
 xnor_nn_status_t DirectBinarizeData::exec(
         const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
+    if (
+        res[xnor_nn_resource_user_src] == nullptr
+        || res[xnor_nn_resource_bin_src] == nullptr
+    ) return xnor_nn_error_invalid_input;
     const unsigned int *from = (unsigned int*)res[xnor_nn_resource_user_src];
     unsigned char *to = (unsigned char*)res[xnor_nn_resource_bin_src];
 

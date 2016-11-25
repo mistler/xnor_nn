@@ -27,6 +27,10 @@ ReferenceBinarizeData::~ReferenceBinarizeData() {}
 
 xnor_nn_status_t ReferenceBinarizeData::exec(
         const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
+    if (
+        res[xnor_nn_resource_user_src] == nullptr
+        || res[xnor_nn_resource_bin_src] == nullptr
+    ) return xnor_nn_error_invalid_input;
     const float *from = (float*)res[xnor_nn_resource_user_src];
     float *to = (float *)res[xnor_nn_resource_bin_src];
 

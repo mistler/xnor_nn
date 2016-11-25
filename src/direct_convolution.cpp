@@ -53,6 +53,12 @@ namespace implementation {
 
 xnor_nn_status_t DirectConvolution::exec(const xnor_nn_convolution_t *c,
         xnor_nn_resources_t res) {
+    if (
+        res[xnor_nn_resource_bin_src] == nullptr
+        || res[xnor_nn_resource_bin_weights] == nullptr
+        || res[xnor_nn_resource_user_dst] == nullptr
+        || res[xnor_nn_resource_k] == nullptr
+    ) return xnor_nn_error_invalid_input;
     const unsigned int *src = (unsigned int*)res[xnor_nn_resource_bin_src];
     const unsigned int *weights =
         (unsigned int*)res[xnor_nn_resource_bin_weights];
@@ -142,6 +148,12 @@ namespace implementation {
 
 xnor_nn_status_t DirectConvolution::exec(
         const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
+    if (
+        res[xnor_nn_resource_bin_src] == nullptr
+        || res[xnor_nn_resource_bin_weights] == nullptr
+        || res[xnor_nn_resource_user_dst] == nullptr
+        || res[xnor_nn_resource_k] == nullptr
+    ) return xnor_nn_error_invalid_input;
     const unsigned int *src = (unsigned int*)res[xnor_nn_resource_bin_src];
     const unsigned int *weights =
         (unsigned int*)res[xnor_nn_resource_bin_weights];
@@ -226,6 +238,12 @@ namespace implementation {
 
 xnor_nn_status_t DirectConvolution::exec(
         const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
+    if (
+        res[xnor_nn_resource_bin_src] == nullptr
+        || res[xnor_nn_resource_bin_weights] == nullptr
+        || res[xnor_nn_resource_user_dst] == nullptr
+        || res[xnor_nn_resource_k] == nullptr
+    ) return xnor_nn_error_invalid_input;
     const unsigned int *src = (unsigned int*)res[xnor_nn_resource_bin_src];
     const unsigned int *weights =
         (unsigned int*)res[xnor_nn_resource_bin_weights];
