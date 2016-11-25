@@ -1,9 +1,10 @@
 #ifndef IMPLEMENTATION_HPP
 #define IMPLEMENTATION_HPP
 
-#include <vector>
-
 #include "xnor_nn_types.h"
+
+#include <string>
+#include <vector>
 
 namespace xnor_nn {
 namespace implementation {

@@ -58,11 +58,10 @@ xnor_nn_status_t DirectConvolution::exec(const xnor_nn_convolution_t *c,
 
     const int VECTORS_IN_AIC = AIC / VEC_LENGTH;
 
-    int ones[8] = {-1,-1,-1,-1,-1,-1,-1,-1};
-    __m256 v_ones = _mm256_loadu_ps((float*)ones);
+    const int ones[8] = {-1,-1,-1,-1,-1,-1,-1,-1};
 
     // TODO: potentially loops can be reordered
-#   pragma omp parallel for collapse(3) schedule(static)
+#   pragma omp parallel for collapse(4) schedule(static)
     for (int mb = 0; mb < MB; mb++)
     for (int oc = 0; oc < OC; oc++)
     for (int oh = 0; oh < OH; oh++)
@@ -71,6 +70,7 @@ xnor_nn_status_t DirectConvolution::exec(const xnor_nn_convolution_t *c,
         float *d = dst + dst_idx;
         *d = 0.f;
         unsigned long long int dst_i = 0;
+        __m256 v_ones = _mm256_loadu_ps((float*)ones);
         for (int kh = 0; kh < KH; kh++)
         for (int kw = 0; kw < KW; kw++) {
             if (oh*SH + kh < (PH > 0 ? PH : 0)) continue;
@@ -148,7 +148,7 @@ xnor_nn_status_t DirectConvolution::exec(
     const int VECTORS_IN_AIC = AIC / VEC_LENGTH;
 
     // TODO: potentially loops can be reordered
-#   pragma omp parallel for collapse(3) schedule(static)
+#   pragma omp parallel for collapse(4) schedule(static)
     for (int mb = 0; mb < MB; mb++)
     for (int oc = 0; oc < OC; oc++)
     for (int oh = 0; oh < OH; oh++)
@@ -232,7 +232,7 @@ xnor_nn_status_t DirectConvolution::exec(
     const int VECTORS_IN_AIC = AIC / VEC_LENGTH;
 
     // TODO: potentially loops can be reordered
-#   pragma omp parallel for collapse(3) schedule(static)
+#   pragma omp parallel for collapse(4) schedule(static)
     for (int mb = 0; mb < MB; mb++)
     for (int oc = 0; oc < OC; oc++)
     for (int oh = 0; oh < OH; oh++)

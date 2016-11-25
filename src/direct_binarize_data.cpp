@@ -12,11 +12,12 @@ bool DirectBinarizeDataChar::isApplicable(
 
 void DirectBinarizeDataChar::setupConvolution(
         xnor_nn_convolution_t *c) {
-    c->binarize_data = exec;
+    DirectBinarizeDataChar *op = new DirectBinarizeDataChar;
+    c->binarize_data = op->exec;
 
     std::vector<Implementation*> *vec =
         (std::vector<Implementation*>*)c->state;
-    vec->push_back(new DirectBinarizeDataChar);
+    vec->push_back(op);
 }
 
 DirectBinarizeDataChar::~DirectBinarizeDataChar() {}

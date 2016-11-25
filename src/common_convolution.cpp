@@ -6,7 +6,6 @@
 #include "implementation.hpp"
 
 #include "utils/logger.hpp"
-#include "utils/timer.hpp"
 
 #ifdef __x86_64__
 #define VLEN 32
@@ -17,111 +16,6 @@
 #endif
 
 using Logger = xnor_nn::utils::Logger;
-
-    /*
-xnor_nn_status_t dispatch_binarize_weights(const xnor_nn_convolution_t *c,
-        xnor_nn_resources_t res) {
-    if (
-            res[xnor_nn_resource_user_weights] == nullptr
-            || res[xnor_nn_resource_bin_weights] == nullptr
-       ) return xnor_nn_error_invalid_input;
-    xnor_nn_executor_t ex = get_executor(c->algorithm,
-            operation_binarize_weights);
-
-    xnor_nn::utils::Timer timer;
-    timer.start();
-
-    xnor_nn_status_t st = ex(c, res);
-
-    timer.stop();
-    Logger::info("Binarize weights:", "MB:", c->mb, "IC:", c->ic,
-            "IH:", c->ih, "IW:", c->iw,
-            "OC:", c->oc, "OH:", c->oh, "OW:", c->ow,
-            "KH:", c->kh, "KW:", c->kw, "SH:", c->sh, "SW:", c->sw,
-            "PH:", c->ph, "PW:", c->pw,
-            "execute:", "time:", timer.millis(), "ms");
-
-    return st;
-}
-
-xnor_nn_status_t dispatch_binarize_data(const xnor_nn_convolution_t *c,
-        xnor_nn_resources_t res) {
-    if (
-            res[xnor_nn_resource_user_src] == nullptr
-            || res[xnor_nn_resource_bin_src] == nullptr
-       ) return xnor_nn_error_invalid_input;
-    xnor_nn_executor_t ex = get_executor(c->algorithm, operation_binarize_data);
-
-    xnor_nn::utils::Timer timer;
-    timer.start();
-
-    xnor_nn_status_t st = ex(c, res);
-
-    timer.stop();
-    Logger::info("Binarize data:", "MB:", c->mb, "IC:", c->ic,
-            "IH:", c->ih, "IW:", c->iw,
-            "OC:", c->oc, "OH:", c->oh, "OW:", c->ow,
-            "KH:", c->kh, "KW:", c->kw, "SH:", c->sh, "SW:", c->sw,
-            "PH:", c->ph, "PW:", c->pw,
-            "execute:", "time:", timer.millis(), "ms");
-
-    return st;
-}
-
-xnor_nn_status_t dispatch_calculate_k(const xnor_nn_convolution_t *c,
-        xnor_nn_resources_t res) {
-    if (
-            res[xnor_nn_resource_user_src] == nullptr
-            || res[xnor_nn_resource_a] == nullptr
-            || res[xnor_nn_resource_k] == nullptr
-       ) return xnor_nn_error_invalid_input;
-    xnor_nn_executor_t ex = get_executor(c->algorithm, operation_calculate_k);
-
-    xnor_nn::utils::Timer timer;
-    timer.start();
-
-    xnor_nn_status_t st = ex(c, res);
-
-    timer.stop();
-    Logger::info("Calculate K:", "MB:", c->mb, "IC:", c->ic,
-            "IH:", c->ih, "IW:", c->iw,
-            "OC:", c->oc, "OH:", c->oh, "OW:", c->ow,
-            "KH:", c->kh, "KW:", c->kw, "SH:", c->sh, "SW:", c->sw,
-            "PH:", c->ph, "PW:", c->pw,
-            "execute:", "time:", timer.millis(), "ms");
-
-    return st;
-
-}
-
-xnor_nn_status_t dispatch_forward(const xnor_nn_convolution_t *c,
-        xnor_nn_resources_t res) {
-    if (
-            res[xnor_nn_resource_bin_src] == nullptr
-            || res[xnor_nn_resource_bin_weights] == nullptr
-            || res[xnor_nn_resource_user_dst] == nullptr
-            || res[xnor_nn_resource_k] == nullptr
-       ) return xnor_nn_error_invalid_input;
-    xnor_nn_executor_t ex = get_executor(c->algorithm,
-            operation_convolution_forward);
-
-    xnor_nn::utils::Timer timer;
-    timer.start();
-
-    xnor_nn_status_t st = ex(c, res);
-
-    timer.stop();
-    Logger::info("Convolution forward:", "MB:", c->mb, "IC:", c->ic,
-            "IH:", c->ih, "IW:", c->iw,
-            "OC:", c->oc, "OH:", c->oh, "OW:", c->ow,
-            "KH:", c->kh, "KW:", c->kw, "SH:", c->sh, "SW:", c->sw,
-            "PH:", c->ph, "PW:", c->pw,
-            "execute:", "time:", timer.millis(), "ms");
-
-    return st;
-}
-*/
-
 
 xnor_nn_status_t xnor_nn_init_convolution(xnor_nn_convolution_t *c,
         const xnor_nn_algorithm_t algorithm,
