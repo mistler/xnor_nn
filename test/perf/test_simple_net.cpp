@@ -57,7 +57,7 @@ static inline void measure_time(F &f, std::string msg, int N = 64) {
 }
 
 int main(){
-    const xnor_nn_algorithm_t alg = xnor_nn_algorithm_optimized;
+    const xnor_nn_algorithm_t alg = xnor_nn_algorithm_direct;
     const std::vector<convolution_params> params =
     {
         // AlexNet

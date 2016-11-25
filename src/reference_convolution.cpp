@@ -10,13 +10,27 @@ bool ReferenceConvolution::isApplicable(
     return true;
 }
 
-void ReferenceConvolution::setupConvolution(
-        xnor_nn_convolution_t *c) {
-    c->forward = exec;
+void ReferenceConvolution::setupConvolution(xnor_nn_convolution_t *c) {
+    ReferenceConvolution *op = new ReferenceConvolution;
+
+    const size_t ELEM_SIZE = sizeof(float);
+    const size_t VEC_LENGTH = 1;
+
+    c->sizeof_element = ELEM_SIZE;
+    c->vector_length = VEC_LENGTH;
+
+    c->resource_size[xnor_nn_resource_bin_src] =
+        c->mb * c->ic * c->ih * c->iw * ELEM_SIZE;
+    c->resource_size[xnor_nn_resource_bin_weights] =
+        c->oc * c->ic * c->kh * c->kw * ELEM_SIZE;
+    c->resource_size[xnor_nn_resource_a] = c->ih * c->iw * sizeof(float);
+    c->resource_size[xnor_nn_resource_k] = c->oh * c->ow * sizeof(float);
+
+    c->forward = op->exec;
 
     std::vector<Implementation*> *vec =
         (std::vector<Implementation*>*)c->state;
-    vec->push_back(new ReferenceConvolution);
+    vec->push_back(op);
 }
 
 ReferenceConvolution::~ReferenceConvolution() {}
@@ -81,5 +95,5 @@ xnor_nn_status_t ReferenceConvolution::exec(
     return xnor_nn_success;
 }
 
-}
-}
+} // namespace implementation
+} // namespace xnor_nn

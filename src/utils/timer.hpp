@@ -35,6 +35,6 @@ private:
     std::chrono::high_resolution_clock::time_point s, e;
 };
 
-}
-}
-#endif
+} // namespace implementation
+} // namespace xnor_nn
+#endif // TIMER_HPP

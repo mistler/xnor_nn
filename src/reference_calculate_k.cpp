@@ -11,13 +11,14 @@ bool ReferenceCalculateK::isApplicable(
     return true;
 }
 
-void ReferenceCalculateK::setupConvolution(
-        xnor_nn_convolution_t *c) {
-    c->calculate_k = exec;
+void ReferenceCalculateK::setupConvolution(xnor_nn_convolution_t *c) {
+    ReferenceCalculateK *op = new ReferenceCalculateK;
+
+    c->calculate_k = op->exec;
 
     std::vector<Implementation*> *vec =
         (std::vector<Implementation*>*)c->state;
-    vec->push_back(new ReferenceCalculateK);
+    vec->push_back(op);
 }
 
 ReferenceCalculateK::~ReferenceCalculateK() {}
@@ -81,5 +82,5 @@ xnor_nn_status_t ReferenceCalculateK::exec(
     return xnor_nn_success;
 }
 
-}
-}
+} // namespace implementation
+} // namespace xnor_nn

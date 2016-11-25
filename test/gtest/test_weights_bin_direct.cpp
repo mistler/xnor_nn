@@ -3,7 +3,7 @@
 #include "gtest.h"
 #include "common.hpp"
 
-TEST(WeightsBinarizationDirectChar, optimized_precalculated) {
+TEST(WeightsBinarizationDirect, direct_precalculated) {
     const int MB = 1;
     const int IC = 2, OC = 2;
     const int IH = 3, IW = 3;
@@ -62,7 +62,7 @@ TEST(WeightsBinarizationDirectChar, optimized_precalculated) {
 
     xnor_nn_convolution_t convolution;
 
-    st = xnor_nn_init_convolution(&convolution, xnor_nn_algorithm_optimized,
+    st = xnor_nn_init_convolution(&convolution, xnor_nn_algorithm_direct,
             MB, OC, IC, IH, IW, KH, KW, SH, SW, PH, PW);
     if (st != xnor_nn_success) goto label;
 

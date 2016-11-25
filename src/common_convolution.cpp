@@ -7,14 +7,6 @@
 
 #include "utils/logger.hpp"
 
-#ifdef __x86_64__
-#define VLEN 32
-#elif defined __arm__
-#define VLEN 16
-#else
-#define VLEN 4
-#endif
-
 using Logger = xnor_nn::utils::Logger;
 
 xnor_nn_status_t xnor_nn_init_convolution(xnor_nn_convolution_t *c,
@@ -46,42 +38,8 @@ xnor_nn_status_t xnor_nn_init_convolution(xnor_nn_convolution_t *c,
     c->aic = ic;
     c->bic = ic;
 
-    switch (c->algorithm) {
-    case xnor_nn_algorithm_reference: {
-        const size_t ELEM_SIZE = sizeof(float);
-        const size_t VEC_LENGTH = 1;
-
-        c->sizeof_element = ELEM_SIZE;
-        c->vector_length = VEC_LENGTH;
-
-        c->resource_size[xnor_nn_resource_bin_src] =
-            c->mb * c->ic * c->ih * c->iw * ELEM_SIZE;
-        c->resource_size[xnor_nn_resource_bin_weights] =
-            c->oc * c->ic * c->kh * c->kw * ELEM_SIZE;
-        c->resource_size[xnor_nn_resource_a] = c->ih * c->iw * sizeof(float);
-        c->resource_size[xnor_nn_resource_k] = c->oh * c->ow * sizeof(float);
-        break;
-    }
-    case xnor_nn_algorithm_optimized: {
-        const size_t ELEM_SIZE = sizeof(char);
-        const size_t BITS = ELEM_SIZE * 8;
-        const size_t VEC_LENGTH = VLEN;
-        const size_t BIC = (c->ic + BITS - 1) / BITS;
-
-        c->sizeof_element = ELEM_SIZE;
-        c->vector_length = VEC_LENGTH;
-        c->bic = BIC;
-        c->aic = ((BIC + VEC_LENGTH - 1) / VEC_LENGTH) * VEC_LENGTH;
-
-        c->resource_size[xnor_nn_resource_bin_src] =
-            c->mb * c->aic * c->ih * c->iw * ELEM_SIZE;
-        c->resource_size[xnor_nn_resource_bin_weights] =
-            c->oc * c->aic * c->kh * c->kw * ELEM_SIZE;
-        c->resource_size[xnor_nn_resource_a] = c->ih * c->iw * sizeof(float);
-        c->resource_size[xnor_nn_resource_k] = c->oh * c->ow * sizeof(float);
-        break;
-    }
-    }
+    c->piw = iw + 2*pw;
+    c->pih = ih + 2*ph;
 
     c->binarize_data = nullptr;
     c->binarize_weights = nullptr;

@@ -55,7 +55,7 @@ private:
     }
 };
 
-}
-}
+} // namespace implementation
+} // namespace xnor_nn
 
-#endif
+#endif // LOGGER_HPP

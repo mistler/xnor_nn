@@ -5,25 +5,28 @@
 namespace xnor_nn {
 namespace implementation {
 
-bool DirectBinarizeWeightsChar::isApplicable(
+bool DirectBinarizeWeights::isApplicable(
         const xnor_nn_convolution_t *c) const {
     if (c->binarize_weights != nullptr) return false;
-    if (c->algorithm != xnor_nn_algorithm_optimized) return false;
-    return true;
+    if (c->algorithm == xnor_nn_algorithm_direct
+            || c->algorithm == xnor_nn_algorithm_padded) return true;
+    return false;
 }
 
-void DirectBinarizeWeightsChar::setupConvolution(
+void DirectBinarizeWeights::setupConvolution(
         xnor_nn_convolution_t *c) {
-    c->binarize_weights = exec;
+    DirectBinarizeWeights *op = new DirectBinarizeWeights;
+
+    c->binarize_weights = op->exec;
 
     std::vector<Implementation*> *vec =
         (std::vector<Implementation*>*)c->state;
-    vec->push_back(new DirectBinarizeWeightsChar);
+    vec->push_back(op);
 }
 
-DirectBinarizeWeightsChar::~DirectBinarizeWeightsChar() {}
+DirectBinarizeWeights::~DirectBinarizeWeights() {}
 
-xnor_nn_status_t DirectBinarizeWeightsChar::exec(
+xnor_nn_status_t DirectBinarizeWeights::exec(
         const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
     const float *from = (float*)res[xnor_nn_resource_user_weights];
     unsigned char *to = (unsigned char*)res[xnor_nn_resource_bin_weights];
@@ -82,5 +85,5 @@ xnor_nn_status_t DirectBinarizeWeightsChar::exec(
     return xnor_nn_success;
 }
 
-}
-}
+} // namespace implementation
+} // namespace xnor_nn

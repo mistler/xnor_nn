@@ -56,5 +56,5 @@ private:
     }
 };
 
-}
-#endif
+} // namespace xnor_nn
+#endif // XNOR_NN_HPP

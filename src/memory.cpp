@@ -47,4 +47,4 @@ void xnor_nn_free_resources(xnor_nn_resources_t res) {
         res[xnor_nn_resource_bin_weights] = nullptr;
         res[xnor_nn_resource_a] = nullptr;
         res[xnor_nn_resource_k] = nullptr;
-}
+} // namespace

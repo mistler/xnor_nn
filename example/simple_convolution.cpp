@@ -18,7 +18,7 @@ int main(){
     dst = new float[MB*OC*OH*OW];
 
     // Convolution setup
-    xnor_nn::Convolution convolution{xnor_nn_algorithm_optimized,
+    xnor_nn::Convolution convolution{xnor_nn_algorithm_direct,
             MB, OC, IC, IH, IW, KH, KW, SH, SW, PH, PW, weights};
     delete[] weights;
 

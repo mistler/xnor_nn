@@ -16,7 +16,7 @@ typedef enum {
 
 typedef enum {
     xnor_nn_algorithm_reference,
-    xnor_nn_algorithm_optimized,
+    xnor_nn_algorithm_direct,
 } xnor_nn_algorithm_t;
 
 typedef enum {

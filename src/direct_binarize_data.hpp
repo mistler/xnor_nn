@@ -3,9 +3,9 @@
 namespace xnor_nn {
 namespace implementation {
 
-class DirectBinarizeDataChar : public Implementation {
+class DirectBinarizeData : public Implementation {
 public:
-    ~DirectBinarizeDataChar();
+    ~DirectBinarizeData();
     bool isApplicable(const xnor_nn_convolution_t *c) const;
     void setupConvolution(xnor_nn_convolution_t *c);
 private:

@@ -5,25 +5,28 @@
 namespace xnor_nn {
 namespace implementation {
 
-bool ReferenceBinarizeWeightsCopyOnFloat::isApplicable(
+bool ReferenceBinarizeWeights::isApplicable(
         const xnor_nn_convolution_t *c) const {
     if (c->binarize_weights != nullptr) return false;
     if (c->algorithm != xnor_nn_algorithm_reference) return false;
     return true;
 }
 
-void ReferenceBinarizeWeightsCopyOnFloat::setupConvolution(
+void ReferenceBinarizeWeights::setupConvolution(
         xnor_nn_convolution_t *c) {
-    c->binarize_weights = exec;
+    ReferenceBinarizeWeights *op =
+        new ReferenceBinarizeWeights;
+
+    c->binarize_weights = op->exec;
 
     std::vector<Implementation*> *vec =
         (std::vector<Implementation*>*)c->state;
-    vec->push_back(new ReferenceBinarizeWeightsCopyOnFloat);
+    vec->push_back(op);
 }
 
-ReferenceBinarizeWeightsCopyOnFloat::~ReferenceBinarizeWeightsCopyOnFloat() {}
+ReferenceBinarizeWeights::~ReferenceBinarizeWeights() {}
 
-xnor_nn_status_t ReferenceBinarizeWeightsCopyOnFloat::exec(
+xnor_nn_status_t ReferenceBinarizeWeights::exec(
         const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
     const float *from = (float*)res[xnor_nn_resource_user_weights];
     float *to = (float*)res[xnor_nn_resource_bin_weights];
@@ -48,5 +51,5 @@ xnor_nn_status_t ReferenceBinarizeWeightsCopyOnFloat::exec(
     return xnor_nn_success;
 }
 
-}
-}
+} // namespace implementation
+} // namespace xnor_nn

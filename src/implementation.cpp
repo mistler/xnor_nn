@@ -18,11 +18,11 @@ namespace implementation {
 
 std::vector<Implementation*> Implementations() {
     static std::vector<Implementation*> impls = {
-        new DirectBinarizeWeightsChar(),
-        new DirectBinarizeDataChar(),
+        new DirectBinarizeWeights(),
+        new DirectBinarizeData(),
         new DirectConvolution(),
-        new ReferenceBinarizeWeightsCopyOnFloat(),
-        new ReferenceBinarizeDataCopyOnFloat(),
+        new ReferenceBinarizeWeights(),
+        new ReferenceBinarizeData(),
         new ReferenceConvolution(),
         new ReferenceCalculateK(),
     };

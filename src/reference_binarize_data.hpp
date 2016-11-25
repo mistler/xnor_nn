@@ -3,8 +3,8 @@
 namespace xnor_nn {
 namespace implementation {
 
-class ReferenceBinarizeDataCopyOnFloat : public Implementation {
-    ~ReferenceBinarizeDataCopyOnFloat();
+class ReferenceBinarizeData : public Implementation {
+    ~ReferenceBinarizeData();
     bool isApplicable(const xnor_nn_convolution_t *c) const;
     void setupConvolution(xnor_nn_convolution_t *c);
 private:

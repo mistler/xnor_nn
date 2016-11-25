@@ -3,7 +3,7 @@
 #include "gtest.h"
 #include "common.hpp"
 
-TEST(ConvolutionForwardOptimized, optimized_precalculated) {
+TEST(ConvolutionForwardDirect, direct_precalculated) {
     const int MB = 1;
     const int IC = 2, OC = 2;
     const int IH = 3, IW = 3;
@@ -57,7 +57,7 @@ TEST(ConvolutionForwardOptimized, optimized_precalculated) {
     float actual_dst[MB*OC*OH*OW] = { 0.f };
 
     // Convolution setup
-    xnor_nn::Convolution convolution{xnor_nn_algorithm_optimized,
+    xnor_nn::Convolution convolution{xnor_nn_algorithm_direct,
             MB, OC, IC, IH, IW, KH, KW, SH, SW, PH, PW, weights};
 
     // Execution

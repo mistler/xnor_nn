@@ -5,25 +5,27 @@
 namespace xnor_nn {
 namespace implementation {
 
-bool ReferenceBinarizeDataCopyOnFloat::isApplicable(
+bool ReferenceBinarizeData::isApplicable(
         const xnor_nn_convolution_t *c) const {
     if (c->binarize_data != nullptr) return false;
     if (c->algorithm != xnor_nn_algorithm_reference) return false;
     return true;
 }
 
-void ReferenceBinarizeDataCopyOnFloat::setupConvolution(
+void ReferenceBinarizeData::setupConvolution(
         xnor_nn_convolution_t *c) {
-    c->binarize_data = exec;
+    ReferenceBinarizeData *op = new ReferenceBinarizeData;
+
+    c->binarize_data = op->exec;
 
     std::vector<Implementation*> *vec =
         (std::vector<Implementation*>*)c->state;
-    vec->push_back(new ReferenceBinarizeDataCopyOnFloat);
+    vec->push_back(op);
 }
 
-ReferenceBinarizeDataCopyOnFloat::~ReferenceBinarizeDataCopyOnFloat() {}
+ReferenceBinarizeData::~ReferenceBinarizeData() {}
 
-xnor_nn_status_t ReferenceBinarizeDataCopyOnFloat::exec(
+xnor_nn_status_t ReferenceBinarizeData::exec(
         const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
     const float *from = (float*)res[xnor_nn_resource_user_src];
     float *to = (float *)res[xnor_nn_resource_bin_src];
@@ -100,5 +102,5 @@ xnor_nn_status_t reference_calculate_k(
     return xnor_nn_success;
 }
 
-}
-}
+} // namespace implementation
+} // namespace xnor_nn

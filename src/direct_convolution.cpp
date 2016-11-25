@@ -1,22 +1,43 @@
 #include "direct_convolution.hpp"
 
+#include "utils.h"
+
 namespace xnor_nn {
 namespace implementation {
 
 bool DirectConvolution::isApplicable(
         const xnor_nn_convolution_t *c) const {
     if (c->forward != nullptr) return false;
-    if (c->algorithm != xnor_nn_algorithm_optimized) return false;
+    if (c->algorithm != xnor_nn_algorithm_direct) return false;
     return true;
 }
 
 void DirectConvolution::setupConvolution(
         xnor_nn_convolution_t *c) {
-    c->forward = exec;
+    DirectConvolution *op = new DirectConvolution;
+
+    const size_t ELEM_SIZE = sizeof(char);
+    const size_t BITS = ELEM_SIZE * 8;
+    const size_t VEC_LENGTH = VLEN;
+    const size_t BIC = (c->ic + BITS - 1) / BITS;
+
+    c->sizeof_element = ELEM_SIZE;
+    c->vector_length = VEC_LENGTH;
+    c->bic = BIC;
+    c->aic = ((BIC + VEC_LENGTH - 1) / VEC_LENGTH) * VEC_LENGTH;
+
+    c->resource_size[xnor_nn_resource_bin_src] =
+        c->mb * c->aic * c->ih * c->iw * ELEM_SIZE;
+    c->resource_size[xnor_nn_resource_bin_weights] =
+        c->oc * c->aic * c->kh * c->kw * ELEM_SIZE;
+    c->resource_size[xnor_nn_resource_a] = c->ih * c->iw * sizeof(float);
+    c->resource_size[xnor_nn_resource_k] = c->oh * c->ow * sizeof(float);
+
+    c->forward = op->exec;
 
     std::vector<Implementation*> *vec =
         (std::vector<Implementation*>*)c->state;
-    vec->push_back(new DirectConvolution);
+    vec->push_back(op);
 }
 
 DirectConvolution::~DirectConvolution() {}
@@ -274,7 +295,7 @@ xnor_nn_status_t DirectConvolution::exec(
     return xnor_nn_success;
 }
 
-}
-}
+} // namespace implementation
+} // namespace xnor_nn
 
 #endif

@@ -3,8 +3,8 @@
 namespace xnor_nn {
 namespace implementation {
 
-class DirectBinarizeWeightsChar : public Implementation {
-    ~DirectBinarizeWeightsChar();
+class DirectBinarizeWeights : public Implementation {
+    ~DirectBinarizeWeights();
     bool isApplicable(const xnor_nn_convolution_t *c) const;
     void setupConvolution(xnor_nn_convolution_t *c);
 private:

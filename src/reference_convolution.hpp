@@ -12,5 +12,5 @@ private:
             xnor_nn_resources_t res);
 };
 
-}
-}
+} // namespace implementation
+} // namespace xnor_nn

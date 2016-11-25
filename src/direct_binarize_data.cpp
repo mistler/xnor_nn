@@ -1,18 +1,20 @@
 #include "direct_binarize_data.hpp"
 
+#include "utils.h"
+
 namespace xnor_nn {
 namespace implementation {
 
-bool DirectBinarizeDataChar::isApplicable(
+bool DirectBinarizeData::isApplicable(
         const xnor_nn_convolution_t *c) const {
     if (c->binarize_data != nullptr) return false;
-    if (c->algorithm != xnor_nn_algorithm_optimized) return false;
+    if (c->algorithm != xnor_nn_algorithm_direct) return false;
     return true;
 }
 
-void DirectBinarizeDataChar::setupConvolution(
+void DirectBinarizeData::setupConvolution(
         xnor_nn_convolution_t *c) {
-    DirectBinarizeDataChar *op = new DirectBinarizeDataChar;
+    DirectBinarizeData *op = new DirectBinarizeData;
     c->binarize_data = op->exec;
 
     std::vector<Implementation*> *vec =
@@ -20,9 +22,9 @@ void DirectBinarizeDataChar::setupConvolution(
     vec->push_back(op);
 }
 
-DirectBinarizeDataChar::~DirectBinarizeDataChar() {}
+DirectBinarizeData::~DirectBinarizeData() {}
 
-xnor_nn_status_t DirectBinarizeDataChar::exec(
+xnor_nn_status_t DirectBinarizeData::exec(
         const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
     const unsigned int *from = (unsigned int*)res[xnor_nn_resource_user_src];
     unsigned char *to = (unsigned char*)res[xnor_nn_resource_bin_src];
@@ -63,5 +65,5 @@ xnor_nn_status_t DirectBinarizeDataChar::exec(
     return xnor_nn_success;
 }
 
-}
-}
+} // namespace implementation
+} // namespace xnor_nn
