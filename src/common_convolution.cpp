@@ -38,9 +38,6 @@ xnor_nn_status_t xnor_nn_init_convolution(xnor_nn_convolution_t *c,
     c->aic = ic;
     c->bic = ic;
 
-    c->piw = iw + 2*pw;
-    c->pih = ih + 2*ph;
-
     c->binarize_data = nullptr;
     c->binarize_weights = nullptr;
     c->calculate_k = nullptr;
@@ -59,7 +56,8 @@ xnor_nn_status_t xnor_nn_init_convolution(xnor_nn_convolution_t *c,
     Logger::info("convolution:", "create:",
             "MB:", mb, "IC:", ic, "IH:", ih, "IW:", iw,
             "OC:", oc, "OH:", oh, "OW:", ow,
-            "KH:", kh, "KW:", kw, "SH:", sh, "SW:", sw, "PH:", ph, "PW:", pw);
+            "KH:", kh, "KW:", kw, "SH:", sh, "SW:", sw, "PH:", ph, "PW:", pw,
+            "Algorithm:", algorithm);
 
     return xnor_nn_success;
 }

@@ -7,8 +7,8 @@
 #include "timer.hpp"
 
 typedef struct {
-    int MB, OC, IC, IH, IW, KH, KW, SH, SW, PH, PW;
     xnor_nn_algorithm_t algorithm;
+    int MB, OC, IC, IH, IW, KH, KW, SH, SW, PH, PW;
 
     void print(std::ostream &stream) const {
         stream
@@ -57,16 +57,16 @@ static inline void measure_time(F &f, std::string msg, int N = 64) {
 }
 
 int main(){
-    const xnor_nn_algorithm_t alg = xnor_nn_algorithm_direct;
+    const xnor_nn_algorithm_t dir = xnor_nn_algorithm_direct;
     const std::vector<convolution_params> params =
     {
         // AlexNet
-        //{ MB, 64, 3, 224, 224, 11, 11, 4, 4, 2, 2, alg }, // conv1
-        { 1, 192, 64, 27, 27, 5, 5, 1, 1, 2, 2, alg }, // conv2
-        { 1, 384, 192, 13, 13, 3, 3, 1, 1, 1, 1, alg }, // conv3
-        { 1, 256, 384, 13, 13, 3, 3, 1, 1, 1, 1, alg }, // conv4
-        { 1, 256, 256, 13, 13, 3, 3, 1, 1, 1, 1, alg }, // conv5
-        { 256, 256, 384, 13, 13, 3, 3, 1, 1, 1, 1, alg }, // conv4
+        //{ alg, MB, 64, 3, 224, 224, 11, 11, 4, 4, 2, 2 }, // conv1
+        { dir, 1, 192, 64, 27, 27, 5, 5, 1, 1, 2, 2, }, // conv2
+        { dir, 1, 384, 192, 13, 13, 3, 3, 1, 1, 1, 1, }, // conv3
+        { dir, 1, 256, 384, 13, 13, 3, 3, 1, 1, 1, 1, }, // conv4
+        { dir, 1, 256, 256, 13, 13, 3, 3, 1, 1, 1, 1, }, // conv5
+        { dir, 256, 256, 384, 13, 13, 3, 3, 1, 1, 1, 1, }, // conv4
     };
 
     const int enough = 256*1024*384; // 384mb on float

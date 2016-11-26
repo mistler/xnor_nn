@@ -7,8 +7,8 @@
 #include "timer.hpp"
 
 typedef struct {
-    int MB, OC, IC, IH, IW, KH, KW, SH, SW, PH, PW;
     xnor_nn_algorithm_t algorithm;
+    int MB, OC, IC, IH, IW, KH, KW, SH, SW, PH, PW;
 
     void print(std::ostream &stream) const {
         stream
@@ -35,7 +35,7 @@ int main(){
 
     // AlexNet conv4
     const int MB = 1;
-    const convolution_params p{ MB, 256, 384, 13, 13, 3, 3, 1, 1, 1, 1, alg };
+    const convolution_params p{ alg, MB, 256, 384, 13, 13, 3, 3, 1, 1, 1, 1 };
     p.print(std::cout);
 
     const int enough = 256*1024*384; // 384mb on float

@@ -8,8 +8,7 @@ namespace implementation {
 bool DirectBinarizeWeights::isApplicable(
         const xnor_nn_convolution_t *c) const {
     if (c->binarize_weights != nullptr) return false;
-    if (c->algorithm == xnor_nn_algorithm_direct
-            || c->algorithm == xnor_nn_algorithm_padded) return true;
+    if (c->algorithm == xnor_nn_algorithm_direct) return true;
     return false;
 }
 

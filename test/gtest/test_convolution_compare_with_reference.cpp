@@ -33,7 +33,7 @@ static void fill_weights(float *d, const params_t &p) {
             0.18f + 0.017f*(11 - (kw+kh+ic+oc%23));
 }
 
-class ConvolutionForwardOptimized : public ::testing::TestWithParam<params_t> {
+class ConvolutionForward : public ::testing::TestWithParam<params_t> {
 protected:
     virtual void SetUp() {
         params_t p = ::testing::TestWithParam<params_t>::GetParam();
@@ -72,12 +72,12 @@ protected:
     }
 };
 
-TEST_P(ConvolutionForwardOptimized, compare_with_reference)
+TEST_P(ConvolutionForward, compare_with_reference)
 {
 }
 
-INSTANTIATE_TEST_CASE_P(TestConvolutionForward,
-        ConvolutionForwardOptimized, ::testing::Values(
+INSTANTIATE_TEST_CASE_P(TestConvolutionForwardDirect,
+        ConvolutionForward, ::testing::Values(
 params_t{ xnor_nn_algorithm_direct, 2, 3, 64, 224, 224, 11, 11, 4, 4, 2, 2 },
 params_t{ xnor_nn_algorithm_direct, 2, 64, 192, 27, 27, 5, 5, 1, 1, 2, 2 },
 params_t{ xnor_nn_algorithm_direct, 2, 192, 384, 13, 13, 3, 3, 1, 1, 1, 1 },

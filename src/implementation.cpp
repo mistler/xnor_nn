@@ -29,5 +29,5 @@ std::vector<Implementation*> Implementations() {
     return impls;
 };
 
-}
-}
+} // namespace implementation
+} // namespace xnor_nn
