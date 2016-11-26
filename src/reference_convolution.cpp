@@ -42,6 +42,7 @@ xnor_nn_status_t ReferenceConvolution::exec(
         || res[xnor_nn_resource_bin_weights] == nullptr
         || res[xnor_nn_resource_user_dst] == nullptr
         || res[xnor_nn_resource_k] == nullptr
+        || c == nullptr
     ) return xnor_nn_error_invalid_input;
     const float *src = (float *)res[xnor_nn_resource_bin_src];
     const float *weights = (float*)res[xnor_nn_resource_bin_weights];

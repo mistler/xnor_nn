@@ -31,7 +31,7 @@ typedef struct {
 
 int main(){
     const int N = 1024;
-    const xnor_nn_algorithm_t alg = xnor_nn_algorithm_direct;
+    const xnor_nn_algorithm_t alg = xnor_nn_algorithm_template;
 
     // AlexNet conv4
     const int MB = 1;

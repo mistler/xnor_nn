@@ -58,15 +58,21 @@ static inline void measure_time(F &f, std::string msg, int N = 64) {
 
 int main(){
     const xnor_nn_algorithm_t dir = xnor_nn_algorithm_direct;
+    const xnor_nn_algorithm_t temp = xnor_nn_algorithm_template;
     const std::vector<convolution_params> params =
     {
         // AlexNet
         //{ alg, MB, 64, 3, 224, 224, 11, 11, 4, 4, 2, 2 }, // conv1
         { dir, 1, 192, 64, 27, 27, 5, 5, 1, 1, 2, 2, }, // conv2
+        { temp, 1, 192, 64, 27, 27, 5, 5, 1, 1, 2, 2, }, // conv2
         { dir, 1, 384, 192, 13, 13, 3, 3, 1, 1, 1, 1, }, // conv3
+        { temp, 1, 384, 192, 13, 13, 3, 3, 1, 1, 1, 1, }, // conv3
         { dir, 1, 256, 384, 13, 13, 3, 3, 1, 1, 1, 1, }, // conv4
+        { temp, 1, 256, 384, 13, 13, 3, 3, 1, 1, 1, 1, }, // conv4
         { dir, 1, 256, 256, 13, 13, 3, 3, 1, 1, 1, 1, }, // conv5
+        { temp, 1, 256, 256, 13, 13, 3, 3, 1, 1, 1, 1, }, // conv5
         { dir, 256, 256, 384, 13, 13, 3, 3, 1, 1, 1, 1, }, // conv4
+        { temp, 256, 256, 384, 13, 13, 3, 3, 1, 1, 1, 1, }, // conv4
     };
 
     const int enough = 256*1024*384; // 384mb on float

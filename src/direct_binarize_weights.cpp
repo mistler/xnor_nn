@@ -8,7 +8,8 @@ namespace implementation {
 bool DirectBinarizeWeights::isApplicable(
         const xnor_nn_convolution_t *c) const {
     if (c->binarize_weights != nullptr) return false;
-    if (c->algorithm == xnor_nn_algorithm_direct) return true;
+    if (c->algorithm == xnor_nn_algorithm_direct
+            || c->algorithm == xnor_nn_algorithm_template) return true;
     return false;
 }
 
@@ -30,6 +31,7 @@ xnor_nn_status_t DirectBinarizeWeights::exec(
     if (
         res[xnor_nn_resource_user_weights] == nullptr
         || res[xnor_nn_resource_bin_weights] == nullptr
+        || c == nullptr
     ) return xnor_nn_error_invalid_input;
     const float *from = (float*)res[xnor_nn_resource_user_weights];
     unsigned char *to = (unsigned char*)res[xnor_nn_resource_bin_weights];

@@ -29,6 +29,7 @@ xnor_nn_status_t ReferenceCalculateK::exec(
         res[xnor_nn_resource_user_src] == nullptr
         || res[xnor_nn_resource_a] == nullptr
         || res[xnor_nn_resource_k] == nullptr
+        || c == nullptr
     ) return xnor_nn_error_invalid_input;
     const float *from = (float*)res[xnor_nn_resource_user_src];
     float *a = (float*)res[xnor_nn_resource_a];

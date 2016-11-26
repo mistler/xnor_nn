@@ -31,6 +31,7 @@ xnor_nn_status_t ReferenceBinarizeWeights::exec(
     if (
         res[xnor_nn_resource_user_weights] == nullptr
         || res[xnor_nn_resource_bin_weights] == nullptr
+        || c == nullptr
     ) return xnor_nn_error_invalid_input;
     const float *from = (float*)res[xnor_nn_resource_user_weights];
     float *to = (float*)res[xnor_nn_resource_bin_weights];

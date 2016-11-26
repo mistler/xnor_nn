@@ -3,6 +3,7 @@
 #include "utils/logger.hpp"
 #include "utils/timer.hpp"
 
+#include "template_convolution.hpp"
 #include "direct_binarize_data.hpp"
 #include "direct_binarize_weights.hpp"
 #include "direct_convolution.hpp"
@@ -18,6 +19,7 @@ namespace implementation {
 
 std::vector<Implementation*> Implementations() {
     static std::vector<Implementation*> impls = {
+        new TemplateConvolution(),
         new DirectBinarizeWeights(),
         new DirectBinarizeData(),
         new DirectConvolution(),

@@ -4,6 +4,7 @@ namespace xnor_nn {
 namespace implementation {
 
 class ReferenceCalculateK : public Implementation {
+public:
     ~ReferenceCalculateK();
     bool isApplicable(const xnor_nn_convolution_t *c) const;
     void setupConvolution(xnor_nn_convolution_t *c);

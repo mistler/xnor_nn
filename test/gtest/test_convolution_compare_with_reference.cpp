@@ -84,3 +84,10 @@ params_t{ xnor_nn_algorithm_direct, 2, 192, 384, 13, 13, 3, 3, 1, 1, 1, 1 },
 params_t{ xnor_nn_algorithm_direct, 2, 384, 256, 13, 13, 3, 3, 1, 1, 1, 1 },
 params_t{ xnor_nn_algorithm_direct, 2, 256, 256, 13, 13, 3, 3, 1, 1, 1, 1 }
 ));
+INSTANTIATE_TEST_CASE_P(TestConvolutionForwardTemplate,
+        ConvolutionForward, ::testing::Values(
+params_t{ xnor_nn_algorithm_template, 2, 64, 192, 27, 27, 5, 5, 1, 1, 2, 2 },
+params_t{ xnor_nn_algorithm_template, 2, 192, 384, 13, 13, 3, 3, 1, 1, 1, 1 },
+params_t{ xnor_nn_algorithm_template, 2, 384, 256, 13, 13, 3, 3, 1, 1, 1, 1 },
+params_t{ xnor_nn_algorithm_template, 2, 256, 256, 13, 13, 3, 3, 1, 1, 1, 1 }
+));

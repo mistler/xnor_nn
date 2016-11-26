@@ -8,8 +8,9 @@ namespace implementation {
 bool DirectBinarizeData::isApplicable(
         const xnor_nn_convolution_t *c) const {
     if (c->binarize_data != nullptr) return false;
-    if (c->algorithm != xnor_nn_algorithm_direct) return false;
-    return true;
+    if (c->algorithm == xnor_nn_algorithm_direct
+            || c->algorithm == xnor_nn_algorithm_template) return true;
+    return false;
 }
 
 void DirectBinarizeData::setupConvolution(
@@ -29,6 +30,7 @@ xnor_nn_status_t DirectBinarizeData::exec(
     if (
         res[xnor_nn_resource_user_src] == nullptr
         || res[xnor_nn_resource_bin_src] == nullptr
+        || c == nullptr
     ) return xnor_nn_error_invalid_input;
     const unsigned int *from = (unsigned int*)res[xnor_nn_resource_user_src];
     unsigned char *to = (unsigned char*)res[xnor_nn_resource_bin_src];
