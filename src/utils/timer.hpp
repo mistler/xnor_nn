@@ -3,6 +3,8 @@
 
 #include <chrono>
 
+#include "utils.h"
+
 namespace xnor_nn{
 namespace utils{
 
@@ -30,6 +32,14 @@ public:
         return std::chrono::duration_cast<
             std::chrono::nanoseconds>(e-s).count();
     }
+
+#ifdef ARCH_X86
+    static inline unsigned long long rdtsc() {
+        unsigned int lo, hi;
+        asm volatile("rdtsc\n" : "=a"(lo), "=d"(hi));
+        return ((unsigned long long)hi << 32) | lo;
+    }
+#endif
 
 private:
     std::chrono::high_resolution_clock::time_point s, e;

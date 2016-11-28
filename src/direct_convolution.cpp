@@ -45,7 +45,7 @@ DirectConvolution::~DirectConvolution() {}
 }
 }
 
-#ifdef __x86_64__
+#ifdef ARCH_X86
 #include <immintrin.h>
 
 namespace xnor_nn {
@@ -140,7 +140,7 @@ xnor_nn_status_t DirectConvolution::exec(const xnor_nn_convolution_t *c,
 }
 }
 
-#elif defined __arm__
+#elif defined ARCH_ARM
 
 #include <arm_neon.h>
 

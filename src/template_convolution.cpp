@@ -1,6 +1,8 @@
 #include "template_convolution.hpp"
 
 #include "utils.h"
+#include "timer.hpp"
+#include "logger.hpp"
 
 #define CHECK(IC, IH, IW, KH, KW, SH, SW, PH, PW) \
     if (IC == c->ic && IH == c->ih && IW == c->iw && KH == c->kh \
@@ -24,7 +26,8 @@
 #define U3 USE(384, 13, 13, 3, 3, 1, 1, 1, 1)
 #define U4 USE(256, 13, 13, 3, 3, 1, 1, 1, 1)
 
-#ifdef __x86_64__
+#ifdef ARCH_X86
+
 #include <immintrin.h>
 
 namespace {
@@ -59,6 +62,10 @@ xnor_nn_status_t exec(const xnor_nn_convolution_t *c,
 
     const int ones[8] = {-1,-1,-1,-1,-1,-1,-1,-1};
 
+    /*
+    unsigned long long int t = xnor_nn::utils::Timer::rdtsc();
+    */
+
     // TODO: potentially loops can be reordered
 #   pragma omp parallel for collapse(4) schedule(static)
     for (int mb = 0; mb < MB; mb++)
@@ -70,6 +77,15 @@ xnor_nn_status_t exec(const xnor_nn_convolution_t *c,
         *d = 0.f;
         unsigned long long int dst_i = 0;
         __m256 v_ones = _mm256_loadu_ps((float*)ones);
+        /*
+        asm volatile (
+            "vmovups (%0), %%ymm2\n\t"
+            :
+            : "r" ((float*)ones)
+            : "ymm2"
+        );
+        */
+
         for (int kh = 0; kh < KH; kh++)
         for (int kw = 0; kw < KW; kw++) {
             if (oh*SH + kh < (PH > 0 ? PH : 0)) continue;
@@ -100,17 +116,49 @@ xnor_nn_status_t exec(const xnor_nn_convolution_t *c,
                 dst_i += __builtin_popcountll(_mm256_extract_epi64(v_xnor, 1));
                 dst_i += __builtin_popcountll(_mm256_extract_epi64(v_xnor, 2));
                 dst_i += __builtin_popcountll(_mm256_extract_epi64(v_xnor, 3));
+                /*
+                float *src_ptr = (float*)src_ic + aic*VLEN/ELEM_SIZE;
+                float *weights_ptr = (float*)weights_ic + aic*VLEN/ELEM_SIZE;
+                asm volatile (
+                    "vmovaps (%1), %%ymm0\n\t"
+                    "vxorps (%2), %%ymm0, %%ymm0\n\t"
+                    "vxorps %%ymm2, %%ymm0, %%ymm0\n\t"
+                    "vextractf128 $0x1,%%ymm0,%%xmm1\n\t"
+                    "vpextrq $0x1,%%xmm1,%%rcx\n\t"
+                    "vpextrq $0x1,%%xmm0,%%rax\n\t"
+                    "vmovq %%xmm1,%%rdx\n\t"
+                    "vmovq %%xmm0, %%rsi\n\t"
+                    "popcnt %%rsi,%%rsi\n\t"
+                    "popcnt %%rax,%%rax\n\t"
+                    "popcnt %%rcx,%%rcx\n\t"
+                    "popcnt %%rdx,%%rdx\n\t"
+                    "add %%rax, %0\n\t"
+                    "add %%rcx, %0\n\t"
+                    "add %%rdx, %0\n\t"
+                    "add %%rsi, %0\n\t"
+                    : "+r" (dst_i)
+                    : "r" (src_ptr), "r" (weights_ptr)
+                    : "rax", "rdx", "rcx", "rsi",
+                    "ymm0", "ymm1", "ymm2"
+                );
+                */
             }
         }
         *d = (float)dst_i * *alpha * k[oh*OW + ow];
     }
+
+    /*
+    t = xnor_nn::utils::Timer::rdtsc() - t;
+
+    xnor_nn::utils::Logger::info("Time: ", t);
+    */
 
     return xnor_nn_success;
 }
 
 } // namespace
 
-#elif defined __arm__
+#elif defined ARCH_ARM
 
 #include <arm_neon.h>
 
