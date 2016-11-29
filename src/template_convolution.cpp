@@ -200,6 +200,7 @@ xnor_nn_status_t exec(
         int dst_idx = ((mb*OC + oc)*OH + oh)*OW + ow;
         float *d = dst + dst_idx;
         *d = 0.f;
+        uint32x4_t v_accum = veorq_u32(v_accum, v_accum);
         long long int dst_i = 0;
         for (int kh = 0; kh < KH; kh++)
         for (int kw = 0; kw < KW; kw++) {
@@ -228,11 +229,12 @@ xnor_nn_status_t exec(
                 uint8x16_t v_cnt16 = vcntq_u8(vreinterpretq_u8_u32(v_xnor));
                 uint16x8_t v_cnt8 = vpaddlq_u8(v_cnt16);
                 uint32x4_t v_cnt4 = vpaddlq_u16(v_cnt8);
-                uint64x2_t v_cnt2 = vpaddlq_u32(v_cnt4);
-                dst_i += vgetq_lane_u64(v_cnt2, 0);
-                dst_i += vgetq_lane_u64(v_cnt2, 1);
+                v_accum = vaddq_u32(v_cnt4, v_accum);
             }
         }
+        uint64x2_t v_cnt2 = vpaddlq_u32(v_accum);
+        dst_i += vgetq_lane_u64(v_cnt2, 0);
+        dst_i += vgetq_lane_u64(v_cnt2, 1);
         *d = (float)dst_i * *alpha * k[oh*OW + ow];
     }
 
