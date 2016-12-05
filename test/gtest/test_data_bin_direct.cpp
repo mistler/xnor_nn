@@ -78,7 +78,7 @@ TEST(DataBinarizationDirect, direct_precalculated) {
     xnor_nn::test::check_4d(MB, IH, IW, convolution.aic,
             (unsigned char*)res[xnor_nn_resource_bin_src], expected_src_bin);
     */
-    xnor_nn::test::check_data(MB, IC, IH, IW, convolution.aic,
+    xnor_nn::test::check_data(MB, IC, IH, IW, convolution.abic,
             (unsigned char*)res[xnor_nn_resource_bin_src], src);
 
     // Check A

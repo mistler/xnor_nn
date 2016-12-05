@@ -16,6 +16,7 @@
             && PW == c->pw) \
         c->forward = exec<IC, IH, IW, KH, KW, SH, SW, PH, PW>
 
+// TODO: make it one macro
 #define C1 CHECK(64, 27, 27, 5, 5, 1, 1, 2, 2)
 #define C2 CHECK(192, 13, 13, 3, 3, 1, 1, 1, 1)
 #define C3 CHECK(384, 13, 13, 3, 3, 1, 1, 1, 1)
@@ -52,13 +53,13 @@ xnor_nn_status_t exec(const xnor_nn_convolution_t *c,
 
     constexpr int OH = (IH + 2*PH - KH) / SH + 1;
     constexpr int OW = (IW + 2*PW - KW) / SW + 1;
-    constexpr int BIC = (IC + 8 - 1) / 8;
-    constexpr int AIC = ((BIC + VLEN - 1) / VLEN) * VLEN;
+    constexpr int BIC = ((IC + 8 - 1) / 8) * 8;
+    constexpr int ABIC = ((BIC + VLEN - 1) / VLEN) * VLEN;
     const int MB = c->mb;
     const int OC = c->oc;
 
-    const int ELEM_SIZE = 4;
-    const int VECTORS_IN_AIC = AIC / VLEN;
+    const int ELEM_SIZE = 32;
+    const int VECTORS_IN_ABIC = ABIC / VLEN;
 
     const int ones[8] = {-1,-1,-1,-1,-1,-1,-1,-1};
 
@@ -88,25 +89,22 @@ xnor_nn_status_t exec(const xnor_nn_convolution_t *c,
 
         for (int kh = 0; kh < KH; kh++)
         for (int kw = 0; kw < KW; kw++) {
-            if (oh*SH + kh < (PH > 0 ? PH : 0)) continue;
-            if (ow*SW + kw < (PW > 0 ? PW : 0)) continue;
+            const int ih = oh*SH - PH + kh;
+            const int iw = ow*SW - PW + kw;
 
-            if (oh*SH + kh >= IH + PH) continue;
-            if (ow*SW + kw >= IW + PW) continue;
-
-            const int ih = oh * SH - PH + kh;
-            const int iw = ow * SW - PW + kw;
+            if (ih < 0 || iw < 0) continue;
+            if (ih >= IH || iw >= IW) continue;
 
             const unsigned int *src_ic =
-                src + ((mb*IH + ih)*IW + iw)*AIC/ELEM_SIZE;
+                src + ((mb*IH + ih)*IW + iw)*ABIC/ELEM_SIZE;
             const unsigned int *weights_ic =
-                weights + ((kh*KW + kw)*OC + oc)*AIC/ELEM_SIZE;
+                weights + ((kh*KW + kw)*OC + oc)*ABIC/ELEM_SIZE;
 
-            for (int aic = 0; aic < VECTORS_IN_AIC; aic++) {
+            for (int vabic = 0; vabic < VECTORS_IN_ABIC; vabic++) {
                 __m256 v_src = _mm256_load_ps(
-                        (float*)src_ic + aic*VLEN/ELEM_SIZE);
+                        (float*)src_ic + vabic*VLEN/ELEM_SIZE);
                 __m256 v_weights = _mm256_load_ps(
-                        (float*)weights_ic + aic*VLEN/ELEM_SIZE);
+                        (float*)weights_ic + vabic*VLEN/ELEM_SIZE);
 
                 __m256 v_xor = _mm256_xor_ps(v_src, v_weights);
                 __m256i v_xnor =
@@ -117,8 +115,8 @@ xnor_nn_status_t exec(const xnor_nn_convolution_t *c,
                 dst_i += __builtin_popcountll(_mm256_extract_epi64(v_xnor, 2));
                 dst_i += __builtin_popcountll(_mm256_extract_epi64(v_xnor, 3));
                 /*
-                float *src_ptr = (float*)src_ic + aic*VLEN/ELEM_SIZE;
-                float *weights_ptr = (float*)weights_ic + aic*VLEN/ELEM_SIZE;
+                float *src_ptr = (float*)src_ic + abic*VLEN/ELEM_SIZE;
+                float *weights_ptr = (float*)weights_ic + abic*VLEN/ELEM_SIZE;
                 asm volatile (
                     "vmovaps (%1), %%ymm0\n\t"
                     "vxorps (%2), %%ymm0, %%ymm0\n\t"
@@ -183,13 +181,13 @@ xnor_nn_status_t exec(
 
     constexpr int OH = (IH + 2*PH - KH) / SH + 1;
     constexpr int OW = (IW + 2*PW - KW) / SW + 1;
-    constexpr int BIC = (IC + 8 - 1) / 8;
-    constexpr int AIC = ((BIC + VLEN - 1) / VLEN) * VLEN;
+    constexpr int BIC = ((IC + 8 - 1) / 8) * 8;
+    constexpr int ABIC = ((BIC + VLEN - 1) / VLEN) * VLEN;
     const int MB = c->mb;
     const int OC = c->oc;
 
-    const int ELEM_SIZE = 4;
-    const int VECTORS_IN_AIC = AIC / VLEN;
+    const int ELEM_SIZE = 32;
+    const int VECTORS_IN_ABIC = ABIC / VLEN;
 
     // TODO: potentially loops can be reordered
 #   pragma omp parallel for collapse(4) schedule(static)
@@ -204,24 +202,21 @@ xnor_nn_status_t exec(
         long long int dst_i = 0;
         for (int kh = 0; kh < KH; kh++)
         for (int kw = 0; kw < KW; kw++) {
-            if (oh*SH + kh < (PH > 0 ? PH : 0)) continue;
-            if (ow*SW + kw < (PW > 0 ? PW : 0)) continue;
+            const int ih = oh*SH - PH + kh;
+            const int iw = ow*SW - PW + kw;
 
-            if (oh*SH + kh >= IH + PH) continue;
-            if (ow*SW + kw >= IW + PW) continue;
-
-            const int ih = oh * SH - PH + kh;
-            const int iw = ow * SW - PW + kw;
+            if (ih < 0 || iw < 0) continue;
+            if (ih >= IH || iw >= IW) continue;
 
             const unsigned int *src_ic =
-                src + ((mb*IH + ih)*IW + iw)*AIC/ELEM_SIZE;
+                src + ((mb*IH + ih)*IW + iw)*ABIC/ELEM_SIZE;
             const unsigned int *weights_ic =
-                weights + ((kh*KW + kw)*OC + oc)*AIC/ELEM_SIZE;
+                weights + ((kh*KW + kw)*OC + oc)*ABIC/ELEM_SIZE;
 
-            for (int aic = 0; aic < VECTORS_IN_AIC; aic++) {
-                uint32x4_t v_src = vld1q_u32(src_ic + aic*VLEN/ELEM_SIZE);
+            for (int vabic = 0; vabic < VECTORS_IN_ABIC; vabic++) {
+                uint32x4_t v_src = vld1q_u32(src_ic + vabic*VLEN/ELEM_SIZE);
                 uint32x4_t v_weights =
-                    vld1q_u32(weights_ic + aic*VLEN/ELEM_SIZE);
+                    vld1q_u32(weights_ic + vabic*VLEN/ELEM_SIZE);
 
                 uint32x4_t v_xor = veorq_u32(v_src, v_weights);
                 uint32x4_t v_xnor = vmvnq_u32(v_xor);
@@ -266,13 +261,13 @@ xnor_nn_status_t exec(
 
     constexpr int OH = (IH + 2*PH - KH) / SH + 1;
     constexpr int OW = (IW + 2*PW - KW) / SW + 1;
-    constexpr int BIC = (IC + 8 - 1) / 8;
-    constexpr int AIC = ((BIC + VLEN - 1) / VLEN) * VLEN;
+    constexpr int BIC = ((IC + 8 - 1) / 8) * 8;
+    constexpr int ABIC = ((BIC + VLEN - 1) / VLEN) * VLEN;
     const int MB = c->mb;
     const int OC = c->oc;
 
-    const int ELEM_SIZE = 4;
-    const int VECTORS_IN_AIC = AIC / VLEN;
+    const int ELEM_SIZE = 32;
+    const int VECTORS_IN_ABIC = ABIC / VLEN;
 
     // TODO: potentially loops can be reordered
 #   pragma omp parallel for collapse(4) schedule(static)
@@ -285,24 +280,21 @@ xnor_nn_status_t exec(
         *d = 0.f;
         for (int kh = 0; kh < KH; kh++)
         for (int kw = 0; kw < KW; kw++) {
-            if (oh*SH + kh < (PH > 0 ? PH : 0)) continue;
-            if (ow*SW + kw < (PW > 0 ? PW : 0)) continue;
+            const int ih = oh*SH - PH + kh;
+            const int iw = ow*SW - PW + kw;
 
-            if (oh*SH + kh >= IH + PH) continue;
-            if (ow*SW + kw >= IW + PW) continue;
-
-            const int ih = oh * SH - PH + kh;
-            const int iw = ow * SW - PW + kw;
+            if (ih < 0 || iw < 0) continue;
+            if (ih >= IH || iw >= IW) continue;
 
             const unsigned int *src_ic =
-                src + ((mb*IH + ih)*IW + iw)*AIC/ELEM_SIZE;
+                src + ((mb*IH + ih)*IW + iw)*ABIC/ELEM_SIZE;
             const unsigned int *weights_ic =
-                weights + ((kh*KW + kw)*OC + oc)*AIC/ELEM_SIZE;
+                weights + ((kh*KW + kw)*OC + oc)*ABIC/ELEM_SIZE;
 
-            for (int aic = 0; aic < VECTORS_IN_AIC; aic++)
+            for (int vabic = 0; vabic < VECTORS_IN_ABIC; vabic++)
             for (int v = 0; v < VLEN / ELEM_SIZE; v++) {
-                int src_idx = aic*VLEN/ELEM_SIZE + v;
-                int weights_idx = aic*VLEN/ELEM_SIZE + v;
+                int src_idx = vabic*VLEN/ELEM_SIZE + v;
+                int weights_idx = abic*VLEN/ELEM_SIZE + v;
 
                 unsigned int bsrc = src_ic[src_idx];
                 unsigned int bweights = weights_ic[weights_idx];
@@ -341,20 +333,20 @@ void TemplateConvolution::setupConvolution(
         xnor_nn_convolution_t *c) {
     TemplateConvolution *op = new TemplateConvolution;
 
-    const size_t ELEM_SIZE = sizeof(char);
-    const size_t BITS = ELEM_SIZE * 8;
-    const size_t VEC_LENGTH = VLEN;
-    const size_t BIC = (c->ic + BITS - 1) / BITS;
+    const int ELEM_SIZE = sizeof(char);
+    const int BITS = ELEM_SIZE * 8;
+    const int VEC_LENGTH = VLEN;
+    const int BIC = ((c->ic + BITS - 1) / BITS) * BITS;
 
     c->sizeof_element = ELEM_SIZE;
     c->vector_length = VEC_LENGTH;
     c->bic = BIC;
-    c->aic = ((BIC + VEC_LENGTH - 1) / VEC_LENGTH) * VEC_LENGTH;
+    c->abic = ((BIC + VEC_LENGTH - 1) / VEC_LENGTH) * VEC_LENGTH;
 
     c->resource_size[xnor_nn_resource_bin_src] =
-        c->mb * c->aic * c->ih * c->iw * ELEM_SIZE;
+        c->mb * c->abic * c->ih * c->iw * ELEM_SIZE;
     c->resource_size[xnor_nn_resource_bin_weights] =
-        c->oc * c->aic * c->kh * c->kw * ELEM_SIZE;
+        c->oc * c->abic * c->kh * c->kw * ELEM_SIZE;
     c->resource_size[xnor_nn_resource_a] = c->ih * c->iw * sizeof(float);
     c->resource_size[xnor_nn_resource_k] = c->oh * c->ow * sizeof(float);
 

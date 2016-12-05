@@ -45,8 +45,8 @@ xnor_nn_status_t DirectBinarizeWeights::exec(
 
     const int elems = OC*IC*KH*KW;
     const int SZ = c->sizeof_element * 8;
-    const int BIC = c->bic;
-    const int AIC = c->aic;
+    const int BIC = c->bic / 8;
+    const int ABIC = c->abic / 8;
 
 #   pragma omp parallel for collapse(3) schedule(static)
     for (int kh = 0; kh < KH; kh++)
@@ -73,11 +73,11 @@ xnor_nn_status_t DirectBinarizeWeights::exec(
                     out |= (unsigned char)1;
                 }
             }
-            int to_idx = ((kh*KW + kw)*OC + oc)*AIC + bic;
+            int to_idx = ((kh*KW + kw)*OC + oc)*ABIC + bic;
             to[to_idx] = out;
         }
-        for (int r = 0; r < AIC - BIC; r++) {
-            int to_idx = ((kh*KW + kw)*OC + oc)*AIC + BIC + r;
+        for (int r = 0; r < ABIC - BIC; r++) {
+            int to_idx = ((kh*KW + kw)*OC + oc)*ABIC + BIC + r;
             to[to_idx] = 0xFFu;
         }
     }

@@ -75,14 +75,11 @@ xnor_nn_status_t ReferenceConvolution::exec(
         for (int ic = 0; ic < IC; ic++) {
             for (int kh = 0; kh < KH; kh++)
             for (int kw = 0; kw < KW; kw++) {
-                if (oh*SH + kh < (PH > 0 ? PH : 0)) continue;
-                if (ow*SW + kw < (PW > 0 ? PW : 0)) continue;
+                const int ih = oh*SH - PH + kh;
+                const int iw = ow*SW - PW + kw;
 
-                if (oh*SH + kh >= IH + PH) continue;
-                if (ow*SW + kw >= IW + PW) continue;
-
-                const int ih = oh * SH - PH + kh;
-                const int iw = ow * SW - PW + kw;
+                if (ih < 0 || iw < 0) continue;
+                if (ih >= IH || iw >= IW) continue;
 
                 int src_idx = ((mb*IC + ic)*IH + ih)*IW + iw;
                 int weights_idx = ((oc*IC + ic)*KH + kh)*KW + kw;

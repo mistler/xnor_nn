@@ -15,9 +15,12 @@ typedef enum {
 } xnor_nn_status_t;
 
 typedef enum {
-    xnor_nn_algorithm_reference,
-    xnor_nn_algorithm_direct,
-    xnor_nn_algorithm_template,
+    xnor_nn_algorithm_reference = 0,
+    xnor_nn_algorithm_direct = 1,
+    xnor_nn_algorithm_template = 2,
+    xnor_nn_algorithm_bcast = 3,
+
+    xnor_nn_algorithm_fastest = 3,
 } xnor_nn_algorithm_t;
 
 typedef enum {
@@ -51,7 +54,7 @@ struct xnor_nn_convolution_ {
     int kh, kw;
     int ph, pw;
 
-    int bic, aic;
+    int bic, abic;
 
     int vector_length;
     int sizeof_element;

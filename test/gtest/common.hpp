@@ -45,6 +45,7 @@ template<typename T> void check_data(
         int MB, int C, int H, int W, int AC,
         const T *a, const float *e) {
     const int SZ = sizeof(T) * 8;
+    AC = AC / 8;
 
     int wrong = 0;
     for (int mb = 0; mb < MB; mb++)
@@ -65,6 +66,7 @@ template<typename T> void check_weights(
         int OC, int IC, int KH, int KW, int AC,
         const T *a, const float *e) {
     const int SZ = sizeof(T) * 8;
+    AC = AC / 8;
 
     int wrong = 0;
     for (int kh = 0; kh < KH; kh++)

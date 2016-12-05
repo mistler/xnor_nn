@@ -35,8 +35,8 @@ xnor_nn_status_t xnor_nn_init_convolution(xnor_nn_convolution_t *c,
     c->pw = pw;
     c->ph = ph;
 
-    c->aic = ic;
     c->bic = ic;
+    c->abic = ic;
 
     c->binarize_data = nullptr;
     c->binarize_weights = nullptr;

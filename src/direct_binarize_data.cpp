@@ -41,8 +41,8 @@ xnor_nn_status_t DirectBinarizeData::exec(
     const int IW = c->iw;
 
     const int SZ = 8;
-    const int BIC = c->bic;
-    const int AIC = c->aic;
+    const int BIC = c->bic / SZ;
+    const int ABIC = c->abic / SZ;
 
 #   pragma omp parallel for collapse(3) schedule(static)
     for (int mb = 0; mb < MB; mb++)
@@ -59,11 +59,11 @@ xnor_nn_status_t DirectBinarizeData::exec(
                 out |= tmp;
             }
             if (LEN != SZ) out <<= SZ-LEN;
-            int to_idx = ((mb*IH + ih)*IW + iw)*AIC + bic;
+            int to_idx = ((mb*IH + ih)*IW + iw)*ABIC + bic;
             to[to_idx] = out;
         }
-        for (int r = 0; r < AIC - BIC; r++) {
-            int to_idx = ((mb*IH + ih)*IW + iw)*AIC + BIC + r;
+        for (int r = 0; r < ABIC - BIC; r++) {
+            int to_idx = ((mb*IH + ih)*IW + iw)*ABIC + BIC + r;
             to[to_idx] = 0x00u;
         }
     }

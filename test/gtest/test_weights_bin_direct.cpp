@@ -81,7 +81,7 @@ TEST(WeightsBinarizationDirect, direct_precalculated) {
             (unsigned char*)res[xnor_nn_resource_bin_weights],
             expected_weights_bin);
     */
-    xnor_nn::test::check_weights(OC, IC, KH, KW, convolution.aic,
+    xnor_nn::test::check_weights(OC, IC, KH, KW, convolution.abic,
             (unsigned char*)res[xnor_nn_resource_bin_weights], weights);
 
     xnor_nn::test::check_value(*actual_alpha, alpha);

@@ -72,14 +72,11 @@ xnor_nn_status_t ReferenceCalculateK::exec(
         *k_curr = 0.f;
         for (int kh = 0; kh < KH; kh++)
         for (int kw = 0; kw < KW; kw++) {
-            if (oh*SH + kh < (PH > 0 ? PH : 0)) continue;
-            if (ow*SW + kw < (PW > 0 ? PW : 0)) continue;
+            const int ih = oh*SH - PH + kh;
+            const int iw = ow*SW - PW + kw;
 
-            if (oh*SH + kh >= IH + PH) continue;
-            if (ow*SW + kw >= IW + PW) continue;
-
-            const int ih = oh * SH - PH + kh;
-            const int iw = ow * SW - PW + kw;
+            if (ih < 0 || iw < 0) continue;
+            if (ih >= IH || iw >= IW) continue;
 
             *k_curr += a[ih*IW + iw] * KHW;
         }
