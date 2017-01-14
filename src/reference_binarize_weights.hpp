@@ -1,3 +1,6 @@
+#ifndef REFERENCE_BINARIZE_WEIGHTS_HPP
+#define REFERENCE_BINARIZE_WEIGHTS_HPP
+
 #include "implementation.hpp"
 
 namespace xnor_nn {
@@ -13,5 +16,7 @@ private:
             xnor_nn_resources_t res);
 };
 
-}
-}
+} // namespace implementation
+} // namespace xnor_nn
+
+#endif // REFERENCE_BINARIZE_WEIGHTS_HPP

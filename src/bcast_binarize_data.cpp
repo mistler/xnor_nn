@@ -1,4 +1,4 @@
-#include "direct_binarize_data.hpp"
+#include "bcast_binarize_data.hpp"
 
 #include "utils.h"
 #include "logger.hpp"
@@ -8,17 +8,17 @@ using Logger = xnor_nn::utils::Logger;
 namespace xnor_nn {
 namespace implementation {
 
-bool DirectBinarizeData::isApplicable(
+bool BcastBinarizeData::isApplicable(
         const xnor_nn_convolution_t *c) const {
     if (c->binarize_data != nullptr) return false;
-    if (c->algorithm == xnor_nn_algorithm_direct
-            || c->algorithm == xnor_nn_algorithm_template) return true;
+    if (c->oc % (VLEN / 32) != 0) return false; // TODO constant in base class
+    if (c->algorithm == xnor_nn_algorithm_bcast) return true;
     return false;
 }
 
-void DirectBinarizeData::setupConvolution(
+void BcastBinarizeData::setupConvolution(
         xnor_nn_convolution_t *c) {
-    DirectBinarizeData *op = new DirectBinarizeData;
+    BcastBinarizeData *op = new BcastBinarizeData;
     c->binarize_data = op->exec;
 
     std::vector<Implementation*> *vec =
@@ -26,9 +26,9 @@ void DirectBinarizeData::setupConvolution(
     vec->push_back(op);
 }
 
-DirectBinarizeData::~DirectBinarizeData() {}
+BcastBinarizeData::~BcastBinarizeData() {}
 
-xnor_nn_status_t DirectBinarizeData::exec(
+xnor_nn_status_t BcastBinarizeData::exec(
         const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
     if (
         res[xnor_nn_resource_user_src] == nullptr
@@ -44,8 +44,9 @@ xnor_nn_status_t DirectBinarizeData::exec(
     const int IW = c->iw;
 
     const int SZ = 8;
-    const int BIC = c->bic / SZ;
-    const int ABIC = c->abic / SZ;
+    const int BIC = (c->ic + SZ - 1) / SZ;
+    const int BICI = 4;
+    const int ABIC = ((BIC + BICI - 1) / BICI) * BICI;
 
     Logger::info("binarize_data:", "execute:",
             "[", MB, "]",
@@ -57,7 +58,7 @@ xnor_nn_status_t DirectBinarizeData::exec(
             "[", IH, "]",
             "[", IW, "]",
             "[", ABIC, "(bytes)", "]",
-            "Algorithm:", xnor_nn_algorithm_direct);
+            "Algorithm:", xnor_nn_algorithm_bcast);
 
 #   pragma omp parallel for collapse(3) schedule(static)
     for (int mb = 0; mb < MB; mb++)

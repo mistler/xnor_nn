@@ -4,6 +4,7 @@
 #include "xnor_nn.h"
 
 #include "gtest.h"
+#include "utils.h"
 
 namespace xnor_nn {
 namespace test {
@@ -62,6 +63,7 @@ template<typename T> void check_data(
     }
 }
 
+// TODO: check space, filled with ONES
 template<typename T> void check_weights(
         int OC, int IC, int KH, int KW, int AC,
         const T *a, const float *e) {
@@ -77,6 +79,43 @@ template<typename T> void check_weights(
             ((T)1) << (SZ - 1 - (ic % SZ));
         bool expected = !(bool)
             (((unsigned int*)e)[((oc*IC + ic)*KH + kh)*KW + kw] >> 31);
+        EXPECT_EQ(expected, actual) << "oc: " << oc << ", ic: "
+            << ic << ", kh: " << kh << ", kw: " << kw << ". wrong/total: "
+            << ++wrong << "/" << OC*IC*KH*KW;
+    }
+}
+
+// TODO: check space, filled with ONES
+void check_weights_bcast(int OC, int IC, int KH, int KW,
+        const unsigned char *a, const float *e) {
+    constexpr int SZ = 8;
+    constexpr int VLEN_BYTES = (VLEN / SZ);
+
+    constexpr int BICI = 4;
+
+    constexpr int ELEM_SIZE = sizeof(char);
+    constexpr int BITS = ELEM_SIZE * SZ;
+    constexpr int OCI = VLEN_BYTES / BICI;
+
+    const int BIC = (IC + BITS - 1) / BITS;
+    const int ICO = (BIC + BICI - 1) / BICI;
+
+    int wrong = 0;
+    for (int oc = 0; oc < OC; oc++)
+    for (int ic = 0; ic < IC; ic++)
+    for (int kh = 0; kh < KH; kh++)
+    for (int kw = 0; kw < KW; kw++) {
+        const int ici = (ic / SZ) % BICI;
+        const int ico = (ic / SZ) / BICI;
+        const int oci = oc % OCI;
+        const int oco = oc / OCI;
+
+        const int e_idx = ((oc*IC + ic)*KH + kh)*KW + kw;
+        const int a_idx =
+            ((((oco*KH + kh)*KW + kw)*ICO + ico)*OCI + oci)*BICI + ici;
+
+        bool actual = a[a_idx] & ((unsigned char)1) << (SZ - 1 - (ic % SZ));
+        bool expected = !(bool)(((unsigned int*)e)[e_idx] >> 31);
         EXPECT_EQ(expected, actual) << "oc: " << oc << ", ic: "
             << ic << ", kh: " << kh << ", kw: " << kw << ". wrong/total: "
             << ++wrong << "/" << OC*IC*KH*KW;

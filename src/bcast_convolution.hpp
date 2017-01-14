@@ -1,14 +1,14 @@
-#ifndef DIRECT_BINARIZE_DATA_HPP
-#define DIRECT_BINARIZE_DATA_HPP
+#ifndef BCAST_CONVOLUTION_HPP
+#define BCAST_CONVOLUTION_HPP
 
 #include "implementation.hpp"
 
 namespace xnor_nn {
 namespace implementation {
 
-class DirectBinarizeData : public Implementation {
+class BcastConvolution : public Implementation {
 public:
-    ~DirectBinarizeData();
+    ~BcastConvolution();
     bool isApplicable(const xnor_nn_convolution_t *c) const;
     void setupConvolution(xnor_nn_convolution_t *c);
 private:
@@ -19,4 +19,4 @@ private:
 } // namespace implementation
 } // namespace xnor_nn
 
-#endif // DIRECT_BINARIZR_DATA_HPP
+#endif // BCAST_CONVOLUTION_HPP

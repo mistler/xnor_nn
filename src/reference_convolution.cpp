@@ -1,5 +1,7 @@
 #include "reference_convolution.hpp"
 
+// TODO: log execution
+
 namespace xnor_nn {
 namespace implementation {
 
@@ -14,10 +16,6 @@ void ReferenceConvolution::setupConvolution(xnor_nn_convolution_t *c) {
     ReferenceConvolution *op = new ReferenceConvolution;
 
     const size_t ELEM_SIZE = sizeof(float);
-    const size_t VEC_LENGTH = 1;
-
-    c->sizeof_element = ELEM_SIZE;
-    c->vector_length = VEC_LENGTH;
 
     c->resource_size[xnor_nn_resource_bin_src] =
         c->mb * c->ic * c->ih * c->iw * ELEM_SIZE;

@@ -3,53 +3,43 @@
 #include "gtest.h"
 #include "common.hpp"
 
-TEST(WeightsBinarizeReference, reference_precalculated) {
+TEST(WeightsBinarizeBcast, bcast_precalculated) {
     const int MB = 1;
-    const int IC = 2, OC = 2;
-    const int IH = 3, IW = 3;
-    const int KH = 3, KW = 3;
+    const int IC = 2, OC = 8;
+    const int IH = 2, IW = 2;
+    const int KH = 2, KW = 2;
     const int SH = 1, SW = 1;
-    const int PH = 1, PW = 1;
+    const int PH = 0, PW = 0;
 
     const float P = 1.f;
     const float N = -1.f;
 
     // Usr weights (just random)
     const float weights[] = {
-        P, P, P,
-        N, N, P,
-        P, N, N,
+        P, P, P, P,
+        N, N, N, N,
 
-        P, P, P,
-        P, P, P,
-        P, P, P,
+        P, P, P, P,
+        P, P, P, P,
 
-        N, N, N,
-        N, N, N,
-        N, N, N,
+        N, N, N, N,
+        N, N, N, N,
 
-        P, P, P,
-        N, N, P,
-        P, N, N
-    };
+        N, N, N, N,
+        P, P, P, P,
 
-    // Precalculated weights
-    const float expected_weights_bin[] = {
-        P, P, P,
-        N, N, P,
-        P, N, N,
 
-        P, P, P,
-        P, P, P,
-        P, P, P,
+        P, P, P, P,
+        N, N, N, N,
 
-        N, N, N,
-        N, N, N,
-        N, N, N,
+        P, P, P, P,
+        P, P, P, P,
 
-        P, P, P,
-        N, N, P,
-        P, N, N,
+        N, N, N, N,
+        N, N, N, N,
+
+        N, N, N, N,
+        P, P, P, P,
     };
 
     // Precalculated alpha
@@ -64,7 +54,7 @@ TEST(WeightsBinarizeReference, reference_precalculated) {
 
     xnor_nn_convolution_t convolution;
 
-    st = xnor_nn_init_convolution(&convolution, xnor_nn_algorithm_reference,
+    st = xnor_nn_init_convolution(&convolution, xnor_nn_algorithm_bcast,
             MB, OC, IC, IH, IW, KH, KW, SH, SW, PH, PW);
     if (st != xnor_nn_success) goto label;
 
@@ -77,9 +67,9 @@ TEST(WeightsBinarizeReference, reference_precalculated) {
     st = convolution.binarize_weights(&convolution, res);
     if (st != xnor_nn_success) goto label;
 
-    // Check result
-    xnor_nn::test::check_4d(OC, IC, KH, KW,
-            (float*)res[xnor_nn_resource_bin_weights], expected_weights_bin);
+    // Chech result
+    xnor_nn::test::check_weights_bcast(OC, IC, KH, KW,
+            (unsigned char*)res[xnor_nn_resource_bin_weights], weights);
 
     xnor_nn::test::check_value(*actual_alpha, alpha);
 

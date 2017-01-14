@@ -2,6 +2,8 @@
 
 #include "utils.h"
 
+// TODO: log execution
+
 namespace xnor_nn {
 namespace implementation {
 
@@ -18,13 +20,10 @@ void DirectConvolution::setupConvolution(
 
     const int ELEM_SIZE = sizeof(char);
     const int BITS = ELEM_SIZE * 8;
-    const int VEC_LENGTH = VLEN;
     const int BIC = ((c->ic + BITS - 1) / BITS) * BITS;
 
-    c->sizeof_element = ELEM_SIZE;
-    c->vector_length = VEC_LENGTH;
     c->bic = BIC;
-    c->abic = ((BIC + VEC_LENGTH - 1) / VEC_LENGTH) * VEC_LENGTH;
+    c->abic = ((BIC + VLEN - 1) / VLEN) * VLEN;
 
     c->resource_size[xnor_nn_resource_bin_src] =
         c->mb * c->abic * c->ih * c->iw * ELEM_SIZE;
@@ -81,10 +80,9 @@ xnor_nn_status_t DirectConvolution::exec(const xnor_nn_convolution_t *c,
     const int PW = c->pw;
 
     const int ABIC = c->abic;
-    const int VEC_LENGTH = c->vector_length;
     const int ELEM_SIZE = 32;
 
-    const int VECTORS_IN_ABIC = ABIC / VEC_LENGTH;
+    const int VECTORS_IN_ABIC = ABIC / VLEN;
 
     const int ones[8] = {-1,-1,-1,-1,-1,-1,-1,-1};
 
@@ -114,9 +112,9 @@ xnor_nn_status_t DirectConvolution::exec(const xnor_nn_convolution_t *c,
 
             for (int vabic = 0; vabic < VECTORS_IN_ABIC; vabic++) {
                 __m256 v_src = _mm256_load_ps(
-                        (float*)src_ic + vabic*VEC_LENGTH/ELEM_SIZE);
+                        (float*)src_ic + vabic*VLEN/ELEM_SIZE);
                 __m256 v_weights = _mm256_load_ps(
-                        (float*)weights_ic + vabic*VEC_LENGTH/ELEM_SIZE);
+                        (float*)weights_ic + vabic*VLEN/ELEM_SIZE);
 
                 __m256 v_xor = _mm256_xor_ps(v_src, v_weights);
                 __m256i v_xnor =
@@ -174,10 +172,9 @@ xnor_nn_status_t DirectConvolution::exec(
     const int PW = c->pw;
 
     const int ABIC = c->abic;
-    const int VEC_LENGTH = c->vector_length;
     const int ELEM_SIZE = 32;
 
-    const int VECTORS_IN_ABIC = ABIC / VEC_LENGTH;
+    const int VECTORS_IN_ABIC = ABIC / VLEN;
 
     // TODO: potentially loops can be reordered
 #   pragma omp parallel for collapse(4) schedule(static)
@@ -205,9 +202,9 @@ xnor_nn_status_t DirectConvolution::exec(
 
             for (int vabic = 0; vabic < VECTORS_IN_ABIC; vabic++) {
                 uint32x4_t v_src =
-                    vld1q_u32(src_ic + vabic*VEC_LENGTH/ELEM_SIZE);
+                    vld1q_u32(src_ic + vabic*VLEN/ELEM_SIZE);
                 uint32x4_t v_weights =
-                    vld1q_u32(weights_ic + vabic*VEC_LENGTH/ELEM_SIZE);
+                    vld1q_u32(weights_ic + vabic*VLEN/ELEM_SIZE);
 
                 uint32x4_t v_xor = veorq_u32(v_src, v_weights);
                 uint32x4_t v_xnor = vmvnq_u32(v_xor);
@@ -265,10 +262,9 @@ xnor_nn_status_t DirectConvolution::exec(
     const int PW = c->pw;
 
     const int ABIC = c->abic;
-    const int VEC_LENGTH = c->vector_length;
     const int ELEM_SIZE = 32;
 
-    const int VECTORS_IN_ABIC = ABIC / VEC_LENGTH;
+    const int VECTORS_IN_ABIC = ABIC / VLEN;
 
     // TODO: potentially loops can be reordered
 #   pragma omp parallel for collapse(4) schedule(static)
@@ -293,9 +289,9 @@ xnor_nn_status_t DirectConvolution::exec(
                 weights + ((kh*KW + kw)*OC + oc)*ABIC/ELEM_SIZE;
 
             for (int vabic = 0; vabic < VECTORS_IN_ABIC; vabic++)
-            for (int v = 0; v < VEC_LENGTH / ELEM_SIZE; v++) {
-                int src_idx = vabic*VEC_LENGTH/ELEM_SIZE + v;
-                int weights_idx = vabic*VEC_LENGTH/ELEM_SIZE + v;
+            for (int v = 0; v < VLEN / ELEM_SIZE; v++) {
+                int src_idx = vabic*VLEN/ELEM_SIZE + v;
+                int weights_idx = vabic*VLEN/ELEM_SIZE + v;
 
                 unsigned int bsrc = src_ic[src_idx];
                 unsigned int bweights = weights_ic[weights_idx];

@@ -1,3 +1,6 @@
+#ifndef REFERENCE_CONVOLUTION_HPP
+#define REFERENCE_CONVOLUTION_HPP
+
 #include "implementation.hpp"
 
 namespace xnor_nn {
@@ -15,3 +18,5 @@ private:
 
 } // namespace implementation
 } // namespace xnor_nn
+
+#endif // REFERENCE_CONVOLUTION_HPP

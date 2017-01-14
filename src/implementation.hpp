@@ -18,7 +18,7 @@ public:
 
 std::vector<Implementation*> Implementations();
 
-}
-}
+} // namespace implementation
+} // namespace xnor_nn
 
 #endif

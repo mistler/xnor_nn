@@ -2,6 +2,10 @@
 
 #include <cmath>
 
+#include "logger.hpp"
+
+using Logger = xnor_nn::utils::Logger;
+
 namespace xnor_nn {
 namespace implementation {
 
@@ -43,6 +47,18 @@ xnor_nn_status_t ReferenceBinarizeWeights::exec(
     const int KW = c->kw;
 
     const int elems = OC*IC*KH*KW;
+
+    Logger::info("binarize_weights:", "execute:",
+            "[", OC, "]",
+            "[", IC, "]",
+            "[", KH, "]",
+            "[", KW, "]",
+            " -> ",
+            "[", OC, "]",
+            "[", IC, "]",
+            "[", KH, "]",
+            "[", KW, "]",
+            "Algorithm:", xnor_nn_algorithm_reference);
 
 #   pragma omp parallel for schedule(static)
     for(int i = 0; i < elems; i++) to[i] = from[i];

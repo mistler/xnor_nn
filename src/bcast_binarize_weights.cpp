@@ -1,7 +1,8 @@
-#include "direct_binarize_weights.hpp"
+#include "bcast_binarize_weights.hpp"
 
 #include <cmath>
 
+#include "utils.h"
 #include "logger.hpp"
 
 using Logger = xnor_nn::utils::Logger;
@@ -9,17 +10,18 @@ using Logger = xnor_nn::utils::Logger;
 namespace xnor_nn {
 namespace implementation {
 
-bool DirectBinarizeWeights::isApplicable(
+bool BcastBinarizeWeights::isApplicable(
         const xnor_nn_convolution_t *c) const {
+    // TODO: make it one bool and log it
     if (c->binarize_weights != nullptr) return false;
-    if (c->algorithm == xnor_nn_algorithm_direct
-            || c->algorithm == xnor_nn_algorithm_template) return true;
+    if (c->oc % (VLEN / 32) != 0) return false; // TODO constant in base class
+    if (c->algorithm == xnor_nn_algorithm_bcast) return true;
     return false;
 }
 
-void DirectBinarizeWeights::setupConvolution(
+void BcastBinarizeWeights::setupConvolution(
         xnor_nn_convolution_t *c) {
-    DirectBinarizeWeights *op = new DirectBinarizeWeights;
+    BcastBinarizeWeights *op = new BcastBinarizeWeights;
 
     c->binarize_weights = op->exec;
 
@@ -28,15 +30,16 @@ void DirectBinarizeWeights::setupConvolution(
     vec->push_back(op);
 }
 
-DirectBinarizeWeights::~DirectBinarizeWeights() {}
+BcastBinarizeWeights::~BcastBinarizeWeights() {}
 
-xnor_nn_status_t DirectBinarizeWeights::exec(
+xnor_nn_status_t BcastBinarizeWeights::exec(
         const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
     if (
         res[xnor_nn_resource_user_weights] == nullptr
         || res[xnor_nn_resource_bin_weights] == nullptr
         || c == nullptr
     ) return xnor_nn_error_invalid_input;
+
     const float *from = (float*)res[xnor_nn_resource_user_weights];
     unsigned char *to = (unsigned char*)res[xnor_nn_resource_bin_weights];
     float *alpha = (float*)&res[xnor_nn_resource_alpha];
@@ -47,10 +50,21 @@ xnor_nn_status_t DirectBinarizeWeights::exec(
     const int KH = c->kh;
     const int KW = c->kw;
 
-    const int elems = OC*IC*KH*KW;
     const int SZ = 8;
-    const int BIC = c->bic / SZ;
-    const int ABIC = c->abic / SZ;
+    const int VLEN_BYTES = (VLEN / 8);
+
+    const int BICI = 4;
+
+    const int ELEM_SIZE = sizeof(char);
+    const int BITS = ELEM_SIZE * SZ;
+
+    const int BIC = (IC + BITS - 1) / BITS;
+    const int ICO = (BIC + BICI - 1) / BICI;
+
+    const int OCI = VLEN_BYTES / BICI;
+    const int OCO = (OC + OCI - 1) / OCI;
+
+    const int elems = OC*IC*KH*KW;
 
     Logger::info("binarize_weights:", "execute:",
             "[", OC, "]",
@@ -58,43 +72,44 @@ xnor_nn_status_t DirectBinarizeWeights::exec(
             "[", KH, "]",
             "[", KW, "]",
             " -> ",
+            "[", OCO, "]",
             "[", KH, "]",
             "[", KW, "]",
-            "[", OC, "]",
-            "[", ABIC, "]",
-            "Algorithm:", xnor_nn_algorithm_direct);
+            "[", ICO, "]",
+            "[", OCI, "]",
+            "[", BICI, "]",
+            "Algorithm:", xnor_nn_algorithm_bcast);
 
 #   pragma omp parallel for collapse(3) schedule(static)
+    for (int oco = 0; oco < OCO; oco++)
     for (int kh = 0; kh < KH; kh++)
     for (int kw = 0; kw < KW; kw++)
-    for (int oc = 0; oc < OC; oc++) {
-        for (int bic = 0; bic < BIC; bic++) {
+    for (int ico = 0; ico < ICO; ico++)
+    for (int oci = 0; oci < OCI; oci++) {
+        for (int bici = 0; bici < BICI; bici++) {
             unsigned char out{0};
-            int LEN = bic == BIC - 1 ? (IC % SZ) : SZ;
-            if (LEN == 0) LEN = SZ;
-            for (int ic = 0; ic < LEN; ic++) {
-                int from_idx = ((oc*IC + bic*SZ + ic)*KH + kh)*KW + kw;
+            const int current_ic = (ico*BICI + bici)*SZ;
+            int ic = 0;
+            for (; ic < SZ && current_ic + ic < IC; ic++) {
+                const int from_oc = oco*OCI + oci;
+                const int from_ic = current_ic + ic;
+                const int from_idx = ((from_oc*IC + from_ic)*KH + kh)*KW + kw;
                 char tmp = (~f[from_idx]) >> 31;
                 out <<= 1;
                 out |= tmp;
             }
-            if (LEN != SZ) {
+            if (ic != SZ) {
                 // Dirty hack! As this data is fake we want it to have
                 // zero influence to the dst after convolution, so lets fill it
-                // with ONES and after ~(src^weights) it will be ZERO
-                // because corresponding values in src are zeros
-                // before the convolution forward.
-                for (int i = 0; i < SZ-LEN; i++) {
+                // with ONES so ~(src^weights) = ~(0^1) = 0
+                for (int i = 0; i < SZ - ic; i++) {
                     out <<= 1;
                     out |= (unsigned char)1;
                 }
             }
-            int to_idx = ((kh*KW + kw)*OC + oc)*ABIC + bic;
+            const int to_idx =
+                ((((oco*KH + kh)*KW + kw)*ICO + ico)*OCI + oci)*BICI + bici;
             to[to_idx] = out;
-        }
-        for (int r = 0; r < ABIC - BIC; r++) {
-            int to_idx = ((kh*KW + kw)*OC + oc)*ABIC + BIC + r;
-            to[to_idx] = 0xFFu;
         }
     }
 

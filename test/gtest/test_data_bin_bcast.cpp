@@ -3,11 +3,10 @@
 #include "gtest.h"
 #include "common.hpp"
 
-TEST(DataBinarizeDirect, direct_precalculated) {
+TEST(DataBinarizeBcast, bcast_precalculated) {
     const int MB = 1;
-    const int IC = 2, OC = 2;
+    const int IC = 2, OC = 8;
     const int IH = 3, IW = 3;
-    const int OH = 3, OW = 3;
     const int KH = 3, KW = 3;
     const int SH = 1, SW = 1;
     const int PH = 1, PW = 1;
@@ -26,29 +25,6 @@ TEST(DataBinarizeDirect, direct_precalculated) {
         P, P, P
     };
 
-    /*
-    // Precalculated src
-    const unsigned char expected_src_bin[] = {
-        0x80u, 0x00u, 0x80u, 0x00u, 0x80u, 0x00u,
-        0x00u, 0x00u, 0x80u, 0x00u, 0x00u, 0x00u,
-        0x40u, 0x00u, 0x40u, 0x00u, 0x40u, 0x00u,
-    };
-    */
-
-    // Precalculated a
-    const float expected_a[] = {
-        P, P, P,
-        P, P, P,
-        P, P, P,
-    };
-
-    // Precalculated k
-    const float expected_k[] = {
-        4.f / 9.f, 6.f / 9.f, 4.f / 9.f,
-        6.f / 9.f, 9.f / 9.f, 6.f / 9.f,
-        4.f / 9.f, 6.f / 9.f, 4.f / 9.f,
-    };
-
     // Binarizer setup
     xnor_nn_resources_t res = {0};
 
@@ -57,7 +33,7 @@ TEST(DataBinarizeDirect, direct_precalculated) {
 
     xnor_nn_convolution_t convolution;
 
-    st = xnor_nn_init_convolution(&convolution, xnor_nn_algorithm_direct,
+    st = xnor_nn_init_convolution(&convolution, xnor_nn_algorithm_bcast,
             MB, OC, IC, IH, IW, KH, KW, SH, SW, PH, PW);
     if (st != xnor_nn_success) goto label;
 
@@ -74,20 +50,9 @@ TEST(DataBinarizeDirect, direct_precalculated) {
     if (st != xnor_nn_success) goto label;
 
     // Check result
-    /*
-    xnor_nn::test::check_4d(MB, IH, IW, convolution.aic,
-            (unsigned char*)res[xnor_nn_resource_bin_src], expected_src_bin);
-    */
-    xnor_nn::test::check_data(MB, IC, IH, IW, convolution.abic,
+    xnor_nn::test::check_data(MB, IC, IH, IW,
+            ((IC + 4 - 1) / 4 + 8 - 1) / 8 * 4 * 8,
             (unsigned char*)res[xnor_nn_resource_bin_src], src);
-
-    // Check A
-    xnor_nn::test::check_arrays(IH*IW, (float*)res[xnor_nn_resource_a],
-            expected_a);
-
-    // Check K
-    xnor_nn::test::check_arrays(OH*OW, (float*)res[xnor_nn_resource_k],
-            expected_k);
 
 label:
     xnor_nn_free_resources(res);

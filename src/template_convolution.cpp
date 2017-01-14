@@ -4,6 +4,8 @@
 #include "timer.hpp"
 #include "logger.hpp"
 
+// TODO: log execution
+
 #define CHECK(IC, IH, IW, KH, KW, SH, SW, PH, PW) \
     if (IC == c->ic && IH == c->ih && IW == c->iw && KH == c->kh \
             && KW == c->kw && SH == c->sh && SW == c->sw && PH == c->ph \
@@ -294,7 +296,7 @@ xnor_nn_status_t exec(
             for (int vabic = 0; vabic < VECTORS_IN_ABIC; vabic++)
             for (int v = 0; v < VLEN / ELEM_SIZE; v++) {
                 int src_idx = vabic*VLEN/ELEM_SIZE + v;
-                int weights_idx = abic*VLEN/ELEM_SIZE + v;
+                int weights_idx = vabic*VLEN/ELEM_SIZE + v;
 
                 unsigned int bsrc = src_ic[src_idx];
                 unsigned int bweights = weights_ic[weights_idx];
@@ -335,13 +337,10 @@ void TemplateConvolution::setupConvolution(
 
     const int ELEM_SIZE = sizeof(char);
     const int BITS = ELEM_SIZE * 8;
-    const int VEC_LENGTH = VLEN;
     const int BIC = ((c->ic + BITS - 1) / BITS) * BITS;
 
-    c->sizeof_element = ELEM_SIZE;
-    c->vector_length = VEC_LENGTH;
     c->bic = BIC;
-    c->abic = ((BIC + VEC_LENGTH - 1) / VEC_LENGTH) * VEC_LENGTH;
+    c->abic = ((BIC + VLEN - 1) / VLEN) * VLEN;
 
     c->resource_size[xnor_nn_resource_bin_src] =
         c->mb * c->abic * c->ih * c->iw * ELEM_SIZE;

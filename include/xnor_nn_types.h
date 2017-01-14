@@ -56,9 +56,6 @@ struct xnor_nn_convolution_ {
 
     int bic, abic;
 
-    int vector_length;
-    int sizeof_element;
-
     size_t resource_size[xnor_nn_resource_number];
 
     xnor_nn_executor_t binarize_weights;

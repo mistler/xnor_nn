@@ -2,6 +2,10 @@
 
 #include <cmath>
 
+#include "logger.hpp"
+
+using Logger = xnor_nn::utils::Logger;
+
 namespace xnor_nn {
 namespace implementation {
 
@@ -41,6 +45,18 @@ xnor_nn_status_t ReferenceBinarizeData::exec(
     const int IW = c->iw;
 
     const int elems = MB*IC*IH*IW;
+
+    Logger::info("binarize_data:", "execute:",
+            "[", MB, "]",
+            "[", IC, "]",
+            "[", IH, "]",
+            "[", IW, "]",
+            " -> ",
+            "[", MB, "]",
+            "[", IC, "]",
+            "[", IH, "]",
+            "[", IW, "]",
+            "Algorithm:", xnor_nn_algorithm_reference);
 
 #   pragma omp parallel for schedule(static)
     for(int i = 0; i < elems; i++) to[i] = from[i];

@@ -1,3 +1,6 @@
+#ifndef DIRECT_CONVOLUTION_HPP
+#define DIRECT_CONVOLUTION_HPP
+
 #include "implementation.hpp"
 
 namespace xnor_nn {
@@ -13,5 +16,7 @@ private:
             xnor_nn_resources_t res);
 };
 
-}
-}
+} // namespace implementation
+} // namespace xnor_nn
+
+#endif // DIRECT_CONVOLUTION_HPP

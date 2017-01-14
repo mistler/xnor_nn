@@ -5,7 +5,7 @@
 
 #include "implementation.hpp"
 
-#include "utils/logger.hpp"
+#include "logger.hpp"
 
 using Logger = xnor_nn::utils::Logger;
 
