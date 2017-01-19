@@ -88,7 +88,7 @@ int main(){
         { bcast, 256, 256, 384, 13, 13, 3, 3, 1, 1, 1, 1, }, // conv4
     };
 
-    const int enough = 256*1024*1024; // 1024mb on float
+    const int enough = 256*1024*384; // 384mb on float
 
     float *workspace = new float[enough];
     float *dst = new float[enough];
