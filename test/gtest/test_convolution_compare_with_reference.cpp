@@ -78,6 +78,13 @@ TEST_P(ConvolutionForward, compare_with_reference)
 }
 
 // mb ic oc ih iw kh kw sh sw ph pw
+INSTANTIATE_TEST_CASE_P(ConvolutionBcastTask,
+        ConvolutionForward, ::testing::Values(
+params_t{ xnor_nn_algorithm_bcast, 1, 1, 24, 60, 61, 3, 3, 1, 1, 0, 0 },
+params_t{ xnor_nn_algorithm_bcast, 256, 1, 24, 60, 61, 3, 3, 1, 1, 0, 0 },
+params_t{ xnor_nn_algorithm_bcast, 1, 24, 24, 20, 20, 3, 3, 1, 1, 0, 0 },
+params_t{ xnor_nn_algorithm_bcast, 256, 24, 24, 20, 20, 3, 3, 1, 1, 0, 0 }
+));
 INSTANTIATE_TEST_CASE_P(ConvolutionBcastSmall,
         ConvolutionForward, ::testing::Values(
 params_t{ xnor_nn_algorithm_bcast, 3, 24, 32, 27, 27, 5, 5, 1, 1, 2, 2 },

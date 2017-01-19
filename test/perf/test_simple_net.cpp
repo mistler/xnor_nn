@@ -6,6 +6,7 @@
 #include "xnor_nn.h"
 #include "timer.hpp"
 
+// TODO: swap ic and oc
 typedef struct {
     xnor_nn_algorithm_t algorithm;
     int MB, OC, IC, IH, IW, KH, KW, SH, SW, PH, PW;
@@ -62,6 +63,12 @@ int main(){
     const xnor_nn_algorithm_t bcast = xnor_nn_algorithm_bcast;
     const std::vector<convolution_params> params =
     {
+        // Task
+        { bcast, 1, 24, 1, 60, 61, 3, 3, 1, 1, 0, 0 },
+        { bcast, 256, 24, 1, 60, 61, 3, 3, 1, 1, 0, 0 },
+        { bcast, 1, 24, 24, 20, 20, 3, 3, 1, 1, 0, 0 },
+        { bcast, 256, 24, 24, 20, 20, 3, 3, 1, 1, 0, 0 },
+
         // AlexNet
         //{ alg, MB, 64, 3, 224, 224, 11, 11, 4, 4, 2, 2 }, // conv1
         { dir, 1, 192, 64, 27, 27, 5, 5, 1, 1, 2, 2, }, // conv2
@@ -81,7 +88,7 @@ int main(){
         { bcast, 256, 256, 384, 13, 13, 3, 3, 1, 1, 1, 1, }, // conv4
     };
 
-    const int enough = 256*1024*384; // 384mb on float
+    const int enough = 256*1024*1024; // 1024mb on float
 
     float *workspace = new float[enough];
     float *dst = new float[enough];
