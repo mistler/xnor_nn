@@ -12,22 +12,17 @@ namespace implementation {
 
 bool BcastBinarizeWeights::isApplicable(
         const xnor_nn_convolution_t *c) const {
-    // TODO: make it one bool and log it
-    if (c->binarize_weights != nullptr) return false;
-    if (c->oc % (VLEN / 32) != 0) return false; // TODO constant in base class
-    if (c->algorithm == xnor_nn_algorithm_bcast) return true;
-    return false;
+    bool ok = this->BcastBase::isApplicable(c)
+        && c->binarize_weights == nullptr;
+    return ok;
 }
 
 void BcastBinarizeWeights::setupConvolution(
         xnor_nn_convolution_t *c) {
     BcastBinarizeWeights *op = new BcastBinarizeWeights;
-
+    op->BcastBase::setupConvolution(c);
+    setState(c, op, xnor_nn_operation_binarize_weights);
     c->binarize_weights = op->exec;
-
-    std::vector<Implementation*> *vec =
-        (std::vector<Implementation*>*)c->state;
-    vec->push_back(op);
 }
 
 BcastBinarizeWeights::~BcastBinarizeWeights() {}
@@ -50,19 +45,15 @@ xnor_nn_status_t BcastBinarizeWeights::exec(
     const int KH = c->kh;
     const int KW = c->kw;
 
-    const int SZ = 8;
-    const int VLEN_BYTES = (VLEN / 8);
+    BcastBinarizeWeights *state = reinterpret_cast<BcastBinarizeWeights*>(
+            getState(c, xnor_nn_operation_binarize_weights));
 
-    const int BICI = 4;
+    constexpr int SZ = state->SZ;
+    constexpr int BICI = state->BICI;
+    constexpr int OCI = state->OCI;
 
-    const int ELEM_SIZE = sizeof(char);
-    const int BITS = ELEM_SIZE * SZ;
-
-    const int BIC = (IC + BITS - 1) / BITS;
-    const int ICO = (BIC + BICI - 1) / BICI;
-
-    const int OCI = VLEN_BYTES / BICI;
-    const int OCO = (OC + OCI - 1) / OCI;
+    const int ICO = state->ICO;
+    const int OCO = state->OCO;
 
     const int elems = OC*IC*KH*KW;
 

@@ -1,12 +1,12 @@
 #ifndef BCAST_BINARIZE_WEIGHTS_HPP
 #define BCAST_BINARIZE_WEIGHTS_HPP
 
-#include "implementation.hpp"
+#include "bcast_base.hpp"
 
 namespace xnor_nn {
 namespace implementation {
 
-class BcastBinarizeWeights : public Implementation {
+class BcastBinarizeWeights : public BcastBase {
 public:
     ~BcastBinarizeWeights();
     bool isApplicable(const xnor_nn_convolution_t *c) const;

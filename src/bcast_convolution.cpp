@@ -9,43 +9,25 @@ namespace implementation {
 
 bool BcastConvolution::isApplicable(
         const xnor_nn_convolution_t *c) const {
-    if (c->forward != nullptr) return false;
-    if (c->oc % (VLEN / 32) != 0) return false; // TODO constant in base class
-    if (c->algorithm != xnor_nn_algorithm_bcast) return false;
-    return true;
+    bool ok = this->BcastBase::isApplicable(c)
+        && c->forward == nullptr;
+    return ok;
 }
 
 void BcastConvolution::setupConvolution(
         xnor_nn_convolution_t *c) {
     BcastConvolution *op = new BcastConvolution;
+    op->BcastBase::setupConvolution(c);
+    setState(c, op, xnor_nn_operation_convolution_forward);
+    c->forward = op->exec;
 
-    const int VLEN_BYTES = (VLEN / 8);
-
-    const int ELEM_SIZE = sizeof(char);
-    const int BITS = ELEM_SIZE * 8;
-    const int BIC = ((c->ic + BITS - 1) / BITS) * BITS;
-
-    const int SZ = 8;
-    const int BICI = 4;
-    const int ABIC = ((BIC + BICI - 1) / BICI) * BICI;
-
-    const int ICO = ((c->ic + BICI - 1) / BICI + SZ - 1) / SZ;
-
-    const int OCI = VLEN_BYTES / BICI;
-    const int OCO = (c->oc + OCI - 1) / OCI;
-
+    // TODO: move it to base class
     c->resource_size[xnor_nn_resource_bin_src] =
         c->mb * ABIC * c->ih * c->iw * sizeof(char);
     c->resource_size[xnor_nn_resource_bin_weights] =
         OCO * c->kh * c->kw * ICO * OCI * sizeof(int);
     c->resource_size[xnor_nn_resource_a] = c->ih * c->iw * sizeof(float);
     c->resource_size[xnor_nn_resource_k] = c->oh * c->ow * sizeof(float);
-
-    c->forward = op->exec;
-
-    std::vector<Implementation*> *vec =
-        (std::vector<Implementation*>*)c->state;
-    vec->push_back(op);
 }
 
 BcastConvolution::~BcastConvolution() {}
@@ -76,7 +58,6 @@ xnor_nn_status_t BcastConvolution::exec(
     const float *k = (float*)res[xnor_nn_resource_k];
 
     const int MB = c->mb;
-    const int IC = c->ic;
     const int IH = c->ih;
     const int IW = c->iw;
     const int OC = c->oc;
@@ -91,19 +72,13 @@ xnor_nn_status_t BcastConvolution::exec(
 
     const int ones[8] = {-1,-1,-1,-1,-1,-1,-1,-1};
 
-    const int SZ = 8;
-    const int VLEN_BYTES = (VLEN / SZ);
+    BcastConvolution *state = reinterpret_cast<BcastConvolution*>(
+            getState(c, xnor_nn_operation_convolution_forward));
 
-    const int BICI = 4;
+    constexpr int OCI = state->OCI;
 
-    const int ELEM_SIZE = sizeof(char);
-    const int BITS = ELEM_SIZE * SZ;
-
-    const int BIC = (IC + BITS - 1) / BITS;
-    const int ICO = (BIC + BICI - 1) / BICI;
-
-    const int OCI = VLEN_BYTES / BICI;
-    const int OCO = (OC + OCI - 1) / OCI;
+    const int ICO = state->ICO;
+    const int OCO = state->OCO;
 
     // TODO: potentially loops can be reordered
     // TODO: check collapse value for performance
@@ -182,7 +157,6 @@ xnor_nn_status_t BcastConvolution::exec(
     const float *k = (float*)res[xnor_nn_resource_k];
 
     const int MB = c->mb;
-    const int IC = c->ic;
     const int IH = c->ih;
     const int IW = c->iw;
     const int OC = c->oc;
@@ -195,19 +169,13 @@ xnor_nn_status_t BcastConvolution::exec(
     const int PH = c->ph;
     const int PW = c->pw;
 
-    const int SZ = 8;
-    const int VLEN_BYTES = (VLEN / SZ);
+    BcastConvolution *state = reinterpret_cast<BcastBase>(
+            getState(c, xnor_nn_operation_convolution_forward));
 
-    const int BICI = 4;
+    constexpr int OCI = state->OCI;
 
-    const int ELEM_SIZE = sizeof(char);
-    const int BITS = ELEM_SIZE * SZ;
-
-    const int BIC = (IC + BITS - 1) / BITS;
-    const int ICO = (BIC + BICI - 1) / BICI;
-
-    const int OCI = VLEN_BYTES / BICI;
-    const int OCO = (OC + OCI - 1) / OCI;
+    const int ICO = state->ICO;
+    const int OCO = state->OCO;
 
     // TODO: potentially loops can be reordered
     // TODO: check collapse value for performance
@@ -280,7 +248,6 @@ xnor_nn_status_t BcastConvolution::exec(
     const float *k = (float*)res[xnor_nn_resource_k];
 
     const int MB = c->mb;
-    const int IC = c->ic;
     const int IH = c->ih;
     const int IW = c->iw;
     const int OC = c->oc;
@@ -293,19 +260,13 @@ xnor_nn_status_t BcastConvolution::exec(
     const int PH = c->ph;
     const int PW = c->pw;
 
-    const int SZ = 8;
-    const int VLEN_BYTES = (VLEN / SZ);
+    BcastConvolution *state = reinterpret_cast<BcastConvolution*>(
+            getState(c, xnor_nn_operation_convolution_forward));
 
-    const int BICI = 4;
+    constexpr int OCI = state->OCI;
 
-    const int ELEM_SIZE = sizeof(char);
-    const int BITS = ELEM_SIZE * SZ;
-
-    const int BIC = (IC + BITS - 1) / BITS;
-    const int ICO = (BIC + BICI - 1) / BICI;
-
-    const int OCI = VLEN_BYTES / BICI;
-    const int OCO = (OC + OCI - 1) / OCI;
+    const int ICO = state->ICO;
+    const int OCO = state->OCO;
 
     // TODO: potentially loops can be reordered
     // TODO: check collapse value for performance

@@ -37,7 +37,7 @@ static inline void clean_cache(char *more_than_cache, int more_than_cache_size) 
 
 template<typename F>
 static inline void measure_time(F &f, std::string msg, int N = 64) {
-    const int more_than_cache_size = 1024*1024*4; // 16mb
+    const int more_than_cache_size = 1024*1024*16; // 16mb
     static char more_than_cache[more_than_cache_size];
 
     xnor_nn::utils::Timer timer;

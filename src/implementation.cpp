@@ -41,5 +41,25 @@ std::vector<Implementation*> Implementations() {
     return impls;
 };
 
+void Implementation::setState(xnor_nn_convolution_t *c, Implementation *impl,
+        const xnor_nn_operation_t operation) {
+    std::vector<Implementation*> *vec =
+        (std::vector<Implementation*>*)c->state;
+    // TODO: use map
+    impl->op = operation;
+    vec->push_back(impl);
+}
+
+Implementation *Implementation::getState(const xnor_nn_convolution_t *c,
+        const xnor_nn_operation_t operation) {
+    std::vector<Implementation*> *vec =
+        (std::vector<Implementation*>*)c->state;
+    for (auto it = vec->begin(); it != vec->end(); ++it) {
+        if ((*it)->op == operation) return *it;
+    }
+
+    return nullptr;
+}
+
 } // namespace implementation
 } // namespace xnor_nn

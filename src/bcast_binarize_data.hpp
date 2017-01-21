@@ -1,12 +1,12 @@
 #ifndef BCAST_BINARIZE_DATA_HPP
 #define BCAST_BINARIZE_DATA_HPP
 
-#include "implementation.hpp"
+#include "bcast_base.hpp"
 
 namespace xnor_nn {
 namespace implementation {
 
-class BcastBinarizeData : public Implementation {
+class BcastBinarizeData : public BcastBase {
 public:
     ~BcastBinarizeData();
     bool isApplicable(const xnor_nn_convolution_t *c) const;

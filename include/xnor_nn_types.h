@@ -37,6 +37,13 @@ typedef enum {
     xnor_nn_resource_alpha = 7,
 } xnor_nn_resource_type_t;
 
+typedef enum {
+    xnor_nn_operation_convolution_forward = 0,
+    xnor_nn_operation_binarize_weights = 1,
+    xnor_nn_operation_binarize_data = 2,
+    xnor_nn_operation_calculate_k = 3,
+} xnor_nn_operation_t;
+
 typedef void *xnor_nn_resources_t[xnor_nn_resource_number];
 
 typedef struct xnor_nn_convolution_ xnor_nn_convolution_t;

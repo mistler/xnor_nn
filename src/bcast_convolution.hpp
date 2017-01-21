@@ -1,12 +1,12 @@
 #ifndef BCAST_CONVOLUTION_HPP
 #define BCAST_CONVOLUTION_HPP
 
-#include "implementation.hpp"
+#include "bcast_base.hpp"
 
 namespace xnor_nn {
 namespace implementation {
 
-class BcastConvolution : public Implementation {
+class BcastConvolution : public BcastBase {
 public:
     ~BcastConvolution();
     bool isApplicable(const xnor_nn_convolution_t *c) const;

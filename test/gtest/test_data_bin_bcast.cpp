@@ -3,7 +3,7 @@
 #include "gtest.h"
 #include "common.hpp"
 
-TEST(DataBinarizeBcast, bcast_precalculated) {
+TEST(DataBinarizeBcast, bcast_small) {
     const int MB = 1;
     const int IC = 2, OC = 8;
     const int IH = 3, IW = 3;

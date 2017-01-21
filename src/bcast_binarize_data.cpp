@@ -10,20 +10,17 @@ namespace implementation {
 
 bool BcastBinarizeData::isApplicable(
         const xnor_nn_convolution_t *c) const {
-    if (c->binarize_data != nullptr) return false;
-    if (c->oc % (VLEN / 32) != 0) return false; // TODO constant in base class
-    if (c->algorithm == xnor_nn_algorithm_bcast) return true;
-    return false;
+    bool ok = this->BcastBase::isApplicable(c)
+        && c->binarize_data == nullptr;
+    return ok;
 }
 
-void BcastBinarizeData::setupConvolution(
-        xnor_nn_convolution_t *c) {
+// TODO: try to fix allocation of new this
+void BcastBinarizeData::setupConvolution(xnor_nn_convolution_t *c) {
     BcastBinarizeData *op = new BcastBinarizeData;
+    op->BcastBase::setupConvolution(c);
+    setState(c, op, xnor_nn_operation_binarize_data);
     c->binarize_data = op->exec;
-
-    std::vector<Implementation*> *vec =
-        (std::vector<Implementation*>*)c->state;
-    vec->push_back(op);
 }
 
 BcastBinarizeData::~BcastBinarizeData() {}
@@ -43,10 +40,16 @@ xnor_nn_status_t BcastBinarizeData::exec(
     const int IH = c->ih;
     const int IW = c->iw;
 
-    const int SZ = 8;
-    const int BIC = (c->ic + SZ - 1) / SZ;
-    const int BICI = 4;
-    const int ABIC = ((BIC + BICI - 1) / BICI) * BICI;
+    BcastBinarizeData *state = reinterpret_cast<BcastBinarizeData*>(
+            getState(c, xnor_nn_operation_binarize_data));
+
+    const int BIC = state->BIC;
+    const int ABIC = state->ABIC;
+
+    /*
+    const int BIC = (c->ic + 8 - 1) / 8;
+    const int ABIC = ((BIC + 4 - 1) / 4) * 4;
+    */
 
     Logger::info("binarize_data:", "execute:",
             "[", MB, "]",
