@@ -12,6 +12,10 @@ TEST(DataBinarizeDirect, direct_precalculated) {
     const int SH = 1, SW = 1;
     const int PH = 1, PW = 1;
 
+    // TODO: remove me
+    const int BIC = ((IC + 8 - 1) / 8) * 8;
+    const int ABIC = ((BIC + VLEN - 1) / VLEN) * VLEN;
+
     const float P = 1.f;
     const float N = -1.f;
 
@@ -78,7 +82,8 @@ TEST(DataBinarizeDirect, direct_precalculated) {
     xnor_nn::test::check_4d(MB, IH, IW, convolution.aic,
             (unsigned char*)res[xnor_nn_resource_bin_src], expected_src_bin);
     */
-    xnor_nn::test::check_data(MB, IC, IH, IW, convolution.abic,
+
+    xnor_nn::test::check_data(MB, IC, IH, IW, ABIC,
             (unsigned char*)res[xnor_nn_resource_bin_src], src);
 
     // Check A

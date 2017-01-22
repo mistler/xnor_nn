@@ -44,15 +44,13 @@
 namespace xnor_nn {
 namespace implementation {
 
-bool BcastConvolution::isApplicable(
-        const xnor_nn_convolution_t *c) const {
+bool BcastConvolution::isApplicable(const xnor_nn_convolution_t *c) const {
     bool ok = this->BcastBase::isApplicable(c)
         && c->forward == nullptr;
     return ok;
 }
 
-void BcastConvolution::setupConvolution(
-        xnor_nn_convolution_t *c) {
+void BcastConvolution::setupConvolution(xnor_nn_convolution_t *c) {
     BcastConvolution *op = new BcastConvolution;
     op->BcastBase::setupConvolution(c);
     setState(c, op, xnor_nn_operation_convolution_forward);

@@ -1,12 +1,12 @@
 #ifndef DIRECT_BINARIZE_DATA_HPP
 #define DIRECT_BINARIZE_DATA_HPP
 
-#include "implementation.hpp"
+#include "direct_base.hpp"
 
 namespace xnor_nn {
 namespace implementation {
 
-class DirectBinarizeData : public Implementation {
+class DirectBinarizeData : public DirectBase {
 public:
     ~DirectBinarizeData();
     bool isApplicable(const xnor_nn_convolution_t *c) const;

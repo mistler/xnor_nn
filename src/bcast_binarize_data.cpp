@@ -8,8 +8,7 @@ using Logger = xnor_nn::utils::Logger;
 namespace xnor_nn {
 namespace implementation {
 
-bool BcastBinarizeData::isApplicable(
-        const xnor_nn_convolution_t *c) const {
+bool BcastBinarizeData::isApplicable(const xnor_nn_convolution_t *c) const {
     bool ok = this->BcastBase::isApplicable(c)
         && c->binarize_data == nullptr;
     return ok;

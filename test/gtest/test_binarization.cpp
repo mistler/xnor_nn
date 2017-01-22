@@ -3,6 +3,8 @@
 #include "gtest.h"
 #include "common.hpp"
 
+#include "utils.h"
+
 typedef struct {
     xnor_nn_algorithm_t algorithm;
     int mb;
@@ -38,8 +40,11 @@ protected:
     virtual void SetUp() {
         params_t p = ::testing::TestWithParam<params_t>::GetParam();
 
-        p.oh = (p.ih + 2*p.ph - p.kh) / p.sh + 1;
-        p.ow = (p.iw + 2*p.pw - p.kw) / p.sw + 1;
+        p.oh = getOH(p.ih, p.kh, p.sh, p.ph);
+        p.ow = getOW(p.iw, p.kw, p.sw, p.pw);
+
+        const int BIC = ((p.ic + 8 - 1) / 8) * 8;
+        const int ABIC = ((BIC + VLEN - 1) / VLEN) * VLEN;
 
         float *src = new float[p.mb*p.ic*p.ih*p.iw];
         float *weights = new float[p.oc*p.ic*p.kh*p.kw];
@@ -81,10 +86,9 @@ protected:
                     ((p.ic + 4 - 1) / 4 + 8 - 1) / 8 * 4 * 8,
                     (unsigned char*)res[xnor_nn_resource_bin_src], src);
         } else {
-            xnor_nn::test::check_weights(p.oc, p.ic, p.kh, p.kw,
-                    convolution.abic,
+            xnor_nn::test::check_weights(p.oc, p.ic, p.kh, p.kw, ABIC,
                     (unsigned char*)res[xnor_nn_resource_bin_weights], weights);
-            xnor_nn::test::check_data(p.mb, p.ic, p.ih, p.iw, convolution.abic,
+            xnor_nn::test::check_data(p.mb, p.ic, p.ih, p.iw, ABIC,
                     (unsigned char*)res[xnor_nn_resource_bin_src], src);
         }
 

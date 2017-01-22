@@ -8,21 +8,17 @@ using Logger = xnor_nn::utils::Logger;
 namespace xnor_nn {
 namespace implementation {
 
-bool DirectBinarizeData::isApplicable(
-        const xnor_nn_convolution_t *c) const {
-    if (c->binarize_data != nullptr) return false;
-    if (c->algorithm == xnor_nn_algorithm_direct) return true;
-    return false;
+bool DirectBinarizeData::isApplicable(const xnor_nn_convolution_t *c) const {
+    bool ok = this->DirectBase::isApplicable(c)
+        && c->binarize_data == nullptr;
+    return ok;
 }
 
-void DirectBinarizeData::setupConvolution(
-        xnor_nn_convolution_t *c) {
+void DirectBinarizeData::setupConvolution(xnor_nn_convolution_t *c) {
     DirectBinarizeData *op = new DirectBinarizeData;
+    op->DirectBase::setupConvolution(c);
+    setState(c, op, xnor_nn_operation_binarize_data);
     c->binarize_data = op->exec;
-
-    std::vector<Implementation*> *vec =
-        (std::vector<Implementation*>*)c->state;
-    vec->push_back(op);
 }
 
 DirectBinarizeData::~DirectBinarizeData() {}
@@ -42,9 +38,12 @@ xnor_nn_status_t DirectBinarizeData::exec(
     const int IH = c->ih;
     const int IW = c->iw;
 
-    const int SZ = 8;
-    const int BIC = c->bic / SZ;
-    const int ABIC = c->abic / SZ;
+    DirectBinarizeData *state = reinterpret_cast<DirectBinarizeData*>(
+            getState(c, xnor_nn_operation_binarize_data));
+
+    // TODO: unify
+    const int BIC = state->BIC / 8;
+    const int ABIC = state->ABIC / 8;
 
     Logger::info("binarize_data:", "execute:",
             "[", MB, "]",

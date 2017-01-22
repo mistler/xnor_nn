@@ -2,6 +2,7 @@
 
 #include "gtest.h"
 #include "common.hpp"
+#include "utils.h"
 
 TEST(WeightsBinarizeDirect, direct_precalculated) {
     const int MB = 1;
@@ -10,6 +11,10 @@ TEST(WeightsBinarizeDirect, direct_precalculated) {
     const int KH = 3, KW = 3;
     const int SH = 1, SW = 1;
     const int PH = 1, PW = 1;
+
+    // TODO: remove me
+    const int BIC = ((IC + 8 - 1) / 8) * 8;
+    const int ABIC = ((BIC + VLEN - 1) / VLEN) * VLEN;
 
     const float P = 1.f;
     const float N = -1.f;
@@ -81,7 +86,8 @@ TEST(WeightsBinarizeDirect, direct_precalculated) {
             (unsigned char*)res[xnor_nn_resource_bin_weights],
             expected_weights_bin);
     */
-    xnor_nn::test::check_weights(OC, IC, KH, KW, convolution.abic,
+
+    xnor_nn::test::check_weights(OC, IC, KH, KW, ABIC,
             (unsigned char*)res[xnor_nn_resource_bin_weights], weights);
 
     xnor_nn::test::check_value(*actual_alpha, alpha);

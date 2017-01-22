@@ -10,15 +10,13 @@ using Logger = xnor_nn::utils::Logger;
 namespace xnor_nn {
 namespace implementation {
 
-bool BcastBinarizeWeights::isApplicable(
-        const xnor_nn_convolution_t *c) const {
+bool BcastBinarizeWeights::isApplicable(const xnor_nn_convolution_t *c) const {
     bool ok = this->BcastBase::isApplicable(c)
         && c->binarize_weights == nullptr;
     return ok;
 }
 
-void BcastBinarizeWeights::setupConvolution(
-        xnor_nn_convolution_t *c) {
+void BcastBinarizeWeights::setupConvolution(xnor_nn_convolution_t *c) {
     BcastBinarizeWeights *op = new BcastBinarizeWeights;
     op->BcastBase::setupConvolution(c);
     setState(c, op, xnor_nn_operation_binarize_weights);

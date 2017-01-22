@@ -20,4 +20,6 @@ constexpr int getOW(int iw, int kw, int sw, int pw) {
     return (iw + 2*pw - kw) / sw + 1;
 }
 
+// TODO: add div with round up function
+
 #endif // UTILS_H

@@ -1,12 +1,12 @@
 #ifndef DIRECT_BINARIZE_WEIGHTS_HPP
 #define DIRECT_BINARIZE_WEIGHTS_HPP
 
-#include "implementation.hpp"
+#include "direct_base.hpp"
 
 namespace xnor_nn {
 namespace implementation {
 
-class DirectBinarizeWeights : public Implementation {
+class DirectBinarizeWeights : public DirectBase {
 public:
     ~DirectBinarizeWeights();
     bool isApplicable(const xnor_nn_convolution_t *c) const;

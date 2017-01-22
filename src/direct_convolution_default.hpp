@@ -8,7 +8,7 @@ namespace xnor_nn {
 namespace implementation {
 
 #ifdef TEMPLATE_CONVOLUTION
-template<int IC, int IH, int IW, int KH, int KW,
+template<int OC, int IC, int IH, int IW, int KH, int KW,
     int SH, int SW, int PH, int PW>
 xnor_nn_status_t DirectConvolution::exec_template(
 #else
@@ -30,7 +30,6 @@ xnor_nn_status_t DirectConvolution::exec_simple(
     const float *k = (float*)res[xnor_nn_resource_k];
 
     const int MB = c->mb;
-    const int OC = c->oc;
 
 #ifdef TEMPLATE_CONVOLUTION
     constexpr int OH = (IH + 2*PH - KH) / SH + 1;
@@ -38,6 +37,7 @@ xnor_nn_status_t DirectConvolution::exec_simple(
     constexpr int BIC = ((IC + 8 - 1) / 8) * 8;
     constexpr int ABIC = ((BIC + VLEN - 1) / VLEN) * VLEN;
 #else
+    const int OC = c->oc;
     const int OH = c->oh;
     const int OW = c->ow;
     const int IH = c->ih;
@@ -49,7 +49,10 @@ xnor_nn_status_t DirectConvolution::exec_simple(
     const int PH = c->ph;
     const int PW = c->pw;
 
-    const int ABIC = c->abic;
+    DirectConvolution *state = reinterpret_cast<DirectConvolution*>(
+            getState(c, xnor_nn_operation_convolution_forward));
+
+    const int ABIC = state->ABIC;
 #endif
 
     constexpr int ELEM_SIZE = 32;

@@ -9,22 +9,17 @@ using Logger = xnor_nn::utils::Logger;
 namespace xnor_nn {
 namespace implementation {
 
-bool DirectBinarizeWeights::isApplicable(
-        const xnor_nn_convolution_t *c) const {
-    if (c->binarize_weights != nullptr) return false;
-    if (c->algorithm == xnor_nn_algorithm_direct) return true;
-    return false;
+bool DirectBinarizeWeights::isApplicable(const xnor_nn_convolution_t *c) const {
+    bool ok = this->DirectBase::isApplicable(c)
+        && c->binarize_weights == nullptr;
+    return ok;
 }
 
-void DirectBinarizeWeights::setupConvolution(
-        xnor_nn_convolution_t *c) {
+void DirectBinarizeWeights::setupConvolution(xnor_nn_convolution_t *c) {
     DirectBinarizeWeights *op = new DirectBinarizeWeights;
-
+    op->DirectBase::setupConvolution(c);
+    setState(c, op, xnor_nn_operation_binarize_weights);
     c->binarize_weights = op->exec;
-
-    std::vector<Implementation*> *vec =
-        (std::vector<Implementation*>*)c->state;
-    vec->push_back(op);
 }
 
 DirectBinarizeWeights::~DirectBinarizeWeights() {}
@@ -46,10 +41,13 @@ xnor_nn_status_t DirectBinarizeWeights::exec(
     const int KH = c->kh;
     const int KW = c->kw;
 
+    DirectBinarizeWeights *state = reinterpret_cast<DirectBinarizeWeights*>(
+            getState(c, xnor_nn_operation_binarize_weights));
+
+    const int BIC = state->BIC / 8;
+    const int ABIC = state->ABIC / 8;
+
     const int elems = OC*IC*KH*KW;
-    const int SZ = 8;
-    const int BIC = c->bic / SZ;
-    const int ABIC = c->abic / SZ;
 
     Logger::info("binarize_weights:", "execute:",
             "[", OC, "]",

@@ -27,55 +27,43 @@
 
 #endif
 
-#define USE(IC, IH, IW, KH, KW, SH, SW, PH, PW) \
-    if (IC == c->ic && IH == c->ih && IW == c->iw && KH == c->kh \
-            && KW == c->kw && SH == c->sh && SW == c->sw && PH == c->ph \
-            && PW == c->pw) \
+#define TRY(OC, IC, IH, IW, KH, KW, SH, SW, PH, PW) \
+    if (OC == c->oc && IC == c->ic && IH == c->ih && IW == c->iw \
+            && KH == c->kh && KW == c->kw && SH == c->sh && SW == c->sw \
+            && PH == c->ph && PW == c->pw) \
     { \
-        c->forward = exec_template<IC, IH, IW, KH, KW, SH, SW, PH, PW>; \
+        c->forward = exec_template<OC, IC, IH, IW, KH, KW, SH, SW, PH, PW>; \
         return; \
     }
-
-#define U1 USE(64, 27, 27, 5, 5, 1, 1, 2, 2)
-#define U2 USE(192, 13, 13, 3, 3, 1, 1, 1, 1)
-#define U3 USE(384, 13, 13, 3, 3, 1, 1, 1, 1)
-#define U4 USE(256, 13, 13, 3, 3, 1, 1, 1, 1)
 
 namespace xnor_nn {
 namespace implementation {
 
-bool DirectConvolution::isApplicable(
-        const xnor_nn_convolution_t *c) const {
-    if (c->forward != nullptr) return false;
-    if (c->algorithm != xnor_nn_algorithm_direct) return false;
-    return true;
+bool DirectConvolution::isApplicable(const xnor_nn_convolution_t *c) const {
+    bool ok = this->DirectBase::isApplicable(c)
+        && c->forward == nullptr;
+    return ok;
 }
 
 void DirectConvolution::setupConvolution(xnor_nn_convolution_t *c) {
     DirectConvolution *op = new DirectConvolution;
-
-    const int ELEM_SIZE = sizeof(char);
-    const int BITS = ELEM_SIZE * 8;
-    const int BIC = ((c->ic + BITS - 1) / BITS) * BITS;
-
-    c->bic = BIC;
-    c->abic = ((BIC + VLEN - 1) / VLEN) * VLEN;
+    op->DirectBase::setupConvolution(c);
+    setState(c, op, xnor_nn_operation_convolution_forward);
 
     c->resource_size[xnor_nn_resource_bin_src] =
-        c->mb * c->abic * c->ih * c->iw * ELEM_SIZE;
+        c->mb * ABIC * c->ih * c->iw * ELEM_SIZE;
     c->resource_size[xnor_nn_resource_bin_weights] =
-        c->oc * c->abic * c->kh * c->kw * ELEM_SIZE;
+        c->oc * ABIC * c->kh * c->kw * ELEM_SIZE;
     c->resource_size[xnor_nn_resource_a] = c->ih * c->iw * sizeof(float);
     c->resource_size[xnor_nn_resource_k] = c->oh * c->ow * sizeof(float);
 
-    std::vector<Implementation*> *vec =
-        (std::vector<Implementation*>*)c->state;
-    vec->push_back(op);
+    // OC, IC, IH, IW, KH, KW, SH, SW, PH, PW
 
-    U1;
-    U2;
-    U3;
-    U4;
+    // AlexNet
+    TRY(192, 64, 27, 27, 5, 5, 1, 1, 2, 2);
+    TRY(384, 192, 13, 13, 3, 3, 1, 1, 1, 1);
+    TRY(256, 384, 13, 13, 3, 3, 1, 1, 1, 1);
+    TRY(256, 256, 13, 13, 3, 3, 1, 1, 1, 1);
 
     c->forward = exec_simple;
 }
