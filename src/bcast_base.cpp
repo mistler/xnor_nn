@@ -15,8 +15,8 @@ void BcastBase::setupConvolution(xnor_nn_convolution_t *c) {
     BIC = (c->ic + BITS - 1) / BITS;
     ABIC = ((BIC + BICI - 1) / BICI) * BICI;
 
-    ICO = ((c->ic + BICI - 1) / BICI + SZ - 1) / SZ;
-    OCO = (c->oc + OCI - 1) / OCI;
+    ICO = getICO(c->ic);
+    OCO = getOCO(c->oc);
 
     c->resource_size[xnor_nn_resource_bin_src] =
         c->mb * ABIC * c->ih * c->iw * sizeof(char);

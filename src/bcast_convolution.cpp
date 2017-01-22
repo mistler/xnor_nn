@@ -4,6 +4,43 @@
 
 // TODO: log execution
 
+#ifdef ARCH_X86
+
+#define TEMPLATE_CONVOLUTION
+#include "bcast_convolution_avx.hpp"
+#undef TEMPLATE_CONVOLUTION
+#include "bcast_convolution_avx.hpp"
+
+#elif defined ARCH_ARM
+
+#define TEMPLATE_CONVOLUTION
+#include "bcast_convolution_neon.hpp"
+#undef TEMPLATE_CONVOLUTION
+#include "bcast_convolution_neon.hpp"
+
+#else
+
+#define TEMPLATE_CONVOLUTION
+#include "bcast_convolution_default.hpp"
+#undef TEMPLATE_CONVOLUTION
+#include "bcast_convolution_default.hpp"
+
+#endif
+
+#define TRY(OC, IC, IH, IW, KH, KW, SH, SW, PH, PW) \
+    if (OC == c->oc && IC == c->ic && IH == c->ih && IW == c->iw \
+            && KH == c->kh && KW == c->kw && SH == c->sh && SW == c->sw \
+            && PH == c->ph && PW == c->pw) \
+    { \
+        constexpr int OH = getOH(IH, KH, SH, PH); \
+        constexpr int OW = getOH(IW, KW, SW, PW); \
+        constexpr int OCO = getOCO(OC); \
+        constexpr int ICO = getICO(IC); \
+        c->forward = exec_template<OC, IC, IH, IW, KH, KW, SH, SW, PH, PW, \
+                OH, OW, OCO, ICO, OCI>; \
+        return; \
+    }
+
 namespace xnor_nn {
 namespace implementation {
 
@@ -19,7 +56,6 @@ void BcastConvolution::setupConvolution(
     BcastConvolution *op = new BcastConvolution;
     op->BcastBase::setupConvolution(c);
     setState(c, op, xnor_nn_operation_convolution_forward);
-    c->forward = op->exec;
 
     // TODO: move it to base class
     c->resource_size[xnor_nn_resource_bin_src] =
@@ -28,288 +64,23 @@ void BcastConvolution::setupConvolution(
         OCO * c->kh * c->kw * ICO * OCI * sizeof(int);
     c->resource_size[xnor_nn_resource_a] = c->ih * c->iw * sizeof(float);
     c->resource_size[xnor_nn_resource_k] = c->oh * c->ow * sizeof(float);
+
+    // OC, IC, IH, IW, KH, KW, SH, SW, PH, PW
+
+    // AlexNet
+    TRY(192, 64, 27, 27, 5, 5, 1, 1, 2, 2);
+    TRY(384, 192, 13, 13, 3, 3, 1, 1, 1, 1);
+    TRY(256, 384, 13, 13, 3, 3, 1, 1, 1, 1);
+    TRY(256, 256, 13, 13, 3, 3, 1, 1, 1, 1);
+
+    // Task
+    TRY(32, 1, 60, 61, 3, 3, 1, 1, 0, 0);
+    TRY(32, 32, 20, 20, 3, 3, 1, 1, 0, 0);
+
+    c->forward = exec_simple;
 }
 
 BcastConvolution::~BcastConvolution() {}
 
 } // namespace implementation
 } // namespace xnor_nn
-
-#ifdef ARCH_X86
-#include <immintrin.h>
-
-namespace xnor_nn {
-namespace implementation {
-
-xnor_nn_status_t BcastConvolution::exec(
-        const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
-    if (
-        res[xnor_nn_resource_bin_src] == nullptr
-        || res[xnor_nn_resource_bin_weights] == nullptr
-        || res[xnor_nn_resource_user_dst] == nullptr
-        || res[xnor_nn_resource_k] == nullptr
-        || c == nullptr
-    ) return xnor_nn_error_invalid_input;
-    const unsigned int *src = (unsigned int*)res[xnor_nn_resource_bin_src];
-    const unsigned int *weights =
-        (unsigned int*)res[xnor_nn_resource_bin_weights];
-    float *dst = (float*)res[xnor_nn_resource_user_dst];
-    float *alpha = (float*)&res[xnor_nn_resource_alpha];
-    const float *k = (float*)res[xnor_nn_resource_k];
-
-    const int MB = c->mb;
-    const int IH = c->ih;
-    const int IW = c->iw;
-    const int OC = c->oc;
-    const int OH = c->oh;
-    const int OW = c->ow;
-    const int KH = c->kh;
-    const int KW = c->kw;
-    const int SH = c->sh;
-    const int SW = c->sw;
-    const int PH = c->ph;
-    const int PW = c->pw;
-
-    const int ones[8] = {-1,-1,-1,-1,-1,-1,-1,-1};
-
-    BcastConvolution *state = reinterpret_cast<BcastConvolution*>(
-            getState(c, xnor_nn_operation_convolution_forward));
-
-    constexpr int OCI = state->OCI;
-
-    const int ICO = state->ICO;
-    const int OCO = state->OCO;
-
-    // TODO: potentially loops can be reordered
-    // TODO: check collapse value for performance
-#   pragma omp parallel for collapse(4) schedule(static)
-    for (int mb = 0; mb < MB; mb++)
-    for (int oco = 0; oco < OCO; oco++)
-    for (int oh = 0; oh < OH; oh++)
-    for (int ow = 0; ow < OW; ow++) {
-        unsigned int d_arr[OCI] = { 0u };
-        __m256 v_ones = _mm256_loadu_ps((float*)ones);
-
-        for (int kh = 0; kh < KH; kh++)
-        for (int kw = 0; kw < KW; kw++) {
-            const int ih = oh*SH - PH + kh;
-            const int iw = ow*SW - PW + kw;
-
-            if (ih < 0 || iw < 0) continue;
-            if (ih >= IH || iw >= IW) continue;
-
-            const unsigned int *src_ic =
-                src + ((mb*IH + ih)*IW + iw)*ICO;
-            const unsigned int *weights_ic_oci =
-                weights + ((oco*KH +kh)*KW + kw)*ICO*OCI;
-
-            for (int ico = 0; ico < ICO; ico++) {
-                __m256 v_src = _mm256_broadcast_ss((float*)src_ic + ico);
-                __m256 v_weights = _mm256_load_ps(
-                        (float*)weights_ic_oci + ico*OCI);
-
-                __m256 v_xor = _mm256_xor_ps(v_src, v_weights);
-                __m256i v_xnor =
-                    _mm256_castps_si256(_mm256_xor_ps(v_xor, v_ones));
-
-                d_arr[0] += __builtin_popcount(_mm256_extract_epi32(v_xnor, 0));
-                d_arr[1] += __builtin_popcount(_mm256_extract_epi32(v_xnor, 1));
-                d_arr[2] += __builtin_popcount(_mm256_extract_epi32(v_xnor, 2));
-                d_arr[3] += __builtin_popcount(_mm256_extract_epi32(v_xnor, 3));
-                d_arr[4] += __builtin_popcount(_mm256_extract_epi32(v_xnor, 4));
-                d_arr[5] += __builtin_popcount(_mm256_extract_epi32(v_xnor, 5));
-                d_arr[6] += __builtin_popcount(_mm256_extract_epi32(v_xnor, 6));
-                d_arr[7] += __builtin_popcount(_mm256_extract_epi32(v_xnor, 7));
-            }
-        }
-        for (int i = 0; i < OCI; i++)
-            dst[((mb*OC + oco*OCI + i)*OH + oh)*OW + ow] =
-                d_arr[i] * *alpha * k[oh*OW + ow];
-    }
-
-    return xnor_nn_success;
-}
-
-} // namespace implementation
-} // namespace xnor_nn
-
-#elif defined ARCH_ARM
-
-#include <arm_neon.h>
-
-namespace xnor_nn {
-namespace implementation {
-
-xnor_nn_status_t BcastConvolution::exec(
-        const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
-    if (
-        res[xnor_nn_resource_bin_src] == nullptr
-        || res[xnor_nn_resource_bin_weights] == nullptr
-        || res[xnor_nn_resource_user_dst] == nullptr
-        || res[xnor_nn_resource_k] == nullptr
-        || c == nullptr
-    ) return xnor_nn_error_invalid_input;
-    const unsigned int *src = (unsigned int*)res[xnor_nn_resource_bin_src];
-    const unsigned int *weights =
-        (unsigned int*)res[xnor_nn_resource_bin_weights];
-    float *dst = (float*)res[xnor_nn_resource_user_dst];
-    float *alpha = (float*)&res[xnor_nn_resource_alpha];
-    const float *k = (float*)res[xnor_nn_resource_k];
-
-    const int MB = c->mb;
-    const int IH = c->ih;
-    const int IW = c->iw;
-    const int OC = c->oc;
-    const int OH = c->oh;
-    const int OW = c->ow;
-    const int KH = c->kh;
-    const int KW = c->kw;
-    const int SH = c->sh;
-    const int SW = c->sw;
-    const int PH = c->ph;
-    const int PW = c->pw;
-
-    BcastConvolution *state = reinterpret_cast<BcastBase>(
-            getState(c, xnor_nn_operation_convolution_forward));
-
-    constexpr int OCI = state->OCI;
-
-    const int ICO = state->ICO;
-    const int OCO = state->OCO;
-
-    // TODO: potentially loops can be reordered
-    // TODO: check collapse value for performance
-#   pragma omp parallel for collapse(4) schedule(static)
-    for (int mb = 0; mb < MB; mb++)
-    for (int oco = 0; oco < OCO; oco++)
-    for (int oh = 0; oh < OH; oh++)
-    for (int ow = 0; ow < OW; ow++) {
-        uint32x4_t v_accum = veorq_u32(v_accum, v_accum);
-
-        for (int kh = 0; kh < KH; kh++)
-        for (int kw = 0; kw < KW; kw++) {
-            const int ih = oh*SH - PH + kh;
-            const int iw = ow*SW - PW + kw;
-
-            if (ih < 0 || iw < 0) continue;
-            if (ih >= IH || iw >= IW) continue;
-
-            const unsigned int *src_ic =
-                src + ((mb*IH + ih)*IW + iw)*ICO;
-            const unsigned int *weights_ic_oci =
-                weights + ((oco*KH +kh)*KW + kw)*ICO*OCI;
-
-            for (int ico = 0; ico < ICO; ico++) {
-                uint32x4_t v_src = vdupq_n_u32(src_ic[ico]);
-                uint32x4_t v_weights = vld1q_u32(weights_ic_oci + ico*OCI);
-
-                uint32x4_t v_xor = veorq_u32(v_src, v_weights);
-                uint32x4_t v_xnor = vmvnq_u32(v_xor);
-
-                uint8x16_t v_cnt16 = vcntq_u8(vreinterpretq_u8_u32(v_xnor));
-                uint16x8_t v_cnt8 = vpaddlq_u8(v_cnt16);
-                uint32x4_t v_cnt4 = vpaddlq_u16(v_cnt8);
-                v_accum = vaddq_u32(v_cnt4, v_accum);
-            }
-        }
-        // TODO: single instruction mov
-        unsigned int d_arr[OCI] = { 0u };
-        vst1q_u32(d_arr, v_accum);
-        for (int i = 0; i < OCI; i++)
-            dst[((mb*OC + oco*OCI + i)*OH + oh)*OW + ow] =
-                d_arr[i] * *alpha * k[oh*OW + ow];
-    }
-
-    return xnor_nn_success;
-}
-
-} // namespace implementation
-} // namespace xnor_nn
-
-#else
-
-namespace xnor_nn {
-namespace implementation {
-
-xnor_nn_status_t BcastConvolution::exec(
-        const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
-    if (
-        res[xnor_nn_resource_bin_src] == nullptr
-        || res[xnor_nn_resource_bin_weights] == nullptr
-        || res[xnor_nn_resource_user_dst] == nullptr
-        || res[xnor_nn_resource_k] == nullptr
-        || c == nullptr
-    ) return xnor_nn_error_invalid_input;
-    const unsigned int *src = (unsigned int*)res[xnor_nn_resource_bin_src];
-    const unsigned int *weights =
-        (unsigned int*)res[xnor_nn_resource_bin_weights];
-    float *dst = (float*)res[xnor_nn_resource_user_dst];
-    float *alpha = (float*)&res[xnor_nn_resource_alpha];
-    const float *k = (float*)res[xnor_nn_resource_k];
-
-    const int MB = c->mb;
-    const int IH = c->ih;
-    const int IW = c->iw;
-    const int OC = c->oc;
-    const int OH = c->oh;
-    const int OW = c->ow;
-    const int KH = c->kh;
-    const int KW = c->kw;
-    const int SH = c->sh;
-    const int SW = c->sw;
-    const int PH = c->ph;
-    const int PW = c->pw;
-
-    BcastConvolution *state = reinterpret_cast<BcastConvolution*>(
-            getState(c, xnor_nn_operation_convolution_forward));
-
-    constexpr int OCI = state->OCI;
-
-    const int ICO = state->ICO;
-    const int OCO = state->OCO;
-
-    // TODO: potentially loops can be reordered
-    // TODO: check collapse value for performance
-#   pragma omp parallel for collapse(4) schedule(static)
-    for (int mb = 0; mb < MB; mb++)
-    for (int oco = 0; oco < OCO; oco++)
-    for (int oh = 0; oh < OH; oh++)
-    for (int ow = 0; ow < OW; ow++) {
-        unsigned int d_arr[OCI] = { 0u };
-        for (int kh = 0; kh < KH; kh++)
-        for (int kw = 0; kw < KW; kw++) {
-            const int ih = oh*SH - PH + kh;
-            const int iw = ow*SW - PW + kw;
-
-            if (ih < 0 || iw < 0) continue;
-            if (ih >= IH || iw >= IW) continue;
-
-            const unsigned int *src_ic =
-                src + ((mb*IH + ih)*IW + iw)*ICO;
-            const unsigned int *weights_ic_oci =
-                weights + ((oco*KH +kh)*KW + kw)*ICO*OCI;
-
-            for (int ico = 0; ico < ICO; ico++)
-            for (int oci = 0; oci < OCI; oci++) {
-                int src_idx = ico;
-                int weights_idx = ico*OCI + oci;
-
-                unsigned int bsrc = src_ic[src_idx];
-                unsigned int bweights = weights_ic_oci[weights_idx];
-
-                unsigned int result = ~(bsrc ^ bweights);
-                d_arr[oci] += __builtin_popcount(result);
-            }
-        }
-        for (int i = 0; i < OCI; i++)
-            dst[((mb*OC + oco*OCI + i)*OH + oh)*OW + ow] =
-                d_arr[i] * *alpha * k[oh*OW + ow];
-    }
-
-    return xnor_nn_success;
-}
-
-} // namespace implementation
-} // namespace xnor_nn
-
-#endif

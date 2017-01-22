@@ -16,6 +16,15 @@ public:
     virtual void setupConvolution(xnor_nn_convolution_t *c);
 
 protected:
+    static constexpr int getICO(int IC) {
+        return ((IC + BICI - 1) / BICI + SZ - 1) / SZ;
+    }
+
+    static constexpr int getOCO(int OC) {
+        return (OC + OCI - 1) / OCI;
+    }
+
+protected:
     int BIC, ABIC, ICO, OCO;
 
     // TODO: remove unused stuff

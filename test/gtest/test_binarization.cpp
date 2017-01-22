@@ -106,6 +106,13 @@ TEST_P(Binarization, binarization)
 }
 
 // mb ic oc ih iw kh kw sh sw ph pw
+INSTANTIATE_TEST_CASE_P(BinarizationBcastTask,
+        Binarization, ::testing::Values(
+params_t{ xnor_nn_algorithm_bcast, 1, 1, 24, 60, 61, 3, 3, 1, 1, 0, 0 },
+params_t{ xnor_nn_algorithm_bcast, 256, 1, 24, 60, 61, 3, 3, 1, 1, 0, 0 },
+params_t{ xnor_nn_algorithm_bcast, 1, 24, 24, 20, 20, 3, 3, 1, 1, 0, 0 },
+params_t{ xnor_nn_algorithm_bcast, 256, 24, 24, 20, 20, 3, 3, 1, 1, 0, 0 }
+));
 INSTANTIATE_TEST_CASE_P(BinarizationBcastSmall,
         Binarization, ::testing::Values(
 params_t{ xnor_nn_algorithm_bcast, 3, 24, 32, 27, 27, 5, 5, 1, 1, 2, 2 },

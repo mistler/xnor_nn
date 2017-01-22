@@ -2,9 +2,8 @@
 #include <vector>
 
 #include "xnor_nn.h"
-
 #include "implementation.hpp"
-
+#include "utils.h"
 #include "logger.hpp"
 
 using Logger = xnor_nn::utils::Logger;
@@ -13,25 +12,25 @@ xnor_nn_status_t xnor_nn_init_convolution(xnor_nn_convolution_t *c,
         const xnor_nn_algorithm_t algorithm,
         int mb, int oc, int ic, int ih, int iw,
         int kh, int kw, int sh, int sw, int ph, int pw) {
-    const int oh = (ih + 2*ph - kh) / sh + 1;
-    const int ow = (iw + 2*pw - kw) / sw + 1;
+    const int oh = getOH(ih, kh, sh, pw);
+    const int ow = getOW(iw, kw, sw, pw);
 
     c->algorithm = algorithm;
 
     c->mb = mb;
 
-    c->iw = iw;
-    c->ih = ih;
     c->ic = ic;
+    c->ih = ih;
+    c->iw = iw;
 
-    c->ow = ow;
-    c->oh = oh;
     c->oc = oc;
+    c->oh = oh;
+    c->ow = ow;
 
-    c->sw = sw;
-    c->sh = sh;
     c->kw = kw;
     c->kh = kh;
+    c->sw = sw;
+    c->sh = sh;
     c->pw = pw;
     c->ph = ph;
 
