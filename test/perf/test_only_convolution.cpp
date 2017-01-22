@@ -30,12 +30,13 @@ typedef struct {
 
 
 int main(){
-    const int N = 1024;
-    const xnor_nn_algorithm_t alg = xnor_nn_algorithm_template;
+    const int N = 1024 * 4 * 32;
+    const xnor_nn_algorithm_t alg = xnor_nn_algorithm_bcast;
 
     // AlexNet conv4
-    const int MB = 1;
-    const convolution_params p{ alg, MB, 256, 384, 13, 13, 3, 3, 1, 1, 1, 1 };
+    //const int MB = 1;
+    //const convolution_params p{ alg, MB, 256, 384, 13, 13, 3, 3, 1, 1, 1, 1 };
+    const convolution_params p { alg, 1, 24, 24, 20, 20, 3, 3, 1, 1, 0, 0 };
     p.print(std::cout);
 
     const int enough = 256*1024*384; // 384mb on float
@@ -49,7 +50,6 @@ int main(){
     res[xnor_nn_resource_user_dst] = dst;
 
     xnor_nn_convolution_t convolution;
-
 
     st = xnor_nn_init_convolution(&convolution, p.algorithm,
             p.MB, p.OC, p.IC, p.IH, p.IW,
