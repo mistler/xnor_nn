@@ -4,7 +4,6 @@
 #include "utils/timer.hpp"
 
 #include "bcast_convolution.hpp"
-#include "template_convolution.hpp"
 #include "direct_convolution.hpp"
 
 #include "bcast_binarize_weights.hpp"
@@ -25,11 +24,11 @@ namespace implementation {
 std::vector<Implementation*> Implementations() {
     static std::vector<Implementation*> impls = {
         new BcastConvolution(),
-        new TemplateConvolution(),
         new DirectConvolution(),
 
         new BcastBinarizeWeights(),
         new DirectBinarizeWeights(),
+
         new BcastBinarizeData(),
         new DirectBinarizeData(),
 

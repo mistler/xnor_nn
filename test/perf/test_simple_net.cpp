@@ -29,7 +29,8 @@ typedef struct {
     }
 } convolution_params;
 
-static inline void clean_cache(char *more_than_cache, int more_than_cache_size) {
+static inline void clean_cache(char *more_than_cache,
+        int more_than_cache_size) {
 #   pragma omp parallel for
     for (int i = 0; i < more_than_cache_size; i++)
         more_than_cache[i]++;
@@ -59,7 +60,6 @@ static inline void measure_time(F &f, std::string msg, int N = 64) {
 
 int main(){
     const xnor_nn_algorithm_t dir = xnor_nn_algorithm_direct;
-    const xnor_nn_algorithm_t temp = xnor_nn_algorithm_template;
     const xnor_nn_algorithm_t bcast = xnor_nn_algorithm_bcast;
     const std::vector<convolution_params> params =
     {
@@ -74,19 +74,14 @@ int main(){
 
         //{ alg, MB, 64, 3, 224, 224, 11, 11, 4, 4, 2, 2 }, // conv1
         { dir, 1, 192, 64, 27, 27, 5, 5, 1, 1, 2, 2, }, // conv2
-        { temp, 1, 192, 64, 27, 27, 5, 5, 1, 1, 2, 2, }, // conv2
         { bcast, 1, 192, 64, 27, 27, 5, 5, 1, 1, 2, 2, }, // conv2
         { dir, 1, 384, 192, 13, 13, 3, 3, 1, 1, 1, 1, }, // conv3
-        { temp, 1, 384, 192, 13, 13, 3, 3, 1, 1, 1, 1, }, // conv3
         { bcast, 1, 384, 192, 13, 13, 3, 3, 1, 1, 1, 1, }, // conv3
         { dir, 1, 256, 384, 13, 13, 3, 3, 1, 1, 1, 1, }, // conv4
-        { temp, 1, 256, 384, 13, 13, 3, 3, 1, 1, 1, 1, }, // conv4
         { bcast, 1, 256, 384, 13, 13, 3, 3, 1, 1, 1, 1, }, // conv4
         { dir, 1, 256, 256, 13, 13, 3, 3, 1, 1, 1, 1, }, // conv5
-        { temp, 1, 256, 256, 13, 13, 3, 3, 1, 1, 1, 1, }, // conv5
         { bcast, 1, 256, 256, 13, 13, 3, 3, 1, 1, 1, 1, }, // conv5
         { dir, 256, 256, 384, 13, 13, 3, 3, 1, 1, 1, 1, }, // conv4
-        { temp, 256, 256, 384, 13, 13, 3, 3, 1, 1, 1, 1, }, // conv4
         { bcast, 256, 256, 384, 13, 13, 3, 3, 1, 1, 1, 1, }, // conv4
     };
 
