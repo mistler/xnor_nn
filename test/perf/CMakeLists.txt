@@ -18,7 +18,6 @@ add_custom_target(
     DEPENDS ${LIB_NAME}
 )
 
-
 set(APP_NAME "test_only_convolution")
 add_executable(
     ${APP_NAME}
