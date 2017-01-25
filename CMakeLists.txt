@@ -9,8 +9,10 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "")
 endif()
 
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
+    set(CPU_ARCHITECTURE x86)
     set(CCXX_ARCH_FLAGS "-march=native")
 else(CMAKE_SYSTEM_PROCESSOR MATCHES "(armv7)|(armv8)")
+    set(CPU_ARCHITECTURE ARM)
     set(CCXX_ARCH_FLAGS "-mfpu=neon -march=native")
 endif()
 
