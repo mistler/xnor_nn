@@ -10,6 +10,7 @@ add_custom_command(OUTPUT ${CAFFE_RUNNER}
         XNOR_NN_LIB="${CMAKE_BINARY_DIR}/src"
         make all
     WORKING_DIRECTORY "${CAFFE_SOURCE_DIR}"
+    DEPENDS ${LIB_NAME}
 )
 
 add_custom_target(
@@ -32,7 +33,8 @@ add_custom_target(
 set(CAFFE_TIME_VARS KMP_AFFINITY=compact,1,0,granularity=fine OMP_NUM_THREADS=1)
 set(CAFFE_TIME_RUN ${CAFFE_RUNNER} time)
 set(CAFFE_MODEL -model=${CAFFE_SOURCE_DIR}/models)
-set(CAFFE_GREP 2>&1 | grep -E 'conv.*forward: ')
+set(CAFFE_GREP 2>&1 | grep -E 'conv.*forward: |Average Forward pass: '
+    | sed 's/.*]//g')
 
 add_custom_target(
     caffe_time
