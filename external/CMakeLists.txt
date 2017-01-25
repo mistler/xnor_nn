@@ -23,7 +23,7 @@ add_custom_target(
 
 add_custom_target(
     caffe_clean
-    COMMAND make clean
+    COMMAND rm -rf ${CAFFE_BUILD_DIR} ${CAFFE_BUILD_DIR}_debug ${CAFFE_BUILD_DIR}_release
     WORKING_DIRECTORY "${CAFFE_SOURCE_DIR}"
 )
 

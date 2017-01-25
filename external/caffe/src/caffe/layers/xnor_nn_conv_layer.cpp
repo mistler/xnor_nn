@@ -79,6 +79,7 @@ template <typename Dtype>
 void XnorNNConvolutionLayer<Dtype>::Backward_cpu(
       const vector<Blob<Dtype>*>& top, const vector<bool>& propagate_down,
       const vector<Blob<Dtype>*>& bottom) {
+#if 0
   const Dtype* weight = this->blobs_[0]->cpu_data();
   Dtype* weight_diff = this->blobs_[0]->mutable_cpu_diff();
   for (int i = 0; i < top.size(); ++i) {
@@ -107,6 +108,7 @@ void XnorNNConvolutionLayer<Dtype>::Backward_cpu(
       }
     }
   }
+#endif
 }
 
 #ifdef CPU_ONLY
