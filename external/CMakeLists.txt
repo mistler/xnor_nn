@@ -26,3 +26,8 @@ add_custom_target(
     COMMAND make clean
     WORKING_DIRECTORY "${CAFFE_SOURCE_DIR}"
 )
+
+add_custom_target(
+    caffe_patch
+    COMMAND rm ${CAFFE_RUNNER}
+)
