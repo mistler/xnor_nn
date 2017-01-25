@@ -60,10 +60,11 @@ void DirectConvolution::setupConvolution(xnor_nn_convolution_t *c) {
     // OC, IC, IH, IW, KH, KW, SH, SW, PH, PW
 
     // AlexNet
-    TRY(192, 64, 27, 27, 5, 5, 1, 1, 2, 2);
-    TRY(384, 192, 13, 13, 3, 3, 1, 1, 1, 1);
+    TRY(96, 3, 224, 224, 11, 11, 4, 4, 2, 2);
+    TRY(256, 96, 27, 27, 5, 5, 1, 1, 2, 2);
+    TRY(384, 256, 13, 13, 3, 3, 1, 1, 1, 1);
+    TRY(384, 384, 13, 13, 3, 3, 1, 1, 1, 1);
     TRY(256, 384, 13, 13, 3, 3, 1, 1, 1, 1);
-    TRY(256, 256, 13, 13, 3, 3, 1, 1, 1, 1);
 
     c->forward = exec_simple;
 }

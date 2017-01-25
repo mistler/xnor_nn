@@ -42,12 +42,12 @@ add_custom_target(
     COMMAND echo ${CPU_ARCHITECTURE}
     COMMAND echo caffe_task
     COMMAND ${CAFFE_TIME_VARS} ${CAFFE_TIME_RUN}
-        -iterations=1000 ${CAFFE_MODEL}/caffe_task/train_val.prototxt
+        -iterations=2500 ${CAFFE_MODEL}/caffe_task/train_val.prototxt
         ${CAFFE_GREP}
 
     COMMAND echo && echo xnor_nn_task
     COMMAND ${CAFFE_TIME_VARS} ${CAFFE_TIME_RUN}
-        -iterations=1000 ${CAFFE_MODEL}/xnor_nn_task/train_val.prototxt
+        -iterations=2500 ${CAFFE_MODEL}/xnor_nn_task/train_val.prototxt
         ${CAFFE_GREP}
 
     COMMAND echo && echo caffe_alexnet

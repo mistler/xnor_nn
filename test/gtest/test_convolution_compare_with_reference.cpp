@@ -80,10 +80,10 @@ TEST_P(ConvolutionForward, compare_with_reference)
 // mb ic oc ih iw kh kw sh sw ph pw
 INSTANTIATE_TEST_CASE_P(ConvolutionBcastTask,
         ConvolutionForward, ::testing::Values(
-params_t{ xnor_nn_algorithm_bcast, 1, 1, 24, 60, 61, 3, 3, 1, 1, 0, 0 },
-params_t{ xnor_nn_algorithm_bcast, 256, 1, 24, 60, 61, 3, 3, 1, 1, 0, 0 },
-params_t{ xnor_nn_algorithm_bcast, 1, 24, 24, 20, 20, 3, 3, 1, 1, 0, 0 },
-params_t{ xnor_nn_algorithm_bcast, 256, 24, 24, 20, 20, 3, 3, 1, 1, 0, 0 }
+params_t{ xnor_nn_algorithm_bcast, 1, 1, 32, 60, 61, 3, 3, 3, 3, 0, 0 },
+params_t{ xnor_nn_algorithm_bcast, 256, 1, 32, 60, 61, 3, 3, 3, 3, 0, 0 },
+params_t{ xnor_nn_algorithm_bcast, 1, 32, 32, 20, 20, 3, 3, 1, 1, 0, 0 },
+params_t{ xnor_nn_algorithm_bcast, 256, 32, 32, 20, 20, 3, 3, 1, 1, 0, 0 }
 ));
 INSTANTIATE_TEST_CASE_P(ConvolutionBcastSmall,
         ConvolutionForward, ::testing::Values(
@@ -113,16 +113,17 @@ params_t{ xnor_nn_algorithm_bcast, 3, 7, 8, 13, 13, 3, 3, 1, 1, 1, 1 }
 ));
 INSTANTIATE_TEST_CASE_P(ConvolutionBcastAlexNet,
         ConvolutionForward, ::testing::Values(
-params_t{ xnor_nn_algorithm_bcast, 2, 64, 192, 27, 27, 5, 5, 1, 1, 2, 2 },
-params_t{ xnor_nn_algorithm_bcast, 2, 192, 384, 13, 13, 3, 3, 1, 1, 1, 1 },
-params_t{ xnor_nn_algorithm_bcast, 2, 384, 256, 13, 13, 3, 3, 1, 1, 1, 1 },
-params_t{ xnor_nn_algorithm_bcast, 2, 256, 256, 13, 13, 3, 3, 1, 1, 1, 1 }
+params_t{ xnor_nn_algorithm_bcast, 2, 3, 96, 224, 224, 11, 11, 4, 4, 2, 2 },
+params_t{ xnor_nn_algorithm_bcast, 2, 96, 256, 27, 27, 5, 5, 1, 1, 2, 2 },
+params_t{ xnor_nn_algorithm_bcast, 2, 256, 384, 13, 13, 3, 3, 1, 1, 1, 1 },
+params_t{ xnor_nn_algorithm_bcast, 2, 384, 384, 13, 13, 3, 3, 1, 1, 1, 1 },
+params_t{ xnor_nn_algorithm_bcast, 2, 384, 256, 13, 13, 3, 3, 1, 1, 1, 1 }
 ));
 INSTANTIATE_TEST_CASE_P(ConvolutionDirectAlexNet,
         ConvolutionForward, ::testing::Values(
-params_t{ xnor_nn_algorithm_direct, 2, 3, 64, 224, 224, 11, 11, 4, 4, 2, 2 },
-params_t{ xnor_nn_algorithm_direct, 2, 64, 192, 27, 27, 5, 5, 1, 1, 2, 2 },
-params_t{ xnor_nn_algorithm_direct, 2, 192, 384, 13, 13, 3, 3, 1, 1, 1, 1 },
-params_t{ xnor_nn_algorithm_direct, 2, 384, 256, 13, 13, 3, 3, 1, 1, 1, 1 },
-params_t{ xnor_nn_algorithm_direct, 2, 256, 256, 13, 13, 3, 3, 1, 1, 1, 1 }
+params_t{ xnor_nn_algorithm_direct, 2, 3, 96, 224, 224, 11, 11, 4, 4, 2, 2 },
+params_t{ xnor_nn_algorithm_direct, 2, 96, 256, 27, 27, 5, 5, 1, 1, 2, 2 },
+params_t{ xnor_nn_algorithm_direct, 2, 256, 384, 13, 13, 3, 3, 1, 1, 1, 1 },
+params_t{ xnor_nn_algorithm_direct, 2, 384, 384, 13, 13, 3, 3, 1, 1, 1, 1 },
+params_t{ xnor_nn_algorithm_direct, 2, 384, 256, 13, 13, 3, 3, 1, 1, 1, 1 }
 ));
