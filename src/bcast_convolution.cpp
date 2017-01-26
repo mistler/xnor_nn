@@ -73,7 +73,7 @@ void BcastConvolution::setupConvolution(xnor_nn_convolution_t *c) {
     TRY(256, 384, 13, 13, 3, 3, 1, 1, 1, 1);
 
     // Task
-    TRY(32, 1, 60, 61, 3, 3, 3, 3, 0, 0);
+    TRY(32, 1, 60, 61, 3, 3, 1, 1, 0, 0);
     TRY(32, 32, 20, 20, 3, 3, 1, 1, 0, 0);
 
     c->forward = exec_simple;
