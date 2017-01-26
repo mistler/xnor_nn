@@ -3,7 +3,7 @@
 #include "gtest.h"
 #include "common.hpp"
 
-#include "utils.h"
+#include "utils.hpp"
 
 typedef struct {
     xnor_nn_algorithm_t algorithm;

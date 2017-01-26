@@ -1,9 +1,8 @@
 #include "bcast_convolution.hpp"
 
-#include "utils.h"
+#include "utils.hpp"
+#include "logger.hpp"
 
-// TODO: log execution
-//
 namespace xnor_nn {
 namespace implementation {
 
@@ -36,6 +35,7 @@ xnor_nn_status_t BcastConvolution::exec_simple(
     const int OC = c->oc;
     const int OH = c->oh;
     const int OW = c->ow;
+    const int IC = c->ic;
     const int IH = c->ih;
     const int IW = c->iw;
     const int KH = c->kh;
@@ -53,6 +53,20 @@ xnor_nn_status_t BcastConvolution::exec_simple(
     const int ICO = state->ICO;
     const int OCO = state->OCO;
 #endif
+
+    LOG_INFO("convolution:\t", "execute:",
+            "[", MB, "][", IC, "][", IH, "][", IW, "]",
+            "x",
+            "[", OC, "][", IC, "][", KH, "][", KW, "]",
+            "=",
+            "[", MB, "][", OC, "][", OH, "][", OW, "]",
+            "stride: [", SH, "][", SW, "]",
+            "pad: [", PH, "][", PW, "]",
+            "Algorithm:", "bcast"
+#ifdef TEMPLATE_CONVOLUTION
+            , "Template version"
+#endif
+            );
 
     // TODO: potentially loops can be reordered
     // TODO: check collapse value for performance

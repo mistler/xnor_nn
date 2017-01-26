@@ -2,10 +2,8 @@
 
 #include <cmath>
 
-#include "utils.h"
+#include "utils.hpp"
 #include "logger.hpp"
-
-using Logger = xnor_nn::utils::Logger;
 
 namespace xnor_nn {
 namespace implementation {
@@ -55,19 +53,11 @@ xnor_nn_status_t BcastBinarizeWeights::exec(
 
     const int elems = OC*IC*KH*KW;
 
-    Logger::info("binarize_weights:", "execute:",
-            "[", OC, "]",
-            "[", IC, "]",
-            "[", KH, "]",
-            "[", KW, "]",
-            " -> ",
-            "[", OCO, "]",
-            "[", KH, "]",
-            "[", KW, "]",
-            "[", ICO, "]",
-            "[", OCI, "]",
-            "[", BICI, "]",
-            "Algorithm:", xnor_nn_algorithm_bcast);
+    LOG_INFO("binarize_weights:", "execute:",
+            "[", OC, "][", IC, "][", KH, "][", KW, "]",
+            "->",
+            "[", OCO, "][", KH, "][", KW, "][", ICO, "][", OCI, "][", BICI, "]",
+            "Algorithm:", "bcast");
 
 #   pragma omp parallel for collapse(3) schedule(static)
     for (int oco = 0; oco < OCO; oco++)

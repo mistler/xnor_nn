@@ -3,7 +3,7 @@
 
 #include <chrono>
 
-#include "utils.h"
+#include "utils.hpp"
 
 namespace xnor_nn{
 namespace utils{

@@ -1,10 +1,10 @@
 #ifndef COMMON_HPP
 #define COMMON_HPP
 
-#include "xnor_nn.h"
-
 #include "gtest.h"
-#include "utils.h"
+
+#include "xnor_nn.h"
+#include "utils.hpp"
 
 namespace xnor_nn {
 namespace test {

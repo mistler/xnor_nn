@@ -3,10 +3,8 @@
 
 #include "xnor_nn.h"
 #include "implementation.hpp"
-#include "utils.h"
+#include "utils.hpp"
 #include "logger.hpp"
-
-using Logger = xnor_nn::utils::Logger;
 
 xnor_nn_status_t xnor_nn_init_convolution(xnor_nn_convolution_t *c,
         const xnor_nn_algorithm_t algorithm,
@@ -49,10 +47,14 @@ xnor_nn_status_t xnor_nn_init_convolution(xnor_nn_convolution_t *c,
         }
     }
 
-    Logger::info("convolution:", "create:",
-            "MB:", mb, "IC:", ic, "IH:", ih, "IW:", iw,
-            "OC:", oc, "OH:", oh, "OW:", ow,
-            "KH:", kh, "KW:", kw, "SH:", sh, "SW:", sw, "PH:", ph, "PW:", pw,
+    LOG_INFO("convolution:\t", "create: ",
+            "[", mb, "][", ic, "][", ih, "][", iw, "]",
+            "x",
+            "[", oc, "][", ic, "][", kh, "][", kw, "]",
+            "=",
+            "[", mb, "][", oc, "][", oh, "][", ow, "]",
+            "stride: [", sh, "][", sw, "]",
+            "pad: [", ph, "][", pw, "]",
             "Algorithm:", algorithm);
 
     return xnor_nn_success;

@@ -1,6 +1,6 @@
 #include "direct_convolution.hpp"
 
-#include "utils.h"
+#include "utils.hpp"
 
 // TODO: log execution
 
@@ -32,7 +32,11 @@
             && KH == c->kh && KW == c->kw && SH == c->sh && SW == c->sw \
             && PH == c->ph && PW == c->pw) \
     { \
-        c->forward = exec_template<OC, IC, IH, IW, KH, KW, SH, SW, PH, PW>; \
+        constexpr int OH = getOH(IH, KH, SH, PH); \
+        constexpr int OW = getOW(IH, KH, SH, PH); \
+        constexpr int ABIC = getABIC(IC); \
+        c->forward = exec_template< \
+                OC, IC, IH, IW, KH, KW, SH, SW, PH, PW, OH, OW, ABIC>; \
         return; \
     }
 

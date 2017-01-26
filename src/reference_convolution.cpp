@@ -1,6 +1,6 @@
 #include "reference_convolution.hpp"
 
-// TODO: log execution
+#include "logger.hpp"
 
 namespace xnor_nn {
 namespace implementation {
@@ -61,6 +61,16 @@ xnor_nn_status_t ReferenceConvolution::exec(
     const int SW = c->sw;
     const int PH = c->ph;
     const int PW = c->pw;
+
+    LOG_INFO("convolution:\t", "execute:",
+            "[", MB, "][", IC, "][", IH, "][", IW, "]",
+            "x",
+            "[", OC, "][", IC, "][", KH, "][", KW, "]",
+            "=",
+            "[", MB, "][", OC, "][", OH, "][", OW, "]",
+            "stride: [", SH, "][", SW, "]",
+            "pad: [", PH, "][", PW, "]",
+            "Algorithm:", "reference");
 
 #   pragma omp parallel for collapse(2) schedule(static)
     for (int mb = 0; mb < MB; mb++)

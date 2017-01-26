@@ -2,16 +2,15 @@
 
 #include <arm_neon.h>
 
-#include "utils.h"
-
-// TODO: log execution
+#include "utils.hpp"
+#include "logger.hpp"
 
 namespace xnor_nn {
 namespace implementation {
 
 #ifdef TEMPLATE_CONVOLUTION
 template<int OC, int IC, int IH, int IW, int KH, int KW,
-    int SH, int SW, int PH, int PW>
+    int SH, int SW, int PH, int PW, int OH, int OW, int ABIC>
 xnor_nn_status_t DirectConvolution::exec_template(
 #else
 xnor_nn_status_t DirectConvolution::exec_simple(
@@ -34,14 +33,11 @@ xnor_nn_status_t DirectConvolution::exec_simple(
     const int MB = c->mb;
 
 #ifdef TEMPLATE_CONVOLUTION
-    constexpr int OH = (IH + 2*PH - KH) / SH + 1;
-    constexpr int OW = (IW + 2*PW - KW) / SW + 1;
-    constexpr int BIC = ((IC + 8 - 1) / 8) * 8;
-    constexpr int ABIC = ((BIC + VLEN - 1) / VLEN) * VLEN;
 #else
     const int OC = c->oc;
     const int OH = c->oh;
     const int OW = c->ow;
+    const int IC = c->ic;
     const int IH = c->ih;
     const int IW = c->iw;
     const int KH = c->kh;
@@ -59,6 +55,20 @@ xnor_nn_status_t DirectConvolution::exec_simple(
 
     constexpr int ELEM_SIZE = 32;
     const int VECTORS_IN_ABIC = ABIC / VLEN;
+
+    LOG_INFO("convolution:\t", "execute:",
+            "[", MB, "][", IC, "][", IH, "][", IW, "]",
+            "x",
+            "[", OC, "][", IC, "][", KH, "][", KW, "]",
+            "=",
+            "[", MB, "][", OC, "][", OH, "][", OW, "]",
+            "stride: [", SH, "][", SW, "]",
+            "pad: [", PH, "][", PW, "]",
+            "Algorithm:", "direct"
+#ifdef TEMPLATE_CONVOLUTION
+            , "Template version"
+#endif
+            );
 
     // TODO: potentially loops can be reordered
 #   pragma omp parallel for collapse(4) schedule(static)

@@ -2,7 +2,7 @@
 
 #include "gtest.h"
 #include "common.hpp"
-#include "utils.h"
+#include "utils.hpp"
 
 TEST(WeightsBinarizeDirect, direct_precalculated) {
     const int MB = 1;

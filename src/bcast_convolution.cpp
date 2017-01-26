@@ -1,6 +1,6 @@
 #include "bcast_convolution.hpp"
 
-#include "utils.h"
+#include "utils.hpp"
 
 // TODO: log execution
 

@@ -1,5 +1,5 @@
-#ifndef UTILS_H
-#define UTILS_H
+#ifndef UTILS_HPP
+#define UTILS_HPP
 
 #ifdef __x86_64__
 #define VLEN 256
@@ -22,4 +22,4 @@ constexpr int getOW(int iw, int kw, int sw, int pw) {
 
 // TODO: add div with round up function
 
-#endif // UTILS_H
+#endif // UTILS_HPP

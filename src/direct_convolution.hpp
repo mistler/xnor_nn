@@ -13,7 +13,7 @@ public:
     void setupConvolution(xnor_nn_convolution_t *c);
 private:
     template<int OC, int IC, int IH, int IW, int KH, int KW,
-        int SH, int SW, int PH, int PW>
+        int SH, int SW, int PH, int PW, int OH, int OW, int ABIC>
     static xnor_nn_status_t exec_template(const xnor_nn_convolution_t *c,
             xnor_nn_resources_t res);
 

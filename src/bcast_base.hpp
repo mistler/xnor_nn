@@ -4,7 +4,7 @@
 #include "implementation.hpp"
 
 #include "xnor_nn_types.h"
-#include "utils.h"
+#include "utils.hpp"
 
 namespace xnor_nn {
 namespace implementation {

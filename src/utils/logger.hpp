@@ -5,6 +5,11 @@
 #include <string>
 #include <cstdlib>
 
+#define LOG_INFO(...) \
+    if (xnor_nn::utils::Logger::enabled()) { \
+        xnor_nn::utils::Logger::info(__VA_ARGS__); \
+    }
+
 namespace xnor_nn {
 namespace utils {
 
@@ -20,6 +25,10 @@ public:
         if (!inst.is_verbose_) return;
         inst.info_stream_ << "xnor_nn: info:";
         inst.info_variadic(t...);
+    }
+
+    static bool enabled() {
+        return instance().is_verbose_;
     }
 
 private:

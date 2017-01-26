@@ -1,9 +1,7 @@
 #include "bcast_binarize_data.hpp"
 
-#include "utils.h"
+#include "utils.hpp"
 #include "logger.hpp"
-
-using Logger = xnor_nn::utils::Logger;
 
 namespace xnor_nn {
 namespace implementation {
@@ -50,17 +48,11 @@ xnor_nn_status_t BcastBinarizeData::exec(
     const int ABIC = ((BIC + 4 - 1) / 4) * 4;
     */
 
-    Logger::info("binarize_data:", "execute:",
-            "[", MB, "]",
-            "[", IC, "]",
-            "[", IH, "]",
-            "[", IW, "]",
-            " -> ",
-            "[", MB, "]",
-            "[", IH, "]",
-            "[", IW, "]",
-            "[", ABIC, "(bytes)", "]",
-            "Algorithm:", xnor_nn_algorithm_bcast);
+    LOG_INFO("binarize_data:\t", "execute:",
+            "[", MB, "][", IC, "][", IH, "][", IW, "]",
+            "->",
+            "[", MB, "][", IH, "][", IW, "][", ABIC, "(bytes)", "]",
+            "Algorithm:", "bcast");
 
 #   pragma omp parallel for collapse(3) schedule(static)
     for (int mb = 0; mb < MB; mb++)
