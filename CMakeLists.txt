@@ -8,6 +8,9 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "")
     set(CMAKE_BUILD_TYPE "Release")
 endif()
 
+# uncomment it for cross-compilation, also change arch flags
+#set(CMAKE_SYSROOT "/usr/arm-linux-gnueabi")
+
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
     set(CPU_ARCHITECTURE x86)
     set(CCXX_ARCH_FLAGS "-march=native")
