@@ -26,6 +26,10 @@ include_directories(include)
 
 enable_testing()
 
+# TEMPRORARY
+#string(REPLACE "-O3" "-O2" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+#string(REPLACE "-O3" "-O2" CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
+
 add_subdirectory(src)
 add_subdirectory(example)
 add_subdirectory(external)
