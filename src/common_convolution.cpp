@@ -32,8 +32,6 @@ xnor_nn_status_t xnor_nn_init_convolution(xnor_nn_convolution_t *c,
     c->pw = pw;
     c->ph = ph;
 
-    c->vlen = VLEN;
-
     c->binarize_data = nullptr;
     c->binarize_weights = nullptr;
     c->calculate_k = nullptr;

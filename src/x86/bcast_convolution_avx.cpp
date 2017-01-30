@@ -5,15 +5,17 @@
 #include "utils.hpp"
 #include "logger.hpp"
 
+#include "bcast_template_parameters.hpp"
+
 namespace xnor_nn {
 namespace implementation {
 
-#ifdef TEMPLATE_CONVOLUTION
-template<int OC, int IC, int IH, int IW, int KH, int KW,
-    int SH, int SW, int PH, int PW, int OH, int OW, int OCO, int ICO, int OCI>
-xnor_nn_status_t BcastConvolution::exec_template(
+#ifdef TEMPLATED
+template<int OC, int IC, int IH, int IW, int KH, int KW, int SH, int SW,
+    int PH, int PW>
+xnor_nn_status_t BcastConvolution::exec_avx_template(
 #else
-xnor_nn_status_t BcastConvolution::exec_simple(
+xnor_nn_status_t BcastConvolution::exec_avx_simple(
 #endif
         const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
     if (
@@ -32,7 +34,16 @@ xnor_nn_status_t BcastConvolution::exec_simple(
 
     const int MB = c->mb;
 
-#ifdef TEMPLATE_CONVOLUTION
+    BcastConvolution *state = reinterpret_cast<BcastConvolution*>(
+            getState(c, xnor_nn_operation_convolution_forward));
+
+#ifdef TEMPLATED
+    constexpr int OH = getOH(IH, KH, SH, PH);
+    constexpr int OW = getOW(IW, KW, SW, PW);
+    constexpr int OCO = state->constexpr_getOCO(OC);
+    constexpr int ICO = state->constexpr_getICO(IC);
+    constexpr int OCI = state->constexpr_getOCI();
+
 #else
     const int OC = c->oc;
     const int OH = c->oh;
@@ -47,13 +58,9 @@ xnor_nn_status_t BcastConvolution::exec_simple(
     const int PH = c->ph;
     const int PW = c->pw;
 
-    BcastConvolution *state = reinterpret_cast<BcastConvolution*>(
-            getState(c, xnor_nn_operation_convolution_forward));
-
-    constexpr int OCI = state->OCI;
-
-    const int ICO = state->ICO;
     const int OCO = state->OCO;
+    const int ICO = state->ICO;
+    const int OCI = state->getOCI();
 #endif
 
     LOG_INFO("convolution:\t", "execute:",
@@ -65,7 +72,7 @@ xnor_nn_status_t BcastConvolution::exec_simple(
             "stride: [", SH, "][", SW, "]",
             "pad: [", PH, "][", PW, "]",
             "Algorithm:", "bcast"
-#ifdef TEMPLATE_CONVOLUTION
+#ifdef TEMPLATED
             , "Template version"
 #endif
             );
@@ -121,6 +128,14 @@ xnor_nn_status_t BcastConvolution::exec_simple(
 
     return xnor_nn_success;
 }
+
+#ifdef TEMPLATED
+
+BCAST_TEMPLATE_INSTANTIATE(avx);
+
+#undef INSTANTIATE
+
+#endif
 
 } // namespace implementation
 } // namespace xnor_nn

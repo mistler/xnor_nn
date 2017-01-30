@@ -1,7 +1,9 @@
-#include "xnor_nn.hpp"
-
 #include "gtest.h"
+
 #include "common.hpp"
+
+#include "xnor_nn.hpp"
+#include "cpuid.hpp"
 
 typedef struct {
     xnor_nn_algorithm_t algorithm;
@@ -57,7 +59,7 @@ protected:
         st = xnor_nn_init_convolution(&convolution, p.algorithm,
                 p.mb, p.oc, p.ic, p.ih, p.iw, p.kh, p.kw,
                 p.sh, p.sw, p.ph, p.pw);
-        const int VLEN = convolution.vlen;
+        const int VLEN = xnor_nn::utils::Cpuid::vlen();
         const int BIC = ((p.ic + 8 - 1) / 8) * 8;
         const int ABIC = ((BIC + VLEN - 1) / VLEN) * VLEN;
         if (st != xnor_nn_success) goto label;

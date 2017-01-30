@@ -1,7 +1,8 @@
-#include "xnor_nn.hpp"
-
 #include "gtest.h"
+
 #include "common.hpp"
+
+#include "xnor_nn.hpp"
 
 typedef struct {
     xnor_nn_algorithm_t algorithm;

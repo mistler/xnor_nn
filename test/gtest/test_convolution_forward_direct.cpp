@@ -1,7 +1,8 @@
-#include "xnor_nn.hpp"
-
 #include "gtest.h"
+
 #include "common.hpp"
+
+#include "xnor_nn.hpp"
 
 TEST(ConvolutionForwardDirect, direct_precalculated) {
     const int MB = 1;

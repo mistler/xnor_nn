@@ -6,7 +6,7 @@ namespace implementation {
 bool BcastBase::isApplicable(const xnor_nn_convolution_t *c) const {
     bool ok = true
         && c->algorithm == xnor_nn_algorithm_bcast
-        && c->oc % OCI == 0;
+        && c->oc % getOCI() == 0;
     return ok;
 }
 
@@ -17,6 +17,7 @@ void BcastBase::setupConvolution(xnor_nn_convolution_t *c) {
 
     ICO = getICO(c->ic);
     OCO = getOCO(c->oc);
+    OCI = getOCI();
 
     c->resource_size[xnor_nn_resource_bin_src] =
         c->mb * ABIC * c->ih * c->iw * sizeof(char);

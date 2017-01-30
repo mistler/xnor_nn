@@ -1,17 +1,21 @@
 #include "bcast_convolution.hpp"
 
+#include <arm_neon.h>
+
 #include "utils.hpp"
 #include "logger.hpp"
+
+#include "bcast_template_parameters.hpp"
 
 namespace xnor_nn {
 namespace implementation {
 
-#ifdef TEMPLATE_CONVOLUTION
-template<int OC, int IC, int IH, int IW, int KH, int KW,
-    int SH, int SW, int PH, int PW, int OH, int OW, int OCO, int ICO, int OCI>
-xnor_nn_status_t BcastConvolution::exec_template(
+#ifdef TEMPLATED
+template<int OC, int IC, int IH, int IW, int KH, int KW, int SH, int SW,
+    int PH, int PW>
+xnor_nn_status_t BcastConvolution::exec_neon_template(
 #else
-xnor_nn_status_t BcastConvolution::exec_simple(
+xnor_nn_status_t BcastConvolution::exec_neon_simple(
 #endif
         const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
     if (
@@ -30,7 +34,15 @@ xnor_nn_status_t BcastConvolution::exec_simple(
 
     const int MB = c->mb;
 
-#ifdef TEMPLATE_CONVOLUTION
+    BcastConvolution *state = reinterpret_cast<BcastConvolution*>(
+            getState(c, xnor_nn_operation_convolution_forward));
+
+#ifdef TEMPLATED
+    constexpr int OH = getOH(IH, KH, SH, PH);
+    constexpr int OW = getOW(IW, KW, SW, PW);
+    constexpr int OCO = state->constexpr_getOCO(OC);
+    constexpr int ICO = state->constexpr_getICO(IC);
+    constexpr int OCI = state->constexpr_getOCI();
 #else
     const int OC = c->oc;
     const int OH = c->oh;
@@ -45,13 +57,10 @@ xnor_nn_status_t BcastConvolution::exec_simple(
     const int PH = c->ph;
     const int PW = c->pw;
 
-    BcastConvolution *state = reinterpret_cast<BcastConvolution*>(
-            getState(c, xnor_nn_operation_convolution_forward));
 
-    constexpr int OCI = state->OCI;
-
-    const int ICO = state->ICO;
     const int OCO = state->OCO;
+    const int ICO = state->ICO;
+    const int OCI = state->getOCI();
 #endif
 
     LOG_INFO("convolution:\t", "execute:",
@@ -63,7 +72,7 @@ xnor_nn_status_t BcastConvolution::exec_simple(
             "stride: [", SH, "][", SW, "]",
             "pad: [", PH, "][", PW, "]",
             "Algorithm:", "bcast"
-#ifdef TEMPLATE_CONVOLUTION
+#ifdef TEMPLATED
             , "Template version"
 #endif
             );
@@ -75,7 +84,8 @@ xnor_nn_status_t BcastConvolution::exec_simple(
     for (int oco = 0; oco < OCO; oco++)
     for (int oh = 0; oh < OH; oh++)
     for (int ow = 0; ow < OW; ow++) {
-        unsigned int d_arr[OCI] = { 0u };
+        uint32x4_t v_accum = veorq_u32(v_accum, v_accum);
+
         for (int kh = 0; kh < KH; kh++)
         for (int kw = 0; kw < KW; kw++) {
             const int ih = oh*SH - PH + kh;
@@ -89,18 +99,22 @@ xnor_nn_status_t BcastConvolution::exec_simple(
             const unsigned int *weights_ic_oci =
                 weights + ((oco*KH +kh)*KW + kw)*ICO*OCI;
 
-            for (int ico = 0; ico < ICO; ico++)
-            for (int oci = 0; oci < OCI; oci++) {
-                int src_idx = ico;
-                int weights_idx = ico*OCI + oci;
+            for (int ico = 0; ico < ICO; ico++) {
+                uint32x4_t v_src = vdupq_n_u32(src_ic[ico]);
+                uint32x4_t v_weights = vld1q_u32(weights_ic_oci + ico*OCI);
 
-                unsigned int bsrc = src_ic[src_idx];
-                unsigned int bweights = weights_ic_oci[weights_idx];
+                uint32x4_t v_xor = veorq_u32(v_src, v_weights);
+                uint32x4_t v_xnor = vmvnq_u32(v_xor);
 
-                unsigned int result = ~(bsrc ^ bweights);
-                d_arr[oci] += __builtin_popcount(result);
+                uint8x16_t v_cnt16 = vcntq_u8(vreinterpretq_u8_u32(v_xnor));
+                uint16x8_t v_cnt8 = vpaddlq_u8(v_cnt16);
+                uint32x4_t v_cnt4 = vpaddlq_u16(v_cnt8);
+                v_accum = vaddq_u32(v_cnt4, v_accum);
             }
         }
+        // TODO: single instruction mov
+        unsigned int d_arr[OCI] = { 0u };
+        vst1q_u32(d_arr, v_accum);
         for (int i = 0; i < OCI; i++)
             dst[((mb*OC + oco*OCI + i)*OH + oh)*OW + ow] =
                 d_arr[i] * *alpha * k[oh*OW + ow];
@@ -108,6 +122,12 @@ xnor_nn_status_t BcastConvolution::exec_simple(
 
     return xnor_nn_success;
 }
+
+#ifdef TEMPLATED
+
+BCAST_TEMPLATE_INSTANTIATE(neon);
+
+#endif
 
 } // namespace implementation
 } // namespace xnor_nn

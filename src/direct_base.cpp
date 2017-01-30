@@ -1,7 +1,5 @@
 #include "direct_base.hpp"
 
-#include "utils.hpp"
-
 namespace xnor_nn {
 namespace implementation {
 
@@ -13,7 +11,7 @@ bool DirectBase::isApplicable(const xnor_nn_convolution_t *c) const {
 
 void DirectBase::setupConvolution(xnor_nn_convolution_t *c) {
     BIC = ((c->ic + BITS - 1) / BITS) * BITS;
-    ABIC = ((BIC + VLEN - 1) / VLEN) * VLEN;
+    ABIC = getABIC(c->ic);
 
     c->resource_size[xnor_nn_resource_bin_src] =
         c->mb * ABIC * c->ih * c->iw * ELEM_SIZE;

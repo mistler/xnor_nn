@@ -2,7 +2,6 @@
 
 #include <cmath>
 
-#include "utils.hpp"
 #include "logger.hpp"
 
 namespace xnor_nn {
@@ -46,8 +45,8 @@ xnor_nn_status_t BcastBinarizeWeights::exec(
 
     constexpr int SZ = state->SZ;
     constexpr int BICI = state->BICI;
-    constexpr int OCI = state->OCI;
 
+    const int OCI = state->OCI;
     const int ICO = state->ICO;
     const int OCO = state->OCO;
 

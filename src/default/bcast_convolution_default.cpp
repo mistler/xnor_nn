@@ -1,17 +1,19 @@
-#include "direct_convolution.hpp"
+#include "bcast_convolution.hpp"
 
 #include "utils.hpp"
 #include "logger.hpp"
 
+#include "bcast_template_parameters.hpp"
+
 namespace xnor_nn {
 namespace implementation {
 
-#ifdef TEMPLATE_CONVOLUTION
-template<int OC, int IC, int IH, int IW, int KH, int KW,
-    int SH, int SW, int PH, int PW, int OH, int OW, int ABIC>
-xnor_nn_status_t DirectConvolution::exec_template(
+#ifdef TEMPLATED
+template<int OC, int IC, int IH, int IW, int KH, int KW, int SH, int SW,
+    int PH, int PW>
+xnor_nn_status_t BcastConvolution::exec_default_template(
 #else
-xnor_nn_status_t DirectConvolution::exec_simple(
+xnor_nn_status_t BcastConvolution::exec_default_simple(
 #endif
         const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
     if (
@@ -30,7 +32,15 @@ xnor_nn_status_t DirectConvolution::exec_simple(
 
     const int MB = c->mb;
 
-#ifdef TEMPLATE_CONVOLUTION
+    BcastConvolution *state = reinterpret_cast<BcastConvolution*>(
+            getState(c, xnor_nn_operation_convolution_forward));
+
+#ifdef TEMPLATED
+    constexpr int OH = getOH(IH, KH, SH, PH);
+    constexpr int OW = getOW(IW, KW, SW, PW);
+    constexpr int OCO = state->constexpr_getOCO(OC);
+    constexpr int ICO = state->constexpr_getICO(IC);
+    constexpr int OCI = state->constexpr_getOCI();
 #else
     const int OC = c->oc;
     const int OH = c->oh;
@@ -45,14 +55,11 @@ xnor_nn_status_t DirectConvolution::exec_simple(
     const int PH = c->ph;
     const int PW = c->pw;
 
-    DirectConvolution *state = reinterpret_cast<DirectConvolution*>(
-            getState(c, xnor_nn_operation_convolution_forward));
 
-    const int ABIC = state->ABIC;
+    const int OCO = state->OCO;
+    const int ICO = state->ICO;
+    const int OCI = state->getOCI();
 #endif
-
-    constexpr int ELEM_SIZE = 32;
-    const int VECTORS_IN_ABIC = ABIC / VLEN;
 
     LOG_INFO("convolution:\t", "execute:",
             "[", MB, "][", IC, "][", IH, "][", IW, "]",
@@ -62,21 +69,20 @@ xnor_nn_status_t DirectConvolution::exec_simple(
             "[", MB, "][", OC, "][", OH, "][", OW, "]",
             "stride: [", SH, "][", SW, "]",
             "pad: [", PH, "][", PW, "]",
-            "Algorithm:", "direct"
-#ifdef TEMPLATE_CONVOLUTION
+            "Algorithm:", "bcast"
+#ifdef TEMPLATED
             , "Template version"
 #endif
             );
 
     // TODO: potentially loops can be reordered
+    // TODO: check collapse value for performance
 #   pragma omp parallel for collapse(4) schedule(static)
     for (int mb = 0; mb < MB; mb++)
-    for (int oc = 0; oc < OC; oc++)
+    for (int oco = 0; oco < OCO; oco++)
     for (int oh = 0; oh < OH; oh++)
     for (int ow = 0; ow < OW; ow++) {
-        int dst_idx = ((mb*OC + oc)*OH + oh)*OW + ow;
-        float *d = dst + dst_idx;
-        *d = 0.f;
+        unsigned int d_arr[OCI] = { 0u };
         for (int kh = 0; kh < KH; kh++)
         for (int kw = 0; kw < KW; kw++) {
             const int ih = oh*SH - PH + kh;
@@ -86,27 +92,35 @@ xnor_nn_status_t DirectConvolution::exec_simple(
             if (ih >= IH || iw >= IW) continue;
 
             const unsigned int *src_ic =
-                src + ((mb*IH + ih)*IW + iw)*ABIC/ELEM_SIZE;
-            const unsigned int *weights_ic =
-                weights + ((kh*KW + kw)*OC + oc)*ABIC/ELEM_SIZE;
+                src + ((mb*IH + ih)*IW + iw)*ICO;
+            const unsigned int *weights_ic_oci =
+                weights + ((oco*KH +kh)*KW + kw)*ICO*OCI;
 
-            for (int vabic = 0; vabic < VECTORS_IN_ABIC; vabic++)
-            for (int v = 0; v < VLEN / ELEM_SIZE; v++) {
-                int src_idx = vabic*VLEN/ELEM_SIZE + v;
-                int weights_idx = vabic*VLEN/ELEM_SIZE + v;
+            for (int ico = 0; ico < ICO; ico++)
+            for (int oci = 0; oci < OCI; oci++) {
+                int src_idx = ico;
+                int weights_idx = ico*OCI + oci;
 
                 unsigned int bsrc = src_ic[src_idx];
-                unsigned int bweights = weights_ic[weights_idx];
+                unsigned int bweights = weights_ic_oci[weights_idx];
 
                 unsigned int result = ~(bsrc ^ bweights);
-                *d += __builtin_popcount(result);
+                d_arr[oci] += __builtin_popcount(result);
             }
         }
-        *d *= *alpha * k[oh*OW + ow];
+        for (int i = 0; i < OCI; i++)
+            dst[((mb*OC + oco*OCI + i)*OH + oh)*OW + ow] =
+                d_arr[i] * *alpha * k[oh*OW + ow];
     }
 
     return xnor_nn_success;
 }
+
+#ifdef TEMPLATED
+
+BCAST_TEMPLATE_INSTANTIATE(default);
+
+#endif
 
 } // namespace implementation
 } // namespace xnor_nn

@@ -1,19 +1,19 @@
 #include "direct_convolution.hpp"
 
-#include <arm_neon.h>
-
 #include "utils.hpp"
 #include "logger.hpp"
+
+#include "direct_template_parameters.hpp"
 
 namespace xnor_nn {
 namespace implementation {
 
-#ifdef TEMPLATE_CONVOLUTION
-template<int OC, int IC, int IH, int IW, int KH, int KW,
-    int SH, int SW, int PH, int PW, int OH, int OW, int ABIC>
-xnor_nn_status_t DirectConvolution::exec_template(
+#ifdef TEMPLATED
+template<int OC, int IC, int IH, int IW, int KH, int KW, int SH, int SW,
+    int PH, int PW>
+xnor_nn_status_t DirectConvolution::exec_default_template(
 #else
-xnor_nn_status_t DirectConvolution::exec_simple(
+xnor_nn_status_t DirectConvolution::exec_default_simple(
 #endif
         const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
     if (
@@ -32,7 +32,13 @@ xnor_nn_status_t DirectConvolution::exec_simple(
 
     const int MB = c->mb;
 
-#ifdef TEMPLATE_CONVOLUTION
+    DirectConvolution *state = reinterpret_cast<DirectConvolution*>(
+            getState(c, xnor_nn_operation_convolution_forward));
+
+#ifdef TEMPLATED
+    constexpr int OH = getOH(IH, KH, SH, PH);
+    constexpr int OW = getOW(IW, KW, SW, PW);
+    constexpr int ABIC = state->constexpr_getABIC(IC);
 #else
     const int OC = c->oc;
     const int OH = c->oh;
@@ -46,9 +52,6 @@ xnor_nn_status_t DirectConvolution::exec_simple(
     const int SW = c->sw;
     const int PH = c->ph;
     const int PW = c->pw;
-
-    DirectConvolution *state = reinterpret_cast<DirectConvolution*>(
-            getState(c, xnor_nn_operation_convolution_forward));
 
     const int ABIC = state->ABIC;
 #endif
@@ -65,7 +68,7 @@ xnor_nn_status_t DirectConvolution::exec_simple(
             "stride: [", SH, "][", SW, "]",
             "pad: [", PH, "][", PW, "]",
             "Algorithm:", "direct"
-#ifdef TEMPLATE_CONVOLUTION
+#ifdef TEMPLATED
             , "Template version"
 #endif
             );
@@ -79,8 +82,6 @@ xnor_nn_status_t DirectConvolution::exec_simple(
         int dst_idx = ((mb*OC + oc)*OH + oh)*OW + ow;
         float *d = dst + dst_idx;
         *d = 0.f;
-        uint32x4_t v_accum = veorq_u32(v_accum, v_accum);
-        long long int dst_i = 0;
         for (int kh = 0; kh < KH; kh++)
         for (int kw = 0; kw < KW; kw++) {
             const int ih = oh*SH - PH + kh;
@@ -94,29 +95,29 @@ xnor_nn_status_t DirectConvolution::exec_simple(
             const unsigned int *weights_ic =
                 weights + ((kh*KW + kw)*OC + oc)*ABIC/ELEM_SIZE;
 
-            for (int vabic = 0; vabic < VECTORS_IN_ABIC; vabic++) {
-                uint32x4_t v_src =
-                    vld1q_u32(src_ic + vabic*VLEN/ELEM_SIZE);
-                uint32x4_t v_weights =
-                    vld1q_u32(weights_ic + vabic*VLEN/ELEM_SIZE);
+            for (int vabic = 0; vabic < VECTORS_IN_ABIC; vabic++)
+            for (int v = 0; v < VLEN / ELEM_SIZE; v++) {
+                int src_idx = vabic*VLEN/ELEM_SIZE + v;
+                int weights_idx = vabic*VLEN/ELEM_SIZE + v;
 
-                uint32x4_t v_xor = veorq_u32(v_src, v_weights);
-                uint32x4_t v_xnor = vmvnq_u32(v_xor);
+                unsigned int bsrc = src_ic[src_idx];
+                unsigned int bweights = weights_ic[weights_idx];
 
-                uint8x16_t v_cnt16 = vcntq_u8(vreinterpretq_u8_u32(v_xnor));
-                uint16x8_t v_cnt8 = vpaddlq_u8(v_cnt16);
-                uint32x4_t v_cnt4 = vpaddlq_u16(v_cnt8);
-                v_accum = vaddq_u32(v_cnt4, v_accum);
+                unsigned int result = ~(bsrc ^ bweights);
+                *d += __builtin_popcount(result);
             }
         }
-        uint64x2_t v_cnt2 = vpaddlq_u32(v_accum);
-        dst_i += vgetq_lane_u64(v_cnt2, 0);
-        dst_i += vgetq_lane_u64(v_cnt2, 1);
-        *d = (float)dst_i * *alpha * k[oh*OW + ow];
+        *d *= *alpha * k[oh*OW + ow];
     }
 
     return xnor_nn_success;
 }
+
+#ifdef TEMPLATED
+
+DIRECT_TEMPLATE_INSTANTIATE(default);
+
+#endif
 
 } // namespace implementation
 } // namespace xnor_nn

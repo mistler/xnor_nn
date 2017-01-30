@@ -4,7 +4,7 @@
 #include "implementation.hpp"
 
 #include "xnor_nn_types.h"
-#include "utils.hpp"
+#include "cpuid.hpp"
 
 namespace xnor_nn {
 namespace implementation {
@@ -16,26 +16,39 @@ public:
     virtual void setupConvolution(xnor_nn_convolution_t *c);
 
 protected:
+
+#ifdef VLEN
+    static constexpr int constexpr_getICO(int IC) {
+        return ((IC + BICI - 1) / BICI + SZ - 1) / SZ;
+    }
+
+    static constexpr int constexpr_getOCO(int OC) {
+        return (OC + constexpr_getOCI() - 1) / constexpr_getOCI();
+    }
+
+    static constexpr int constexpr_getOCI() {
+        return VLEN / SZ / BICI;
+    }
+#endif
+
     static constexpr int getICO(int IC) {
         return ((IC + BICI - 1) / BICI + SZ - 1) / SZ;
     }
 
-    static constexpr int getOCO(int OC) {
-        return (OC + OCI - 1) / OCI;
+    static int getOCO(int OC) {
+        return (OC + getOCI() - 1) / getOCI();
+    }
+
+    static int getOCI() {
+        return xnor_nn::utils::Cpuid::vlen() / SZ / BICI;
     }
 
 protected:
-    int BIC, ABIC, ICO, OCO;
+    int BIC, ABIC, ICO, OCO, OCI;
 
-    // TODO: remove unused stuff
     static constexpr int SZ = 8;
-    static constexpr int ELEM_SIZE = sizeof(char);
-    static constexpr int BITS = ELEM_SIZE * SZ;
+    static constexpr int BITS = sizeof(char) * SZ;
     static constexpr int BICI = sizeof(int);
-
-    static constexpr int VLEN_BYTES = VLEN / SZ;
-    static constexpr int OCI = VLEN_BYTES / BICI;
-
 };
 
 } // namespace implementation

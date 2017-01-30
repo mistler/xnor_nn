@@ -1,6 +1,5 @@
 #include "bcast_binarize_data.hpp"
 
-#include "utils.hpp"
 #include "logger.hpp"
 
 namespace xnor_nn {

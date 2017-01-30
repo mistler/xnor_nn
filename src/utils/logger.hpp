@@ -15,10 +15,6 @@ namespace utils {
 
 class Logger {
 public:
-    Logger(): info_stream_(std::cout), is_verbose_(false) {
-        read_environment();
-    }
-
     template<typename ... T>
     static void info(T ... t) {
         Logger &inst = instance();
@@ -36,6 +32,10 @@ private:
     bool is_verbose_;
 
 private:
+    Logger(): info_stream_(std::cout), is_verbose_(false) {
+        read_environment();
+    }
+
     static Logger &instance() {
         static Logger instance;
         return instance;

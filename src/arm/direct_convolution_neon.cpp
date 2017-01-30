@@ -1,19 +1,21 @@
-#include "bcast_convolution.hpp"
+#include "direct_convolution.hpp"
 
 #include <arm_neon.h>
 
 #include "utils.hpp"
 #include "logger.hpp"
 
+#include "direct_template_parameters.hpp"
+
 namespace xnor_nn {
 namespace implementation {
 
-#ifdef TEMPLATE_CONVOLUTION
-template<int OC, int IC, int IH, int IW, int KH, int KW,
-    int SH, int SW, int PH, int PW, int OH, int OW, int OCO, int ICO, int OCI>
-xnor_nn_status_t BcastConvolution::exec_template(
+#ifdef TEMPLATED
+template<int OC, int IC, int IH, int IW, int KH, int KW, int SH, int SW,
+    int PH, int PW>
+xnor_nn_status_t DirectConvolution::exec_neon_template(
 #else
-xnor_nn_status_t BcastConvolution::exec_simple(
+xnor_nn_status_t DirectConvolution::exec_neon_simple(
 #endif
         const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
     if (
@@ -32,7 +34,13 @@ xnor_nn_status_t BcastConvolution::exec_simple(
 
     const int MB = c->mb;
 
-#ifdef TEMPLATE_CONVOLUTION
+    DirectConvolution *state = reinterpret_cast<DirectConvolution*>(
+            getState(c, xnor_nn_operation_convolution_forward));
+
+#ifdef TEMPLATED
+    constexpr int OH = getOH(IH, KH, SH, PH);
+    constexpr int OW = getOW(IW, KW, SW, PW);
+    constexpr int ABIC = state->constexpr_getABIC(IC);
 #else
     const int OC = c->oc;
     const int OH = c->oh;
@@ -47,14 +55,11 @@ xnor_nn_status_t BcastConvolution::exec_simple(
     const int PH = c->ph;
     const int PW = c->pw;
 
-    BcastConvolution *state = reinterpret_cast<BcastConvolution*>(
-            getState(c, xnor_nn_operation_convolution_forward));
-
-    constexpr int OCI = state->OCI;
-
-    const int ICO = state->ICO;
-    const int OCO = state->OCO;
+    const int ABIC = state->ABIC;
 #endif
+
+    constexpr int ELEM_SIZE = 32;
+    const int VECTORS_IN_ABIC = ABIC / VLEN;
 
     LOG_INFO("convolution:\t", "execute:",
             "[", MB, "][", IC, "][", IH, "][", IW, "]",
@@ -64,21 +69,23 @@ xnor_nn_status_t BcastConvolution::exec_simple(
             "[", MB, "][", OC, "][", OH, "][", OW, "]",
             "stride: [", SH, "][", SW, "]",
             "pad: [", PH, "][", PW, "]",
-            "Algorithm:", "bcast"
-#ifdef TEMPLATE_CONVOLUTION
+            "Algorithm:", "direct"
+#ifdef TEMPLATED
             , "Template version"
 #endif
             );
 
     // TODO: potentially loops can be reordered
-    // TODO: check collapse value for performance
 #   pragma omp parallel for collapse(4) schedule(static)
     for (int mb = 0; mb < MB; mb++)
-    for (int oco = 0; oco < OCO; oco++)
+    for (int oc = 0; oc < OC; oc++)
     for (int oh = 0; oh < OH; oh++)
     for (int ow = 0; ow < OW; ow++) {
+        int dst_idx = ((mb*OC + oc)*OH + oh)*OW + ow;
+        float *d = dst + dst_idx;
+        *d = 0.f;
         uint32x4_t v_accum = veorq_u32(v_accum, v_accum);
-
+        long long int dst_i = 0;
         for (int kh = 0; kh < KH; kh++)
         for (int kw = 0; kw < KW; kw++) {
             const int ih = oh*SH - PH + kh;
@@ -88,13 +95,15 @@ xnor_nn_status_t BcastConvolution::exec_simple(
             if (ih >= IH || iw >= IW) continue;
 
             const unsigned int *src_ic =
-                src + ((mb*IH + ih)*IW + iw)*ICO;
-            const unsigned int *weights_ic_oci =
-                weights + ((oco*KH +kh)*KW + kw)*ICO*OCI;
+                src + ((mb*IH + ih)*IW + iw)*ABIC/ELEM_SIZE;
+            const unsigned int *weights_ic =
+                weights + ((kh*KW + kw)*OC + oc)*ABIC/ELEM_SIZE;
 
-            for (int ico = 0; ico < ICO; ico++) {
-                uint32x4_t v_src = vdupq_n_u32(src_ic[ico]);
-                uint32x4_t v_weights = vld1q_u32(weights_ic_oci + ico*OCI);
+            for (int vabic = 0; vabic < VECTORS_IN_ABIC; vabic++) {
+                uint32x4_t v_src =
+                    vld1q_u32(src_ic + vabic*VLEN/ELEM_SIZE);
+                uint32x4_t v_weights =
+                    vld1q_u32(weights_ic + vabic*VLEN/ELEM_SIZE);
 
                 uint32x4_t v_xor = veorq_u32(v_src, v_weights);
                 uint32x4_t v_xnor = vmvnq_u32(v_xor);
@@ -105,16 +114,20 @@ xnor_nn_status_t BcastConvolution::exec_simple(
                 v_accum = vaddq_u32(v_cnt4, v_accum);
             }
         }
-        // TODO: single instruction mov
-        unsigned int d_arr[OCI] = { 0u };
-        vst1q_u32(d_arr, v_accum);
-        for (int i = 0; i < OCI; i++)
-            dst[((mb*OC + oco*OCI + i)*OH + oh)*OW + ow] =
-                d_arr[i] * *alpha * k[oh*OW + ow];
+        uint64x2_t v_cnt2 = vpaddlq_u32(v_accum);
+        dst_i += vgetq_lane_u64(v_cnt2, 0);
+        dst_i += vgetq_lane_u64(v_cnt2, 1);
+        *d = (float)dst_i * *alpha * k[oh*OW + ow];
     }
 
     return xnor_nn_success;
 }
+
+#ifdef TEMPLATED
+
+DIRECT_TEMPLATE_INSTANTIATE(neon);
+
+#endif
 
 } // namespace implementation
 } // namespace xnor_nn

@@ -1,7 +1,9 @@
-#include "xnor_nn.hpp"
-
 #include "gtest.h"
+
 #include "common.hpp"
+
+#include "xnor_nn.hpp"
+#include "cpuid.hpp"
 
 TEST(WeightsBinarizeDirect, direct_precalculated) {
     const int MB = 1;
@@ -64,7 +66,7 @@ TEST(WeightsBinarizeDirect, direct_precalculated) {
 
     st = xnor_nn_init_convolution(&convolution, xnor_nn_algorithm_direct,
             MB, OC, IC, IH, IW, KH, KW, SH, SW, PH, PW);
-    const int VLEN = convolution.vlen;
+    const int VLEN = xnor_nn::utils::Cpuid::vlen();
     const int BIC = ((IC + 8 - 1) / 8) * 8;
     const int ABIC = ((BIC + VLEN - 1) / VLEN) * VLEN;
     if (st != xnor_nn_success) goto label;

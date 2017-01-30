@@ -5,15 +5,17 @@
 #include "utils.hpp"
 #include "logger.hpp"
 
+#include "direct_template_parameters.hpp"
+
 namespace xnor_nn {
 namespace implementation {
 
-#ifdef TEMPLATE_CONVOLUTION
-template<int OC, int IC, int IH, int IW, int KH, int KW,
-    int SH, int SW, int PH, int PW, int OH, int OW, int ABIC>
-xnor_nn_status_t DirectConvolution::exec_template(
+#ifdef TEMPLATED
+template<int OC, int IC, int IH, int IW, int KH, int KW, int SH, int SW,
+    int PH, int PW>
+xnor_nn_status_t DirectConvolution::exec_avx_template(
 #else
-xnor_nn_status_t DirectConvolution::exec_simple(
+xnor_nn_status_t DirectConvolution::exec_avx_simple(
 #endif
         const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
     if (
@@ -32,7 +34,13 @@ xnor_nn_status_t DirectConvolution::exec_simple(
 
     const int MB = c->mb;
 
-#ifdef TEMPLATE_CONVOLUTION
+    DirectConvolution *state = reinterpret_cast<DirectConvolution*>(
+            getState(c, xnor_nn_operation_convolution_forward));
+
+#ifdef TEMPLATED
+    constexpr int OH = getOH(IH, KH, SH, PH);
+    constexpr int OW = getOW(IW, KW, SW, PW);
+    constexpr int ABIC = state->constexpr_getABIC(IC);
 #else
     const int OC = c->oc;
     const int OH = c->oh;
@@ -46,9 +54,6 @@ xnor_nn_status_t DirectConvolution::exec_simple(
     const int SW = c->sw;
     const int PH = c->ph;
     const int PW = c->pw;
-
-    DirectConvolution *state = reinterpret_cast<DirectConvolution*>(
-            getState(c, xnor_nn_operation_convolution_forward));
 
     const int ABIC = state->ABIC;
 #endif
@@ -65,7 +70,7 @@ xnor_nn_status_t DirectConvolution::exec_simple(
             "stride: [", SH, "][", SW, "]",
             "pad: [", PH, "][", PW, "]",
             "Algorithm:", "direct"
-#ifdef TEMPLATE_CONVOLUTION
+#ifdef TEMPLATED
             , "Template version"
 #endif
             );
@@ -95,7 +100,7 @@ xnor_nn_status_t DirectConvolution::exec_simple(
             : "ymm2"
         );
         */
-#ifdef TEMPLATE_CONVOLUTION
+#ifdef TEMPLATED
         constexpr int kernel_size = KW * KH * VECTORS_IN_ABIC;
         __m256 kernel[kernel_size];
         if (kernel_size < 10) {
@@ -124,7 +129,7 @@ xnor_nn_status_t DirectConvolution::exec_simple(
             for (int vabic = 0; vabic < VECTORS_IN_ABIC; vabic++) {
                 __m256 v_src = _mm256_load_ps(
                         (float*)src_ic + vabic*VLEN/ELEM_SIZE);
-#ifdef TEMPLATE_CONVOLUTION
+#ifdef TEMPLATED
                 __m256 v_weights;
                 __m256 v_xor;
                 if (kernel_size < 10) {
@@ -186,6 +191,12 @@ xnor_nn_status_t DirectConvolution::exec_simple(
 
     return xnor_nn_success;
 }
+
+#ifdef TEMPLATED
+
+DIRECT_TEMPLATE_INSTANTIATE(avx);
+
+#endif
 
 } // namespace implementation
 } // namespace xnor_nn

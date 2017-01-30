@@ -1,7 +1,9 @@
-#include "xnor_nn.hpp"
-
 #include "gtest.h"
+
 #include "common.hpp"
+
+#include "xnor_nn.hpp"
+#include "cpuid.hpp"
 
 TEST(WeightsBinarizeBcast, bcast_precalculated) {
     const int MB = 1;
@@ -56,6 +58,7 @@ TEST(WeightsBinarizeBcast, bcast_precalculated) {
 
     st = xnor_nn_init_convolution(&convolution, xnor_nn_algorithm_bcast,
             MB, OC, IC, IH, IW, KH, KW, SH, SW, PH, PW);
+    const int VLEN = xnor_nn::utils::Cpuid::vlen();
     if (st != xnor_nn_success) goto label;
 
     st = xnor_nn_allocate_resources(&convolution, res);
@@ -68,7 +71,7 @@ TEST(WeightsBinarizeBcast, bcast_precalculated) {
     if (st != xnor_nn_success) goto label;
 
     // Chech result
-    xnor_nn::test::check_weights_bcast(OC, IC, KH, KW, convolution.vlen,
+    xnor_nn::test::check_weights_bcast(OC, IC, KH, KW, VLEN,
             (unsigned char*)res[xnor_nn_resource_bin_weights], weights);
 
     xnor_nn::test::check_value(*actual_alpha, alpha);

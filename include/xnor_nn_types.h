@@ -60,8 +60,6 @@ struct xnor_nn_convolution_ {
     int kh, kw;
     int ph, pw;
 
-    int vlen; // for testing purposes only
-
     size_t resource_size[xnor_nn_resource_number];
 
     xnor_nn_executor_t binarize_weights;
