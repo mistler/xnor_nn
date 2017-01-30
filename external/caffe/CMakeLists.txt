@@ -39,7 +39,7 @@ set(CAFFE_GREP 2>&1 | grep -E 'conv.*forward: |Average Forward pass: '
 add_custom_target(
     caffe_time
 
-    COMMAND echo ${CPU_ARCHITECTURE}
+    COMMAND echo ${CMAKE_SYSTEM_PROCESSOR}
     COMMAND echo caffe_task
     COMMAND ${CAFFE_TIME_VARS} ${CAFFE_TIME_RUN}
         -iterations=2500 ${CAFFE_MODEL}/caffe_task/train_val.prototxt

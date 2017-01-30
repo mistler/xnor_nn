@@ -2,7 +2,6 @@
 
 #include "gtest.h"
 #include "common.hpp"
-#include "utils.hpp"
 
 TEST(WeightsBinarizeDirect, direct_precalculated) {
     const int MB = 1;
@@ -11,10 +10,6 @@ TEST(WeightsBinarizeDirect, direct_precalculated) {
     const int KH = 3, KW = 3;
     const int SH = 1, SW = 1;
     const int PH = 1, PW = 1;
-
-    // TODO: remove me
-    const int BIC = ((IC + 8 - 1) / 8) * 8;
-    const int ABIC = ((BIC + VLEN - 1) / VLEN) * VLEN;
 
     const float P = 1.f;
     const float N = -1.f;
@@ -69,6 +64,9 @@ TEST(WeightsBinarizeDirect, direct_precalculated) {
 
     st = xnor_nn_init_convolution(&convolution, xnor_nn_algorithm_direct,
             MB, OC, IC, IH, IW, KH, KW, SH, SW, PH, PW);
+    const int VLEN = convolution.vlen;
+    const int BIC = ((IC + 8 - 1) / 8) * 8;
+    const int ABIC = ((BIC + VLEN - 1) / VLEN) * VLEN;
     if (st != xnor_nn_success) goto label;
 
     st = xnor_nn_allocate_resources(&convolution, res);

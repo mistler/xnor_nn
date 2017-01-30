@@ -2,16 +2,27 @@
 
 #include "utils.hpp"
 
-// TODO: log execution
+#ifdef __x86_64__
 
-#ifdef ARCH_X86
+#ifdef __AVX__
 
 #define TEMPLATE_CONVOLUTION
 #include "bcast_convolution_avx.hpp"
 #undef TEMPLATE_CONVOLUTION
 #include "bcast_convolution_avx.hpp"
 
-#elif defined ARCH_ARM
+#else
+
+#define TEMPLATE_CONVOLUTION
+#include "bcast_convolution_default.hpp"
+#undef TEMPLATE_CONVOLUTION
+#include "bcast_convolution_default.hpp"
+
+#endif
+
+#elif defined __arm__
+
+#ifdef __ARM_NEON
 
 #define TEMPLATE_CONVOLUTION
 #include "bcast_convolution_neon.hpp"
@@ -26,6 +37,11 @@
 #include "bcast_convolution_default.hpp"
 
 #endif
+
+#else
+#error Target is not supported
+#endif
+
 
 #define TRY(OC, IC, IH, IW, KH, KW, SH, SW, PH, PW) \
     if (OC == c->oc && IC == c->ic && IH == c->ih && IW == c->iw \

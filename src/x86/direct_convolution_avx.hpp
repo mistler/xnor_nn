@@ -95,6 +95,19 @@ xnor_nn_status_t DirectConvolution::exec_simple(
             : "ymm2"
         );
         */
+#ifdef TEMPLATE_CONVOLUTION
+        constexpr int kernel_size = KW * KH * VECTORS_IN_ABIC;
+        __m256 kernel[kernel_size];
+        if (kernel_size < 10) {
+            for (int kh = 0; kh < KH; kh++)
+            for (int kw = 0; kw < KW; kw++)
+            for (int vabic = 0; vabic < VECTORS_IN_ABIC; vabic++)
+                kernel[(vabic*KH + kh)*KW + kw] = _mm256_load_ps(
+                        (const float*) weights
+                        + ((kh*KW + kw)*OC + oc)*ABIC/ELEM_SIZE
+                        + vabic*VLEN/ELEM_SIZE);
+        }
+#endif
         for (int kh = 0; kh < KH; kh++)
         for (int kw = 0; kw < KW; kw++) {
             const int ih = oh*SH - PH + kh;
@@ -111,10 +124,22 @@ xnor_nn_status_t DirectConvolution::exec_simple(
             for (int vabic = 0; vabic < VECTORS_IN_ABIC; vabic++) {
                 __m256 v_src = _mm256_load_ps(
                         (float*)src_ic + vabic*VLEN/ELEM_SIZE);
-                __m256 v_weights = _mm256_load_ps(
+#ifdef TEMPLATE_CONVOLUTION
+                __m256 v_weights;
+                __m256 v_xor;
+                if (kernel_size < 10) {
+                    v_xor = _mm256_xor_ps(v_src,
+                            kernel[(vabic*KH + kh)*KW + kw]);
+                } else {
+                    v_weights = _mm256_load_ps(
                         (float*)weights_ic + vabic*VLEN/ELEM_SIZE);
-
+                    v_xor = _mm256_xor_ps(v_src, v_weights);
+                }
+#else
+                __m256 v_weights = _mm256_load_ps(
+                    (float*)weights_ic + vabic*VLEN/ELEM_SIZE);
                 __m256 v_xor = _mm256_xor_ps(v_src, v_weights);
+#endif
                 __m256i v_xnor =
                     _mm256_castps_si256(_mm256_xor_ps(v_xor, v_ones));
 

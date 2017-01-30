@@ -4,7 +4,6 @@
 #include "gtest.h"
 
 #include "xnor_nn.h"
-#include "utils.hpp"
 
 namespace xnor_nn {
 namespace test {
@@ -86,16 +85,17 @@ template<typename T> void check_weights(
 }
 
 // TODO: check space, filled with ONES
-void check_weights_bcast(int OC, int IC, int KH, int KW,
+void check_weights_bcast(int OC, int IC, int KH, int KW, int VLEN,
         const unsigned char *a, const float *e) {
     constexpr int SZ = 8;
-    constexpr int VLEN_BYTES = (VLEN / SZ);
 
     constexpr int BICI = 4;
 
     constexpr int ELEM_SIZE = sizeof(char);
     constexpr int BITS = ELEM_SIZE * SZ;
-    constexpr int OCI = VLEN_BYTES / BICI;
+
+    const int VLEN_BYTES = (VLEN / SZ);
+    const int OCI = VLEN_BYTES / BICI;
 
     const int BIC = (IC + BITS - 1) / BITS;
     const int ICO = (BIC + BICI - 1) / BICI;

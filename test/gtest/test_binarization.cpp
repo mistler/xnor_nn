@@ -3,8 +3,6 @@
 #include "gtest.h"
 #include "common.hpp"
 
-#include "utils.hpp"
-
 typedef struct {
     xnor_nn_algorithm_t algorithm;
     int mb;
@@ -40,11 +38,8 @@ protected:
     virtual void SetUp() {
         params_t p = ::testing::TestWithParam<params_t>::GetParam();
 
-        p.oh = getOH(p.ih, p.kh, p.sh, p.ph);
-        p.ow = getOW(p.iw, p.kw, p.sw, p.pw);
-
-        const int BIC = ((p.ic + 8 - 1) / 8) * 8;
-        const int ABIC = ((BIC + VLEN - 1) / VLEN) * VLEN;
+        p.oh = (p.ih + 2*p.ph - p.kh) / p.sh + 1;
+        p.ow = (p.iw + 2*p.pw - p.kw) / p.sw + 1;
 
         float *src = new float[p.mb*p.ic*p.ih*p.iw];
         float *weights = new float[p.oc*p.ic*p.kh*p.kw];
@@ -62,6 +57,9 @@ protected:
         st = xnor_nn_init_convolution(&convolution, p.algorithm,
                 p.mb, p.oc, p.ic, p.ih, p.iw, p.kh, p.kw,
                 p.sh, p.sw, p.ph, p.pw);
+        const int VLEN = convolution.vlen;
+        const int BIC = ((p.ic + 8 - 1) / 8) * 8;
+        const int ABIC = ((BIC + VLEN - 1) / VLEN) * VLEN;
         if (st != xnor_nn_success) goto label;
 
         st = xnor_nn_allocate_resources(&convolution, res);
@@ -80,7 +78,7 @@ protected:
         // Check result
         if (p.algorithm == xnor_nn_algorithm_bcast) {
             // TODO: some better checks
-            xnor_nn::test::check_weights_bcast(p.oc, p.ic, p.kh, p.kw,
+            xnor_nn::test::check_weights_bcast(p.oc, p.ic, p.kh, p.kw, VLEN,
                     (unsigned char*)res[xnor_nn_resource_bin_weights], weights);
             xnor_nn::test::check_data(p.mb, p.ic, p.ih, p.iw,
                     ((p.ic + 4 - 1) / 4 + 8 - 1) / 8 * 4 * 8,

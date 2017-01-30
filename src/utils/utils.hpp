@@ -2,14 +2,25 @@
 #define UTILS_HPP
 
 #ifdef __x86_64__
+
+#ifdef __AVX__
 #define VLEN 256
-#define ARCH_X86
-#elif defined __arm__
-#define VLEN 128
-#define ARCH_ARM
 #else
 #define VLEN 32
-#define ARCH_UNDEF
+#endif
+
+#elif defined __arm__
+
+#ifdef __ARM_NEON
+#define VLEN 128
+#else
+#define VLEN 32
+#endif
+
+#else
+
+#error Target is not supported
+
 #endif
 
 constexpr int getOH(int ih, int kh, int sh, int ph) {
