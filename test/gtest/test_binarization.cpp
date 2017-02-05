@@ -3,8 +3,6 @@
 #include "gtest.h"
 #include "common.hpp"
 
-#include "utils.h"
-
 typedef struct {
     xnor_nn_algorithm_t algorithm;
     int mb;
@@ -40,11 +38,8 @@ protected:
     virtual void SetUp() {
         params_t p = ::testing::TestWithParam<params_t>::GetParam();
 
-        p.oh = getOH(p.ih, p.kh, p.sh, p.ph);
-        p.ow = getOW(p.iw, p.kw, p.sw, p.pw);
-
-        const int BIC = ((p.ic + 8 - 1) / 8) * 8;
-        const int ABIC = ((BIC + VLEN - 1) / VLEN) * VLEN;
+        p.oh = (p.ih + 2*p.ph - p.kh) / p.sh + 1;
+        p.ow = (p.iw + 2*p.pw - p.kw) / p.sw + 1;
 
         float *src = new float[p.mb*p.ic*p.ih*p.iw];
         float *weights = new float[p.oc*p.ic*p.kh*p.kw];
@@ -62,6 +57,9 @@ protected:
         st = xnor_nn_init_convolution(&convolution, p.algorithm,
                 p.mb, p.oc, p.ic, p.ih, p.iw, p.kh, p.kw,
                 p.sh, p.sw, p.ph, p.pw);
+        const int VLEN = convolution.vlen;
+        const int BIC = ((p.ic + 8 - 1) / 8) * 8;
+        const int ABIC = ((BIC + VLEN - 1) / VLEN) * VLEN;
         if (st != xnor_nn_success) goto label;
 
         st = xnor_nn_allocate_resources(&convolution, res);
@@ -80,7 +78,7 @@ protected:
         // Check result
         if (p.algorithm == xnor_nn_algorithm_bcast) {
             // TODO: some better checks
-            xnor_nn::test::check_weights_bcast(p.oc, p.ic, p.kh, p.kw,
+            xnor_nn::test::check_weights_bcast(p.oc, p.ic, p.kh, p.kw, VLEN,
                     (unsigned char*)res[xnor_nn_resource_bin_weights], weights);
             xnor_nn::test::check_data(p.mb, p.ic, p.ih, p.iw,
                     ((p.ic + 4 - 1) / 4 + 8 - 1) / 8 * 4 * 8,
@@ -112,10 +110,10 @@ TEST_P(Binarization, binarization)
 // mb ic oc ih iw kh kw sh sw ph pw
 INSTANTIATE_TEST_CASE_P(BinarizationBcastTask,
         Binarization, ::testing::Values(
-params_t{ xnor_nn_algorithm_bcast, 1, 1, 24, 60, 61, 3, 3, 1, 1, 0, 0 },
-params_t{ xnor_nn_algorithm_bcast, 256, 1, 24, 60, 61, 3, 3, 1, 1, 0, 0 },
-params_t{ xnor_nn_algorithm_bcast, 1, 24, 24, 20, 20, 3, 3, 1, 1, 0, 0 },
-params_t{ xnor_nn_algorithm_bcast, 256, 24, 24, 20, 20, 3, 3, 1, 1, 0, 0 }
+params_t{ xnor_nn_algorithm_bcast, 1, 1, 32, 60, 61, 3, 3, 1, 1, 0, 0 },
+params_t{ xnor_nn_algorithm_bcast, 256, 1, 32, 60, 61, 3, 3, 1, 1, 0, 0 },
+params_t{ xnor_nn_algorithm_bcast, 1, 32, 32, 20, 20, 3, 3, 1, 1, 0, 0 },
+params_t{ xnor_nn_algorithm_bcast, 256, 32, 32, 20, 20, 3, 3, 1, 1, 0, 0 }
 ));
 INSTANTIATE_TEST_CASE_P(BinarizationBcastSmall,
         Binarization, ::testing::Values(
@@ -145,16 +143,17 @@ params_t{ xnor_nn_algorithm_bcast, 3, 7, 8, 13, 13, 3, 3, 1, 1, 1, 1 }
 ));
 INSTANTIATE_TEST_CASE_P(BinarizationBcastAlexNet,
         Binarization, ::testing::Values(
-params_t{ xnor_nn_algorithm_bcast, 2, 64, 192, 27, 27, 5, 5, 1, 1, 2, 2 },
-params_t{ xnor_nn_algorithm_bcast, 2, 192, 384, 13, 13, 3, 3, 1, 1, 1, 1 },
-params_t{ xnor_nn_algorithm_bcast, 2, 384, 256, 13, 13, 3, 3, 1, 1, 1, 1 },
-params_t{ xnor_nn_algorithm_bcast, 2, 256, 256, 13, 13, 3, 3, 1, 1, 1, 1 }
+params_t{ xnor_nn_algorithm_bcast, 2, 3, 96, 227, 227, 11, 11, 4, 4, 0, 0 },
+params_t{ xnor_nn_algorithm_bcast, 2, 96, 256, 27, 27, 5, 5, 1, 1, 2, 2 },
+params_t{ xnor_nn_algorithm_bcast, 2, 256, 384, 13, 13, 3, 3, 1, 1, 1, 1 },
+params_t{ xnor_nn_algorithm_bcast, 2, 384, 384, 13, 13, 3, 3, 1, 1, 1, 1 },
+params_t{ xnor_nn_algorithm_bcast, 2, 384, 256, 13, 13, 3, 3, 1, 1, 1, 1 }
 ));
 INSTANTIATE_TEST_CASE_P(BinarizationDirectAlexNet,
         Binarization, ::testing::Values(
-params_t{ xnor_nn_algorithm_direct, 2, 3, 64, 224, 224, 11, 11, 4, 4, 2, 2 },
-params_t{ xnor_nn_algorithm_direct, 2, 64, 192, 27, 27, 5, 5, 1, 1, 2, 2 },
-params_t{ xnor_nn_algorithm_direct, 2, 192, 384, 13, 13, 3, 3, 1, 1, 1, 1 },
-params_t{ xnor_nn_algorithm_direct, 2, 384, 256, 13, 13, 3, 3, 1, 1, 1, 1 },
-params_t{ xnor_nn_algorithm_direct, 2, 256, 256, 13, 13, 3, 3, 1, 1, 1, 1 }
+params_t{ xnor_nn_algorithm_direct, 2, 3, 96, 227, 227, 11, 11, 4, 4, 0, 0 },
+params_t{ xnor_nn_algorithm_direct, 2, 96, 256, 27, 27, 5, 5, 1, 1, 2, 2 },
+params_t{ xnor_nn_algorithm_direct, 2, 256, 384, 13, 13, 3, 3, 1, 1, 1, 1 },
+params_t{ xnor_nn_algorithm_direct, 2, 384, 384, 13, 13, 3, 3, 1, 1, 1, 1 },
+params_t{ xnor_nn_algorithm_direct, 2, 384, 256, 13, 13, 3, 3, 1, 1, 1, 1 }
 ));

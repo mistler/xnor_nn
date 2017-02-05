@@ -1,7 +1,6 @@
 #include "implementation.hpp"
 
-#include "utils/logger.hpp"
-#include "utils/timer.hpp"
+#include <vector>
 
 #include "bcast_convolution.hpp"
 #include "direct_convolution.hpp"
@@ -15,8 +14,6 @@
 #include "reference_binarize_weights.hpp"
 #include "reference_convolution.hpp"
 #include "reference_calculate_k.hpp"
-
-using Logger = xnor_nn::utils::Logger;
 
 namespace xnor_nn {
 namespace implementation {

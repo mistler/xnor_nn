@@ -1,6 +1,6 @@
-#include <cstdlib>
-
 #include "xnor_nn.h"
+
+#include <cstdlib>
 
 namespace {
 

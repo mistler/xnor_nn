@@ -3,7 +3,6 @@
 
 #include "xnor_nn_types.h"
 
-#include <string>
 #include <vector>
 
 namespace xnor_nn {

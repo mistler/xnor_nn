@@ -2,7 +2,6 @@ set(APP_NAME "gtest")
 
 include_directories(
     ${CMAKE_SOURCE_DIR}/include
-    ${CMAKE_SOURCE_DIR}/src/utils
     ${CMAKE_SOURCE_DIR}/external/gtest
     )
 

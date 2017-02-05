@@ -4,8 +4,6 @@
 
 #include "logger.hpp"
 
-using Logger = xnor_nn::utils::Logger;
-
 namespace xnor_nn {
 namespace implementation {
 
@@ -49,17 +47,11 @@ xnor_nn_status_t DirectBinarizeWeights::exec(
 
     const int elems = OC*IC*KH*KW;
 
-    Logger::info("binarize_weights:", "execute:",
-            "[", OC, "]",
-            "[", IC, "]",
-            "[", KH, "]",
-            "[", KW, "]",
-            " -> ",
-            "[", KH, "]",
-            "[", KW, "]",
-            "[", OC, "]",
-            "[", ABIC, "]",
-            "Algorithm:", xnor_nn_algorithm_direct);
+    LOG_INFO("binarize_weights:", "execute:",
+            "[", OC, "][", IC, "][", KH, "][", KW, "]",
+            "->",
+            "[", KH, "][", KW, "][", OC, "][", ABIC, "]",
+            "Algorithm:", "direct");
 
 #   pragma omp parallel for collapse(3) schedule(static)
     for (int kh = 0; kh < KH; kh++)

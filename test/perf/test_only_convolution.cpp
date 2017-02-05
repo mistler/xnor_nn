@@ -36,7 +36,7 @@ int main(){
     // AlexNet conv4
     //const int MB = 1;
     //const convolution_params p{ alg, MB, 256, 384, 13, 13, 3, 3, 1, 1, 1, 1 };
-    const convolution_params p { alg, 1, 24, 24, 20, 20, 3, 3, 1, 1, 0, 0 };
+    const convolution_params p { alg, 1, 32, 32, 20, 20, 3, 3, 1, 1, 0, 0 };
     p.print(std::cout);
 
     const int enough = 256*1024*384; // 384mb on float

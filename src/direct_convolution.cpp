@@ -1,17 +1,28 @@
 #include "direct_convolution.hpp"
 
-#include "utils.h"
+#include "utils.hpp"
 
-// TODO: log execution
+#ifdef __x86_64__
 
-#ifdef ARCH_X86
+#ifdef __AVX__
 
 #define TEMPLATE_CONVOLUTION
 #include "direct_convolution_avx.hpp"
 #undef TEMPLATE_CONVOLUTION
 #include "direct_convolution_avx.hpp"
 
-#elif defined ARCH_ARM
+#else
+
+#define TEMPLATE_CONVOLUTION
+#include "direct_convolution_default.hpp"
+#undef TEMPLATE_CONVOLUTION
+#include "direct_convolution_default.hpp"
+
+#endif
+
+#elif defined __arm__
+
+#ifdef __ARM_NEON
 
 #define TEMPLATE_CONVOLUTION
 #include "direct_convolution_neon.hpp"
@@ -27,12 +38,21 @@
 
 #endif
 
+#else
+#error Target is not supported
+#endif
+
+
 #define TRY(OC, IC, IH, IW, KH, KW, SH, SW, PH, PW) \
     if (OC == c->oc && IC == c->ic && IH == c->ih && IW == c->iw \
             && KH == c->kh && KW == c->kw && SH == c->sh && SW == c->sw \
             && PH == c->ph && PW == c->pw) \
     { \
-        c->forward = exec_template<OC, IC, IH, IW, KH, KW, SH, SW, PH, PW>; \
+        constexpr int OH = getOH(IH, KH, SH, PH); \
+        constexpr int OW = getOW(IH, KH, SH, PH); \
+        constexpr int ABIC = getABIC(IC); \
+        c->forward = exec_template< \
+                OC, IC, IH, IW, KH, KW, SH, SW, PH, PW, OH, OW, ABIC>; \
         return; \
     }
 
@@ -60,10 +80,11 @@ void DirectConvolution::setupConvolution(xnor_nn_convolution_t *c) {
     // OC, IC, IH, IW, KH, KW, SH, SW, PH, PW
 
     // AlexNet
-    TRY(192, 64, 27, 27, 5, 5, 1, 1, 2, 2);
-    TRY(384, 192, 13, 13, 3, 3, 1, 1, 1, 1);
+    TRY(96, 3, 227, 227, 11, 11, 4, 4, 0, 0);
+    TRY(256, 96, 27, 27, 5, 5, 1, 1, 2, 2);
+    TRY(384, 256, 13, 13, 3, 3, 1, 1, 1, 1);
+    TRY(384, 384, 13, 13, 3, 3, 1, 1, 1, 1);
     TRY(256, 384, 13, 13, 3, 3, 1, 1, 1, 1);
-    TRY(256, 256, 13, 13, 3, 3, 1, 1, 1, 1);
 
     c->forward = exec_simple;
 }

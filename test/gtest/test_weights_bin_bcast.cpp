@@ -68,7 +68,7 @@ TEST(WeightsBinarizeBcast, bcast_precalculated) {
     if (st != xnor_nn_success) goto label;
 
     // Chech result
-    xnor_nn::test::check_weights_bcast(OC, IC, KH, KW,
+    xnor_nn::test::check_weights_bcast(OC, IC, KH, KW, convolution.vlen,
             (unsigned char*)res[xnor_nn_resource_bin_weights], weights);
 
     xnor_nn::test::check_value(*actual_alpha, alpha);

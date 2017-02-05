@@ -4,7 +4,7 @@
 #include "implementation.hpp"
 
 #include "xnor_nn_types.h"
-#include "utils.h"
+#include "utils.hpp"
 
 namespace xnor_nn {
 namespace implementation {
@@ -14,6 +14,11 @@ public:
     virtual ~DirectBase();
     virtual bool isApplicable(const xnor_nn_convolution_t *c) const;
     virtual void setupConvolution(xnor_nn_convolution_t *c);
+
+protected:
+    static constexpr int getABIC(int IC) {
+        return (((((IC + SZ - 1) / SZ) * SZ) + VLEN - 1) / VLEN) * VLEN;
+    }
 
 protected:
     int BIC, ABIC;

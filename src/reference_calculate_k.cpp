@@ -4,8 +4,6 @@
 
 #include "logger.hpp"
 
-using Logger = xnor_nn::utils::Logger;
-
 namespace xnor_nn {
 namespace implementation {
 
@@ -55,17 +53,13 @@ xnor_nn_status_t ReferenceCalculateK::exec(
     const float C = 1.f / IC;
     const float KHW = 1.f / KH / KW;
 
-    Logger::info("calculate_k:", "execute:",
-            "[", MB, "]",
-            "[", IC, "]",
-            "[", IH, "]",
-            "[", IW, "]",
-            " -> ",
+    LOG_INFO("calculate_k:\t", "execute:",
+            "[", MB, "][", IC, "][", IH, "][", IW, "]",
+            "->",
             "[", "1", "]",
-            " + ",
-            "[", IH, "]",
-            "[", IW, "]",
-            "Algorithm:", xnor_nn_algorithm_reference);
+            "+",
+            "[", IH, "][", IW, "]",
+            "Algorithm:", "reference");
 
     // Calculate A
 #   pragma omp parallel for collapse(2) schedule(static)

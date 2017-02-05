@@ -18,11 +18,9 @@ add_custom_target(
     DEPENDS ${LIB_NAME}
 )
 
-
 set(APP_NAME "test_only_convolution")
 add_executable(
     ${APP_NAME}
     ${CMAKE_SOURCE_DIR}/test/perf/test_only_convolution.cpp
 )
 target_link_libraries(${APP_NAME} xnor_nn)
-
