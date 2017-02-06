@@ -69,9 +69,9 @@ xnor_nn_status_t DirectConvolution::exec_avx_simple(
             "[", MB, "][", OC, "][", OH, "][", OW, "]",
             "stride: [", SH, "][", SW, "]",
             "pad: [", PH, "][", PW, "]",
-            "Algorithm:", "direct"
+            "Algorithm:", "direct", "ISA:", "AVX"
 #ifdef TEMPLATED
-            , "Template version"
+            , "Templated"
 #endif
             );
 

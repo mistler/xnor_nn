@@ -69,9 +69,9 @@ xnor_nn_status_t BcastConvolution::exec_default_simple(
             "[", MB, "][", OC, "][", OH, "][", OW, "]",
             "stride: [", SH, "][", SW, "]",
             "pad: [", PH, "][", PW, "]",
-            "Algorithm:", "bcast"
+            "Algorithm:", "bcast", "ISA:", "default"
 #ifdef TEMPLATED
-            , "Template version"
+            , "Templated"
 #endif
             );
 

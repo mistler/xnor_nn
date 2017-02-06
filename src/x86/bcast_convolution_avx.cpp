@@ -71,9 +71,9 @@ xnor_nn_status_t BcastConvolution::exec_avx_simple(
             "[", MB, "][", OC, "][", OH, "][", OW, "]",
             "stride: [", SH, "][", SW, "]",
             "pad: [", PH, "][", PW, "]",
-            "Algorithm:", "bcast"
+            "Algorithm:", "bcast", "ISA:", "AVX"
 #ifdef TEMPLATED
-            , "Template version"
+            , "Templated"
 #endif
             );
 

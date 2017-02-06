@@ -28,14 +28,18 @@ void DirectConvolution::setupConvolution(xnor_nn_convolution_t *c) {
 #ifdef __x86_64__
     if (Cpuid::avx()) {
         DIRECT_TEMPLATE_ASSIGN(c, avx);
+        c->forward = exec_avx_simple;
     } else {
         DIRECT_TEMPLATE_ASSIGN(c, default);
+        c->forward = exec_default_simple;
     }
 #elif defined __arm__
     if (Cpuid::neon()) {
         DIRECT_TEMPLATE_ASSIGN(c, neon);
+        c->forward = exec_neon_simple;
     } else {
         DIRECT_TEMPLATE_ASSIGN(c, default);
+        c->forward = exec_default_simple;
     }
 #endif
 
