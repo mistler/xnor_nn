@@ -2,6 +2,7 @@ set(TARGET_NAME ${LIB_NAME})
 
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
 
+# AVX
     file(GLOB_RECURSE AVX_SOURCES
         ${CMAKE_SOURCE_DIR}/src/x86/*avx.cpp)
     set(AVX_OBJ_LIB x86_avx)
@@ -14,7 +15,7 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
     set_target_properties(${AVX_OBJ_LIB}_templated
         PROPERTIES COMPILE_FLAGS "-fPIC -mavx -mpopcnt -DVLEN=256 -DTEMPLATED")
 
-
+# SSE42
     file(GLOB_RECURSE DEFAULT_SOURCES
         ${CMAKE_SOURCE_DIR}/src/default/*default.cpp)
     set(DEFAULT_OBJ_LIB x86_default)
@@ -24,7 +25,7 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
         PROPERTIES COMPILE_FLAGS "-fPIC -msse4 -mpopcnt -DVLEN=128")
     add_library(${DEFAULT_OBJ_LIB}_templated OBJECT ${DEFAULT_SOURCES})
     set_target_properties(${DEFAULT_OBJ_LIB}_templated
-        PROPERTIES COMPILE_FLAGS "-fPIC -msse4 -mpopcnt -DVLEN=128 -DTEMPLATED")
+        PROPERTIES COMPILE_FLAGS "-fPIC -msse4.2 -mpopcnt -DVLEN=128 -DTEMPLATED")
 
 
     set(OBJ_LIBS $<TARGET_OBJECTS:${DEFAULT_OBJ_LIB}>
@@ -34,6 +35,7 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
 
 else(CMAKE_SYSTEM_PROCESSOR MATCHES "(armv7)|(armv8)")
 
+# NEON
     file(GLOB_RECURSE NEON_SOURCES
         ${CMAKE_SOURCE_DIR}/src/arm/*neon.cpp)
     set(NEON_OBJ_LIB arm_neon)
@@ -46,6 +48,7 @@ else(CMAKE_SYSTEM_PROCESSOR MATCHES "(armv7)|(armv8)")
     set_target_properties(${NEON_OBJ_LIB}_templated
         PROPERTIES COMPILE_FLAGS "-fPIC -mfpu=neon -DVLEN=128 -DTEMPLATED")
 
+# DEFAULT
     file(GLOB_RECURSE DEFAULT_SOURCES
         ${CMAKE_SOURCE_DIR}/src/default/*default.cpp)
     set(DEFAULT_OBJ_LIB arm_default)

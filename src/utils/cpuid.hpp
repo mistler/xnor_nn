@@ -1,6 +1,7 @@
 #ifndef CPUID_HPP
 #define CPUID_HPP
 
+#include <cstdlib>
 #ifdef __x86_64__
 #include <cpuid.h>
 #elif defined __arm__
@@ -20,7 +21,7 @@ public:
 #ifdef __x86_64__
         if (inst._avx512f) return 512;
         if (inst._avx) return 256;
-        if (inst._sse) return 128;
+        if (inst._sse42) return 128;
         return 64;
 #elif defined __arm__
         if (inst._neon) return 128;
@@ -77,15 +78,35 @@ public:
 #undef GETTER
 
 private:
+
     Cpuid() {
         read_cpuid();
+        read_environment();
     }
+
     static Cpuid &instance() {
         static Cpuid instance;
         return instance;
     }
-#ifdef __x86_64__
 
+    void read_environment() {
+        char *env = getenv("XNOR_NN_ISA");
+        if (env != NULL && env[0] >= '0' && env[0] <= '9') {
+            environment_isa_ = env[0] - '0';
+#ifdef __x86_64__
+            switch (environment_isa_) {
+                case 0: _avx512f = false; _avx = false; break;
+                case 1: _avx512f = false; break;
+            }
+#elif defined __arm__
+            switch (environment_isa_) {
+                case 0: _neon = false; break;
+            }
+#endif
+        }
+    }
+
+#ifdef __x86_64__
     void cpuid(int info[4], int InfoType){
         __cpuid_count(InfoType, 0, info[0], info[1], info[2], info[3]);
     }
@@ -161,6 +182,8 @@ private:
 #endif
 
 private:
+
+    int environment_isa_;
 #ifdef __x86_64__
     //  Misc.
     bool _mmx = false;
