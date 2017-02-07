@@ -37,14 +37,15 @@ static inline void clean_cache(char *more_than_cache,
 }
 
 template<typename F>
-static inline void measure_time(F &f, std::string msg, int N = 64) {
+static inline void measure_time(F &f, std::string msg, int N = 64,
+        bool silent = false) {
     const int more_than_cache_size = 1024*1024*16; // 16mb
     static char more_than_cache[more_than_cache_size];
 
     xnor_nn::utils::Timer timer;
 
     double time = 0.0;
-    std::cout << msg << "... ";
+    if (!silent) std::cout << msg << "... ";
     for (int n = 0; n < N; n++) {
         clean_cache(more_than_cache, more_than_cache_size);
         timer.start();
@@ -55,11 +56,10 @@ static inline void measure_time(F &f, std::string msg, int N = 64) {
         timer.stop();
         time += timer.millis();
     }
-    std::cout << "Time: " << time / N << " ms." << std::endl;
+    if (!silent) std::cout << "Time: " << time / N << " ms." << std::endl;
 }
 
 int main(){
-    const xnor_nn_algorithm_t dir = xnor_nn_algorithm_direct;
     const xnor_nn_algorithm_t bcast = xnor_nn_algorithm_bcast;
     const std::vector<convolution_params> params =
     {
@@ -70,14 +70,14 @@ int main(){
         // { bcast, 256, 32, 32, 20, 20, 3, 3, 1, 1, 0, 0 },
 
         // AlexNet
-        //{ alg, MB, 96, 3, 227, 227, 11, 11, 4, 4, 0, 0 }, // conv1
-        { dir, 1, 256, 96, 27, 27, 5, 5, 1, 1, 2, 2, }, // conv2
+        { bcast, 1, 96, 3, 227, 227, 11, 11, 4, 4, 0, 0 }, // conv1
+        // { dir, 1, 256, 96, 27, 27, 5, 5, 1, 1, 2, 2, }, // conv2
         { bcast, 1, 256, 96, 27, 27, 5, 5, 1, 1, 2, 2, }, // conv2
-        { dir, 1, 384, 256, 13, 13, 3, 3, 1, 1, 1, 1, }, // conv3
+        // { dir, 1, 384, 256, 13, 13, 3, 3, 1, 1, 1, 1, }, // conv3
         { bcast, 1, 384, 256, 13, 13, 3, 3, 1, 1, 1, 1, }, // conv3
-        { dir, 1, 384, 384, 13, 13, 3, 3, 1, 1, 1, 1, }, // conv4
+        // { dir, 1, 384, 384, 13, 13, 3, 3, 1, 1, 1, 1, }, // conv4
         { bcast, 1, 384, 384, 13, 13, 3, 3, 1, 1, 1, 1, }, // conv4
-        { dir, 1, 256, 384, 13, 13, 3, 3, 1, 1, 1, 1, }, // conv5
+        // { dir, 1, 256, 384, 13, 13, 3, 3, 1, 1, 1, 1, }, // conv5
         { bcast, 1, 256, 384, 13, 13, 3, 3, 1, 1, 1, 1, }, // conv5
         // { dir, 256, 384, 256, 13, 13, 3, 3, 1, 1, 1, 1, }, // conv3
         // { bcast, 256, 384, 256, 13, 13, 3, 3, 1, 1, 1, 1, }, // conv3
@@ -127,19 +127,19 @@ int main(){
         // Execute
         auto f_weights_bin = std::bind(convolution.binarize_weights,
                 &convolution, res);
-        measure_time(f_weights_bin, "Weights binarization");
+        measure_time(f_weights_bin, "Weights binarization", 16);
 
         auto f_src_bin = std::bind(convolution.binarize_data,
                 &convolution, res);
-        measure_time(f_src_bin, "Src binarization");
+        measure_time(f_src_bin, "Src binarization", 16);
 
         auto f_src_k = std::bind(convolution.calculate_k,
                 &convolution, res);
-        measure_time(f_src_k, "K calculation");
+        measure_time(f_src_k, "K calculation", 4);
 
         auto f_conv_exec = std::bind(convolution.forward,
                 &convolution, res);
-        measure_time(f_conv_exec, "Convolution forward");
+        measure_time(f_conv_exec, "Convolution forward", 128);
 
         std::cout << std::endl;
 
