@@ -1,6 +1,6 @@
 #!/usr/bin/awk -f
 /x86_64_caffe_time/{shift=NR-1}
-/ARM_caffe_time/{shift=NR-1}
+/armv7l_caffe_time/{shift=NR-1}
 {
     if (NR==3+shift) ct1=$3
     if (NR==4+shift) ct2=$3
