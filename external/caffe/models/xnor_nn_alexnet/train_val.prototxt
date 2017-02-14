@@ -1,34 +1,74 @@
 name: "xnor_nn_alexnet"
+#-------------------------------------------------------------------------------
+#layer {
+#  name: "data"
+#  type: "DummyData"
+#  top: "data"
+#  include {
+#    phase: TRAIN
+#  }
+#  dummy_data_param {
+#    shape: { dim: 1 dim: 3 dim: 227 dim: 227 }
+#    data_filler {
+#      type: "constant"
+#      value: 0.01
+#    }
+#  }
+#}
+#layer {
+#  name: "data"
+#  type: "DummyData"
+#  top: "label"
+#  include {
+#    phase: TRAIN
+#  }
+#  dummy_data_param {
+#    shape: { dim: 1  }
+#    data_filler {
+#      type: "constant"
+#    }
+#  }
+#}
+#-------------------------------------------------------------------------------
 layer {
   name: "data"
-  type: "DummyData"
+  type: "Data"
   top: "data"
-  include {
-    phase: TRAIN
-  }
-  dummy_data_param {
-    shape: { dim: 1 dim: 3 dim: 227 dim: 227 }
-    data_filler {
-      type: "constant"
-      value: 0.01
-    }
-  }
-}
-layer {
-  name: "data"
-  type: "DummyData"
   top: "label"
   include {
     phase: TRAIN
   }
-  dummy_data_param {
-    shape: { dim: 1  }
-    data_filler {
-      type: "constant"
-    }
+  transform_param {
+    mirror: true
+    crop_size: 227
+    mean_file: "data/imagenet/imagenet_mean.binaryproto"
+  }
+  data_param {
+    source: "data/imagenet/ilsvrc12_train_lmdb"
+    batch_size: 32
+    backend: LMDB
   }
 }
-
+layer {
+  name: "data"
+  type: "Data"
+  top: "data"
+  top: "label"
+  include {
+    phase: TEST
+  }
+  transform_param {
+    mirror: false
+    crop_size: 227
+    mean_file: "data/imagenet/imagenet_mean.binaryproto"
+  }
+  data_param {
+    source: "data/imagenet/ilsvrc12_val_lmdb"
+    batch_size: 50
+    backend: LMDB
+  }
+}
+#-------------------------------------------------------------------------------
 layer {
   name: "conv1"
   type: "Convolution"

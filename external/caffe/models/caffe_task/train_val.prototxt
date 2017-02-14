@@ -1,33 +1,64 @@
 name: "caffe_task"
+#-------------------------------------------------------------------------------
+#layer {
+#  name: "data"
+#  type: "DummyData"
+#  top: "data"
+#  include {
+#    phase: TRAIN
+#  }
+#  dummy_data_param {
+#    shape: { dim: 1 dim: 1 dim: 60 dim: 61 }
+#    data_filler {
+#      type: "constant"
+#      value: 0.01
+#    }
+#  }
+#}
+#layer {
+#  name: "data"
+#  type: "DummyData"
+#  top: "label"
+#  include {
+#    phase: TRAIN
+#  }
+#  dummy_data_param {
+#    shape: { dim: 1  }
+#    data_filler {
+#      type: "constant"
+#    }
+#  }
+#}
+#-------------------------------------------------------------------------------
 layer {
   name: "data"
-  type: "DummyData"
+  type: "Data"
   top: "data"
-  include {
-    phase: TRAIN
-  }
-  dummy_data_param {
-    shape: { dim: 1 dim: 1 dim: 60 dim: 61 }
-    data_filler {
-      type: "constant"
-      value: 0.01
-    }
-  }
-}
-layer {
-  name: "data"
-  type: "DummyData"
   top: "label"
   include {
     phase: TRAIN
   }
-  dummy_data_param {
-    shape: { dim: 1  }
-    data_filler {
-      type: "constant"
-    }
+  data_param {
+    source: "data/task/train_lmdb"
+    batch_size: 32
+    backend: LMDB
   }
 }
+layer {
+  name: "data"
+  type: "Data"
+  top: "data"
+  top: "label"
+  include {
+    phase: TEST
+  }
+  data_param {
+    source: "data/task/val_lmdb"
+    batch_size: 50
+    backend: LMDB
+  }
+}
+#-------------------------------------------------------------------------------
 layer {
   name: "conv1"
   type: "Convolution"
