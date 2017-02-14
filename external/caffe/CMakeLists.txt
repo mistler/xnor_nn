@@ -31,35 +31,64 @@ add_custom_target(
 )
 
 set(CAFFE_TIME_VARS KMP_AFFINITY=compact,1,0,granularity=fine OMP_NUM_THREADS=1)
+set(CAFFE_TRAIN_VARS KMP_AFFINITY=compact,1,0,granularity=fine OMP_NUM_THREADS=2)
+
 set(CAFFE_TIME_RUN ${CAFFE_RUNNER} time)
-set(CAFFE_MODEL -model=${CAFFE_SOURCE_DIR}/models)
+set(CAFFE_TRAIN_RUN ${CAFFE_RUNNER} train)
+
+set(CAFFE_MODEL_PARAM -model=${CAFFE_SOURCE_DIR}/models)
+set(CAFFE_SOLVER_PARAM -solver=${CAFFE_SOURCE_DIR}/models)
+
 set(CAFFE_GREP 2>&1 | grep -E 'conv.*forward: |Average Forward pass: '
     | sed 's/.*]//g')
 
+MACRO(SUBDIRLIST result curdir)
+  FILE(GLOB children RELATIVE ${curdir} ${curdir}/*)
+  SET(dirlist "")
+  FOREACH(child ${children})
+    IF(IS_DIRECTORY ${curdir}/${child})
+      LIST(APPEND dirlist ${child})
+    ENDIF()
+  ENDFOREACH()
+  SET(${result} ${dirlist})
+ENDMACRO()
+
+SUBDIRLIST(CAFFE_MODELS ${CAFFE_SOURCE_DIR}/models)
+
+foreach(CURRENT_MODEL ${CAFFE_MODELS})
+    add_custom_target(
+        caffe_train_${CURRENT_MODEL}
+        WORKING_DIRECTORY ${CAFFE_SOURCE_DIR}
+        DEPENDS ${CAFFE_RUNNER}
+
+        COMMAND ${CAFFE_TRAIN_VARS} ${CAFFE_TRAIN_RUN}
+            ${CAFFE_SOLVER_PARAM}/${CURRENT_MODEL}/solver.prototxt
+    )
+endforeach()
+
 add_custom_target(
     caffe_time
+    WORKING_DIRECTORY ${CAFFE_BUILD_DIR}
+    DEPENDS ${CAFFE_RUNNER}
 
     COMMAND echo ${CMAKE_SYSTEM_PROCESSOR}_caffe_time
     COMMAND echo caffe_task
     COMMAND ${CAFFE_TIME_VARS} ${CAFFE_TIME_RUN}
-        -iterations=2500 ${CAFFE_MODEL}/caffe_task/train_val.prototxt
+        -iterations=2500 ${CAFFE_MODEL_PARAM}/caffe_task/train_val.prototxt
         ${CAFFE_GREP}
 
     COMMAND echo && echo xnor_nn_task
     COMMAND ${CAFFE_TIME_VARS} ${CAFFE_TIME_RUN}
-        -iterations=2500 ${CAFFE_MODEL}/xnor_nn_task/train_val.prototxt
+        -iterations=2500 ${CAFFE_MODEL_PARAM}/xnor_nn_task/train_val.prototxt
         ${CAFFE_GREP}
 
     COMMAND echo && echo caffe_alexnet
     COMMAND ${CAFFE_TIME_VARS} ${CAFFE_TIME_RUN}
-        -iterations=25 ${CAFFE_MODEL}/caffe_alexnet/train_val.prototxt
+        -iterations=25 ${CAFFE_MODEL_PARAM}/caffe_alexnet/train_val.prototxt
         ${CAFFE_GREP}
 
     COMMAND echo && echo xnor_nn_alexnet
     COMMAND ${CAFFE_TIME_VARS} ${CAFFE_TIME_RUN}
-        -iterations=25 ${CAFFE_MODEL}/xnor_nn_alexnet/train_val.prototxt
+        -iterations=25 ${CAFFE_MODEL_PARAM}/xnor_nn_alexnet/train_val.prototxt
         ${CAFFE_GREP}
-
-    WORKING_DIRECTORY ${CAFFE_BUILD_DIR}
-    DEPENDS ${CAFFE_RUNNER}
 )
