@@ -83,6 +83,7 @@ class XnorNNConvolutionLayer : public BaseConvolutionLayer<Dtype> {
  // Xnor_nn stuff
  private:
   shared_ptr<xnor_nn::Convolution> xnor_nn_conv;
+  vector<Dtype> binWeights;
   bool changeWeights = false;
 };
 

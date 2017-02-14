@@ -45,6 +45,8 @@ void XnorNNConvolutionLayer<Dtype>::Forward_cpu(
     const int PW = this->pad_.cpu_data()[1];
     xnor_nn_conv.reset(new xnor_nn::Convolution{xnor_nn_algorithm_bcast,
             MB, OC, IC, IH, IW, KH, KW, SH, SW, PH, PW, weight});
+
+    binWeights.reserve(OC*IC*KH*KW);
   }
 
   if (changeWeights) {
@@ -56,6 +58,8 @@ void XnorNNConvolutionLayer<Dtype>::Forward_cpu(
     const Dtype* bottom_data = bottom[i]->cpu_data();
     Dtype* top_data = top[i]->mutable_cpu_data();
 
+    // TODO: use allocated memory
+    // TODO: check that aligned instructions generated on arm
     xnor_nn_conv->forward(bottom_data, top_data);
   }
 
@@ -78,13 +82,18 @@ void XnorNNConvolutionLayer<Dtype>::Forward_cpu(
 #endif
 }
 
-// Backward remains simple convolution on float via gemm
+// Backward remains simple convolution on float via gemm using binWeights
 template <typename Dtype>
 void XnorNNConvolutionLayer<Dtype>::Backward_cpu(
       const vector<Blob<Dtype>*>& top, const vector<bool>& propagate_down,
       const vector<Blob<Dtype>*>& bottom) {
   const Dtype* weight = this->blobs_[0]->cpu_data();
   Dtype* weight_diff = this->blobs_[0]->mutable_cpu_diff();
+  Dtype* bweight = binWeights.data();
+
+  // Binarize weights
+  xnor_nn_conv->binarizeWeightsFloat(weight, bweight);
+
   for (int i = 0; i < top.size(); ++i) {
     const Dtype* top_diff = top[i]->cpu_diff();
     const Dtype* bottom_data = bottom[i]->cpu_data();
@@ -106,7 +115,7 @@ void XnorNNConvolutionLayer<Dtype>::Backward_cpu(
         }
         // gradient w.r.t. bottom data, if necessary.
         if (propagate_down[i]) {
-          this->backward_cpu_gemm(top_diff + n * this->top_dim_, weight,
+          this->backward_cpu_gemm(top_diff + n * this->top_dim_, bweight,
               bottom_diff + n * this->bottom_dim_);
         }
       }

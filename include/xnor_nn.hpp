@@ -34,6 +34,10 @@ public:
         check_status(convolution_.binarize_weights(&convolution_, res_));
     }
 
+    void binarizeWeightsFloat(const void *from, void *to) {
+        xnor_nn_binarize_weights_float(&convolution_, (float*)from, (float*)to);
+    }
+
     void forward(const void *src, void *dst) {
         res_[xnor_nn_resource_user_src] = const_cast<void*>(src);
         res_[xnor_nn_resource_user_dst] = dst;
