@@ -74,21 +74,21 @@ add_custom_target(
     COMMAND echo ${CMAKE_SYSTEM_PROCESSOR}_caffe_time
     COMMAND echo caffe_task
     COMMAND ${CAFFE_TIME_VARS} ${CAFFE_TIME_RUN}
-        -iterations=2500 ${CAFFE_MODEL_PARAM}/caffe_task/train_val.prototxt
+        -iterations=2500 ${CAFFE_MODEL_PARAM}/caffe_task/time.prototxt
         ${CAFFE_GREP}
 
     COMMAND echo && echo xnor_nn_task
     COMMAND ${CAFFE_TIME_VARS} ${CAFFE_TIME_RUN}
-        -iterations=2500 ${CAFFE_MODEL_PARAM}/xnor_nn_task/train_val.prototxt
+        -iterations=2500 ${CAFFE_MODEL_PARAM}/xnor_nn_task/time.prototxt
         ${CAFFE_GREP}
 
     COMMAND echo && echo caffe_alexnet
     COMMAND ${CAFFE_TIME_VARS} ${CAFFE_TIME_RUN}
-        -iterations=25 ${CAFFE_MODEL_PARAM}/caffe_alexnet/train_val.prototxt
+        -iterations=25 ${CAFFE_MODEL_PARAM}/caffe_alexnet/time.prototxt
         ${CAFFE_GREP}
 
     COMMAND echo && echo xnor_nn_alexnet
     COMMAND ${CAFFE_TIME_VARS} ${CAFFE_TIME_RUN}
-        -iterations=25 ${CAFFE_MODEL_PARAM}/xnor_nn_alexnet/train_val.prototxt
+        -iterations=25 ${CAFFE_MODEL_PARAM}/xnor_nn_alexnet/time.prototxt
         ${CAFFE_GREP}
 )
