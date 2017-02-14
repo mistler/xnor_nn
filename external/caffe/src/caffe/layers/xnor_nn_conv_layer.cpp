@@ -47,11 +47,15 @@ void XnorNNConvolutionLayer<Dtype>::Forward_cpu(
             MB, OC, IC, IH, IW, KH, KW, SH, SW, PH, PW, weight});
   }
 
+  if (changeWeights) {
+    changeWeights = false;
+    xnor_nn_conv->change_weights(weight);
+  }
+
   for (int i = 0; i < bottom.size(); ++i) {
     const Dtype* bottom_data = bottom[i]->cpu_data();
     Dtype* top_data = top[i]->mutable_cpu_data();
 
-    // TODO: reset weights on each pass if they changed
     xnor_nn_conv->forward(bottom_data, top_data);
   }
 
@@ -96,6 +100,7 @@ void XnorNNConvolutionLayer<Dtype>::Backward_cpu(
       for (int n = 0; n < this->num_; ++n) {
         // gradient w.r.t. weight. Note that we will accumulate diffs.
         if (this->param_propagate_down_[0]) {
+          changeWeights = true;
           this->weight_cpu_gemm(bottom_data + n * this->bottom_dim_,
               top_diff + n * this->top_dim_, weight_diff);
         }

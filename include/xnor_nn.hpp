@@ -21,8 +21,7 @@ public:
         check_status(xnor_nn_allocate_resources(&convolution_, res_));
 
         // Prepare weights
-        res_[xnor_nn_resource_user_weights] = (void*)weights;
-        check_status(convolution_.binarize_weights(&convolution_, res_));
+        change_weights(weights);
     }
 
     ~Convolution() {
@@ -30,6 +29,10 @@ public:
         xnor_nn_destroy_convolution(&convolution_);
     }
 
+    void change_weights(const void *weights) {
+        res_[xnor_nn_resource_user_weights] = (void*)weights;
+        check_status(convolution_.binarize_weights(&convolution_, res_));
+    }
 
     void forward(const void *src, void *dst) {
         res_[xnor_nn_resource_user_src] = const_cast<void*>(src);
