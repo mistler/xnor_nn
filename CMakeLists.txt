@@ -8,6 +8,13 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "")
     set(CMAKE_BUILD_TYPE "Release")
 endif()
 
+if(CMAKE_BUILD_TYPE MATCHES "^(debug|DEBUG|Debug)$")
+    message("Debug mode")
+    set(XNOR_NN_DEBUG 1)
+else()
+    set(XNOR_NN_DEBUG 0)
+endif()
+
 set(OPENMP_FLAGS "-fopenmp")
 set(CCXX_WARN_FLAGS "-Wall -Werror -Wno-unknown-pragmas")
 set(CMAKE_CCXX_FLAGS "${CMAKE_CCXX_FLAGS} ${OPENMP_FLAGS} ${CCXX_WARN_FLAGS}")
