@@ -8,7 +8,7 @@ add_custom_command(OUTPUT ${CAFFE_RUNNER}
         XNOR_NN_CAFFE_BUILD_DIR=${CAFFE_BUILD_DIR}
         XNOR_NN_INCLUDE="${PROJECT_SOURCE_DIR}/include"
         XNOR_NN_LIB="${CMAKE_BINARY_DIR}/src"
-        make all
+        $(MAKE) all
     WORKING_DIRECTORY "${CAFFE_SOURCE_DIR}"
     DEPENDS ${LIB_NAME}
 )
