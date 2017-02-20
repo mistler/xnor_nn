@@ -12,7 +12,14 @@ void xnor_nn_binarize_weights_float(const xnor_nn_convolution_t *c,
     const float cckhw = 1.f / elems;
     // TODO: use correct binarization to {-1,1} instead of {0,1}
 
+    float alpha = 0.f;
+    // Calculate alpha
 #   pragma omp parallel for schedule(static)
     for (int i = 0; i < elems; i++)
-        to[i] = (from[i] > .0f ? 1.f : 0.f) * cckhw;
+        alpha += from[i];
+    alpha *= cckhw;
+
+#   pragma omp parallel for schedule(static)
+    for (int i = 0; i < elems; i++)
+        to[i] = (from[i] >= .0f ? 1.f : -1.f) * alpha;
 }
