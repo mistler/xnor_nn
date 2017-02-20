@@ -1,11 +1,14 @@
 #include "direct_base.hpp"
 
+#include "cpuid.hpp"
+
 namespace xnor_nn {
 namespace implementation {
 
 bool DirectBase::isApplicable(const xnor_nn_convolution_t *c) const {
     bool ok = true
-        && c->algorithm == xnor_nn_algorithm_direct;
+        && c->algorithm == xnor_nn_algorithm_direct
+        && c->ic % xnor_nn::utils::Cpuid::vlen() == 0;
     return ok;
 }
 

@@ -17,14 +17,6 @@ void BcastConvolution::setupConvolution(xnor_nn_convolution_t *c) {
     op->BcastBase::setupConvolution(c);
     setState(c, op, xnor_nn_operation_convolution_forward);
 
-    // TODO: move it to base class
-    c->resource_size[xnor_nn_resource_bin_src] =
-        c->mb * ABIC * c->ih * c->iw * sizeof(char);
-    c->resource_size[xnor_nn_resource_bin_weights] =
-        OCO * c->kh * c->kw * ICO * OCI * sizeof(int);
-    c->resource_size[xnor_nn_resource_a] = c->ih * c->iw * sizeof(float);
-    c->resource_size[xnor_nn_resource_k] = c->oh * c->ow * sizeof(float);
-
     using Cpuid = xnor_nn::utils::Cpuid;
 
 #ifdef __x86_64__

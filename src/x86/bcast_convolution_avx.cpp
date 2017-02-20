@@ -25,9 +25,8 @@ xnor_nn_status_t BcastConvolution::exec_avx_simple(
         || res[xnor_nn_resource_k] == nullptr
         || c == nullptr
     ) return xnor_nn_error_invalid_input;
-    const unsigned int *src = (unsigned int*)res[xnor_nn_resource_bin_src];
-    const unsigned int *weights =
-        (unsigned int*)res[xnor_nn_resource_bin_weights];
+    const int *src = (int*)res[xnor_nn_resource_bin_src];
+    const int *weights = (int*)res[xnor_nn_resource_bin_weights];
     float *dst = (float*)res[xnor_nn_resource_user_dst];
     float *alpha = (float*)&res[xnor_nn_resource_alpha];
     const float *k = (float*)res[xnor_nn_resource_k];
@@ -86,7 +85,7 @@ xnor_nn_status_t BcastConvolution::exec_avx_simple(
     for (int oco = 0; oco < OCO; oco++)
     for (int oh = 0; oh < OH; oh++)
     for (int ow = 0; ow < OW; ow++) {
-        unsigned int d_arr[OCI] = { 0u };
+        int d_arr[OCI] = { 0u };
         __m256 v_ones = _mm256_loadu_ps((float*)ones);
 
         for (int kh = 0; kh < KH; kh++)
@@ -97,9 +96,9 @@ xnor_nn_status_t BcastConvolution::exec_avx_simple(
             if (ih < 0 || iw < 0) continue;
             if (ih >= IH || iw >= IW) continue;
 
-            const unsigned int *src_ic =
+            const int *src_ic =
                 src + ((mb*IH + ih)*IW + iw)*ICO;
-            const unsigned int *weights_ic_oci =
+            const int *weights_ic_oci =
                 weights + ((oco*KH +kh)*KW + kw)*ICO*OCI;
 
             for (int ico = 0; ico < ICO; ico++) {
@@ -111,14 +110,22 @@ xnor_nn_status_t BcastConvolution::exec_avx_simple(
                 __m256i v_xnor =
                     _mm256_castps_si256(_mm256_xor_ps(v_xor, v_ones));
 
-                d_arr[0] += __builtin_popcount(_mm256_extract_epi32(v_xnor, 0));
-                d_arr[1] += __builtin_popcount(_mm256_extract_epi32(v_xnor, 1));
-                d_arr[2] += __builtin_popcount(_mm256_extract_epi32(v_xnor, 2));
-                d_arr[3] += __builtin_popcount(_mm256_extract_epi32(v_xnor, 3));
-                d_arr[4] += __builtin_popcount(_mm256_extract_epi32(v_xnor, 4));
-                d_arr[5] += __builtin_popcount(_mm256_extract_epi32(v_xnor, 5));
-                d_arr[6] += __builtin_popcount(_mm256_extract_epi32(v_xnor, 6));
-                d_arr[7] += __builtin_popcount(_mm256_extract_epi32(v_xnor, 7));
+                d_arr[0] += __builtin_popcount(_mm256_extract_epi32(v_xnor, 0))
+                    *2-32;
+                d_arr[1] += __builtin_popcount(_mm256_extract_epi32(v_xnor, 1))
+                    *2-32;
+                d_arr[2] += __builtin_popcount(_mm256_extract_epi32(v_xnor, 2))
+                    *2-32;
+                d_arr[3] += __builtin_popcount(_mm256_extract_epi32(v_xnor, 3))
+                    *2-32;
+                d_arr[4] += __builtin_popcount(_mm256_extract_epi32(v_xnor, 4))
+                    *2-32;
+                d_arr[5] += __builtin_popcount(_mm256_extract_epi32(v_xnor, 5))
+                    *2-32;
+                d_arr[6] += __builtin_popcount(_mm256_extract_epi32(v_xnor, 6))
+                    *2-32;
+                d_arr[7] += __builtin_popcount(_mm256_extract_epi32(v_xnor, 7))
+                    *2-32;
             }
         }
         for (int i = 0; i < OCI; i++)

@@ -4,7 +4,7 @@
 #include "xnor_nn.h"
 
 int main(void){
-    const int MB = 8;
+    const int MB = 2;
     const int IC = 64, OC = 128;
     const int IH = 13, IW = 13;
     const int OH = 13, OW = 13;
@@ -31,7 +31,7 @@ int main(void){
     }
 
     // Setup
-    st = xnor_nn_init_convolution(&convolution, xnor_nn_algorithm_direct,
+    st = xnor_nn_init_convolution(&convolution, xnor_nn_algorithm_best,
             MB, OC, IC, IH, IW, KH, KW, SH, SW, PH, PW);
     if (st != xnor_nn_success) goto label;
 

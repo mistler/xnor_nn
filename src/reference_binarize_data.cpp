@@ -10,7 +10,6 @@ namespace implementation {
 bool ReferenceBinarizeData::isApplicable(
         const xnor_nn_convolution_t *c) const {
     if (c->binarize_data != nullptr) return false;
-    if (c->algorithm != xnor_nn_algorithm_reference) return false;
     return true;
 }
 

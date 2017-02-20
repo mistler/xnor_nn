@@ -1,12 +1,15 @@
 #include "bcast_base.hpp"
 
+#include "cpuid.hpp"
+
 namespace xnor_nn {
 namespace implementation {
 
 bool BcastBase::isApplicable(const xnor_nn_convolution_t *c) const {
     bool ok = true
         && c->algorithm == xnor_nn_algorithm_bcast
-        && c->oc % getOCI() == 0;
+        && c->oc % getOCI() == 0
+        && c->ic % (BICI*SZ) == 0;
     return ok;
 }
 

@@ -25,9 +25,8 @@ xnor_nn_status_t DirectConvolution::exec_avx_simple(
         || res[xnor_nn_resource_k] == nullptr
         || c == nullptr
     ) return xnor_nn_error_invalid_input;
-    const unsigned int *src = (unsigned int*)res[xnor_nn_resource_bin_src];
-    const unsigned int *weights =
-        (unsigned int*)res[xnor_nn_resource_bin_weights];
+    const int *src = (int*)res[xnor_nn_resource_bin_src];
+    const int *weights = (int*)res[xnor_nn_resource_bin_weights];
     float *dst = (float*)res[xnor_nn_resource_user_dst];
     float *alpha = (float*)&res[xnor_nn_resource_alpha];
     const float *k = (float*)res[xnor_nn_resource_k];
@@ -90,7 +89,7 @@ xnor_nn_status_t DirectConvolution::exec_avx_simple(
         int dst_idx = ((mb*OC + oc)*OH + oh)*OW + ow;
         float *d = dst + dst_idx;
         *d = 0.f;
-        unsigned long long int dst_i = 0;
+        long long int dst_i = 0;
         __m256 v_ones = _mm256_loadu_ps((float*)ones);
         /*
         asm volatile (
@@ -121,9 +120,8 @@ xnor_nn_status_t DirectConvolution::exec_avx_simple(
             if (ih < 0 || iw < 0) continue;
             if (ih >= IH || iw >= IW) continue;
 
-            const unsigned int *src_ic =
-                src + ((mb*IH + ih)*IW + iw)*ABIC/ELEM_SIZE;
-            const unsigned int *weights_ic =
+            const int *src_ic = src + ((mb*IH + ih)*IW + iw)*ABIC/ELEM_SIZE;
+            const int *weights_ic =
                 weights + ((kh*KW + kw)*OC + oc)*ABIC/ELEM_SIZE;
 
             for (int vabic = 0; vabic < VECTORS_IN_ABIC; vabic++) {
@@ -148,10 +146,14 @@ xnor_nn_status_t DirectConvolution::exec_avx_simple(
                 __m256i v_xnor =
                     _mm256_castps_si256(_mm256_xor_ps(v_xor, v_ones));
 
-                dst_i += __builtin_popcountll(_mm256_extract_epi64(v_xnor, 0));
-                dst_i += __builtin_popcountll(_mm256_extract_epi64(v_xnor, 1));
-                dst_i += __builtin_popcountll(_mm256_extract_epi64(v_xnor, 2));
-                dst_i += __builtin_popcountll(_mm256_extract_epi64(v_xnor, 3));
+                dst_i += __builtin_popcountll(_mm256_extract_epi64(v_xnor, 0))
+                    *2-64;
+                dst_i += __builtin_popcountll(_mm256_extract_epi64(v_xnor, 1))
+                    *2-64;
+                dst_i += __builtin_popcountll(_mm256_extract_epi64(v_xnor, 2))
+                    *2-64;
+                dst_i += __builtin_popcountll(_mm256_extract_epi64(v_xnor, 3))
+                    *2-64;
                 /*
                 float *src_ptr = (float*)src_ic + abic*VLEN/ELEM_SIZE;
                 float *weights_ptr = (float*)weights_ic + abic*VLEN/ELEM_SIZE;

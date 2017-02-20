@@ -25,9 +25,8 @@ xnor_nn_status_t BcastConvolution::exec_neon_simple(
         || res[xnor_nn_resource_k] == nullptr
         || c == nullptr
     ) return xnor_nn_error_invalid_input;
-    const unsigned int *src = (unsigned int*)res[xnor_nn_resource_bin_src];
-    const unsigned int *weights =
-        (unsigned int*)res[xnor_nn_resource_bin_weights];
+    const int *src = (int*)res[xnor_nn_resource_bin_src];
+    const int *weights = (int*)res[xnor_nn_resource_bin_weights];
     float *dst = (float*)res[xnor_nn_resource_user_dst];
     float *alpha = (float*)&res[xnor_nn_resource_alpha];
     const float *k = (float*)res[xnor_nn_resource_k];
@@ -84,7 +83,9 @@ xnor_nn_status_t BcastConvolution::exec_neon_simple(
     for (int oco = 0; oco < OCO; oco++)
     for (int oh = 0; oh < OH; oh++)
     for (int ow = 0; ow < OW; ow++) {
-        uint32x4_t v_accum = veorq_u32(v_accum, v_accum);
+        int32x4_t v_accum = veorq_s32(v_accum, v_accum);
+        int8x16_t v_eight = vmovq_n_s8(8);
+        int8x16_t v_two = vmovq_n_s8(2);
 
         for (int kh = 0; kh < KH; kh++)
         for (int kw = 0; kw < KW; kw++) {
@@ -94,27 +95,29 @@ xnor_nn_status_t BcastConvolution::exec_neon_simple(
             if (ih < 0 || iw < 0) continue;
             if (ih >= IH || iw >= IW) continue;
 
-            const unsigned int *src_ic =
-                src + ((mb*IH + ih)*IW + iw)*ICO;
-            const unsigned int *weights_ic_oci =
+            const int *src_ic = src + ((mb*IH + ih)*IW + iw)*ICO;
+            const int *weights_ic_oci =
                 weights + ((oco*KH +kh)*KW + kw)*ICO*OCI;
 
             for (int ico = 0; ico < ICO; ico++) {
-                uint32x4_t v_src = vdupq_n_u32(src_ic[ico]);
-                uint32x4_t v_weights = vld1q_u32(weights_ic_oci + ico*OCI);
+                int32x4_t v_src = vdupq_n_s32(src_ic[ico]);
+                int32x4_t v_weights = vld1q_s32(weights_ic_oci + ico*OCI);
 
-                uint32x4_t v_xor = veorq_u32(v_src, v_weights);
-                uint32x4_t v_xnor = vmvnq_u32(v_xor);
+                int32x4_t v_xor = veorq_s32(v_src, v_weights);
+                int32x4_t v_xnor = vmvnq_s32(v_xor);
 
-                uint8x16_t v_cnt16 = vcntq_u8(vreinterpretq_u8_u32(v_xnor));
-                uint16x8_t v_cnt8 = vpaddlq_u8(v_cnt16);
-                uint32x4_t v_cnt4 = vpaddlq_u16(v_cnt8);
-                v_accum = vaddq_u32(v_cnt4, v_accum);
+                int8x16_t v_cnt16 = vcntq_s8(vreinterpretq_s8_s32(v_xnor));
+                v_cnt16 = vmulq_s8(v_cnt16, v_two);
+                v_cnt16 = vsubq_s8(v_cnt16, v_eight);
+
+                int16x8_t v_cnt8 = vpaddlq_s8(v_cnt16);
+                int32x4_t v_cnt4 = vpaddlq_s16(v_cnt8);
+                v_accum = vaddq_s32(v_cnt4, v_accum);
             }
         }
         // TODO: single instruction mov
-        unsigned int d_arr[OCI] = { 0u };
-        vst1q_u32(d_arr, v_accum);
+        int d_arr[OCI] = { 0u };
+        vst1q_s32(d_arr, v_accum);
         for (int i = 0; i < OCI; i++)
             dst[((mb*OC + oco*OCI + i)*OH + oh)*OW + ow] =
                 d_arr[i] * *alpha * k[oh*OW + ow];

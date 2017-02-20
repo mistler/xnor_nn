@@ -124,7 +124,7 @@ void check_weights_bcast(int OC, int IC, int KH, int KW, int VLEN,
 
 template<> void check_4d<float>(int S3, int S2, int S1, int S0,
         const float *a, const float *e) {
-    const float ERR = 1e-5f;
+    const float ERR = 1e-3f;
 
     int wrong = 0;
     for (int s3 = 0; s3 < S3; s3++)

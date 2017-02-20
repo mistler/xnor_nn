@@ -16,13 +16,6 @@ void DirectConvolution::setupConvolution(xnor_nn_convolution_t *c) {
     op->DirectBase::setupConvolution(c);
     setState(c, op, xnor_nn_operation_convolution_forward);
 
-    c->resource_size[xnor_nn_resource_bin_src] =
-        c->mb * ABIC * c->ih * c->iw * ELEM_SIZE;
-    c->resource_size[xnor_nn_resource_bin_weights] =
-        c->oc * ABIC * c->kh * c->kw * ELEM_SIZE;
-    c->resource_size[xnor_nn_resource_a] = c->ih * c->iw * sizeof(float);
-    c->resource_size[xnor_nn_resource_k] = c->oh * c->ow * sizeof(float);
-
     using Cpuid = xnor_nn::utils::Cpuid;
 
 #ifdef __x86_64__

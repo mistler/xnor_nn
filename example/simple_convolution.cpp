@@ -1,7 +1,7 @@
 #include "xnor_nn.hpp"
 
 int main(){
-    const int MB = 8;
+    const int MB = 2;
     const int IC = 64, OC = 128;
     const int IH = 13, IW = 13;
     const int OH = 13, OW = 13;
@@ -18,7 +18,7 @@ int main(){
     dst = new float[MB*OC*OH*OW];
 
     // Convolution setup
-    xnor_nn::Convolution convolution{xnor_nn_algorithm_direct,
+    xnor_nn::Convolution convolution{xnor_nn_algorithm_best,
             MB, OC, IC, IH, IW, KH, KW, SH, SW, PH, PW, weights};
     delete[] weights;
 

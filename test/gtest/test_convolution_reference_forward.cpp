@@ -45,13 +45,13 @@ TEST(ConvolutionForwardReference, reference_precalculated) {
     };
     // Precalculated output
     float expected_dst[MB*OC*OH*OW] = {
-        8, 12, 8,
-        48, 81, 36,
-        16, 36, 20,
+        -16, -48, -16,
+        24, 0, 0,
+        0, 0, 8,
 
-        16, 36, 16,
-        24, 72, 36,
-        16, 36, 12
+        0, 0, 0,
+        -24, -18, 0,
+        0, 0, -8
     }; // * 1/9
     for (int i = 0; i < MB*OC*OH*OW; i++) expected_dst[i] /= 9.f;
 

@@ -20,14 +20,13 @@ namespace implementation {
 
 std::vector<Implementation*> Implementations() {
     static std::vector<Implementation*> impls = {
-        new BcastConvolution(),
-        new DirectConvolution(),
-
         new BcastBinarizeWeights(),
-        new DirectBinarizeWeights(),
-
         new BcastBinarizeData(),
+        new BcastConvolution(),
+
+        new DirectBinarizeWeights(),
         new DirectBinarizeData(),
+        new DirectConvolution(),
 
         new ReferenceBinarizeWeights(),
         new ReferenceBinarizeData(),

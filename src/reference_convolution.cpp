@@ -8,7 +8,6 @@ namespace implementation {
 bool ReferenceConvolution::isApplicable(
         const xnor_nn_convolution_t *c) const {
     if (c->forward != nullptr) return false;
-    if (c->algorithm != xnor_nn_algorithm_reference) return false;
     return true;
 }
 
@@ -97,7 +96,7 @@ xnor_nn_status_t ReferenceConvolution::exec(
                 bool bweights = weights[weights_idx] >= 0 ? true : false;
 
                 float result = !(bsrc ^ bweights);
-                *d += result;
+                *d += result*2.f-1.f; // {0,1} -> {-1,1}
             }
         }
         *d *= *alpha;

@@ -19,7 +19,7 @@ typedef enum {
     xnor_nn_algorithm_direct = 1,
     xnor_nn_algorithm_bcast = 2,
 
-    xnor_nn_algorithm_fastest = 3,
+    xnor_nn_algorithm_best = 2,
 } xnor_nn_algorithm_t;
 
 typedef enum {

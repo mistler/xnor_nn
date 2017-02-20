@@ -23,9 +23,8 @@ xnor_nn_status_t DirectConvolution::exec_default_simple(
         || res[xnor_nn_resource_k] == nullptr
         || c == nullptr
     ) return xnor_nn_error_invalid_input;
-    const unsigned int *src = (unsigned int*)res[xnor_nn_resource_bin_src];
-    const unsigned int *weights =
-        (unsigned int*)res[xnor_nn_resource_bin_weights];
+    const int *src = (int*)res[xnor_nn_resource_bin_src];
+    const int *weights = (int*)res[xnor_nn_resource_bin_weights];
     float *dst = (float*)res[xnor_nn_resource_user_dst];
     float *alpha = (float*)&res[xnor_nn_resource_alpha];
     const float *k = (float*)res[xnor_nn_resource_k];
@@ -90,9 +89,8 @@ xnor_nn_status_t DirectConvolution::exec_default_simple(
             if (ih < 0 || iw < 0) continue;
             if (ih >= IH || iw >= IW) continue;
 
-            const unsigned int *src_ic =
-                src + ((mb*IH + ih)*IW + iw)*ABIC/ELEM_SIZE;
-            const unsigned int *weights_ic =
+            const int *src_ic = src + ((mb*IH + ih)*IW + iw)*ABIC/ELEM_SIZE;
+            const int *weights_ic =
                 weights + ((kh*KW + kw)*OC + oc)*ABIC/ELEM_SIZE;
 
             for (int vabic = 0; vabic < VECTORS_IN_ABIC; vabic++)
@@ -100,11 +98,12 @@ xnor_nn_status_t DirectConvolution::exec_default_simple(
                 int src_idx = vabic*VLEN/ELEM_SIZE + v;
                 int weights_idx = vabic*VLEN/ELEM_SIZE + v;
 
-                unsigned int bsrc = src_ic[src_idx];
-                unsigned int bweights = weights_ic[weights_idx];
+                int bsrc = src_ic[src_idx];
+                int bweights = weights_ic[weights_idx];
 
-                unsigned int result = ~(bsrc ^ bweights);
-                *d += __builtin_popcount(result);
+                int result = ~(bsrc ^ bweights);
+                int cnt = __builtin_popcount(result);
+                *d += 2*cnt - ELEM_SIZE;
             }
         }
         *d *= *alpha * k[oh*OW + ow];

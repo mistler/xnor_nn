@@ -23,9 +23,8 @@ xnor_nn_status_t BcastConvolution::exec_default_simple(
         || res[xnor_nn_resource_k] == nullptr
         || c == nullptr
     ) return xnor_nn_error_invalid_input;
-    const unsigned int *src = (unsigned int*)res[xnor_nn_resource_bin_src];
-    const unsigned int *weights =
-        (unsigned int*)res[xnor_nn_resource_bin_weights];
+    const int *src = (int*)res[xnor_nn_resource_bin_src];
+    const int *weights = (int*)res[xnor_nn_resource_bin_weights];
     float *dst = (float*)res[xnor_nn_resource_user_dst];
     float *alpha = (float*)&res[xnor_nn_resource_alpha];
     const float *k = (float*)res[xnor_nn_resource_k];
@@ -82,7 +81,7 @@ xnor_nn_status_t BcastConvolution::exec_default_simple(
     for (int oco = 0; oco < OCO; oco++)
     for (int oh = 0; oh < OH; oh++)
     for (int ow = 0; ow < OW; ow++) {
-        unsigned int d_arr[OCI] = { 0u };
+        int d_arr[OCI] = { 0u };
         for (int kh = 0; kh < KH; kh++)
         for (int kw = 0; kw < KW; kw++) {
             const int ih = oh*SH - PH + kh;
@@ -91,9 +90,8 @@ xnor_nn_status_t BcastConvolution::exec_default_simple(
             if (ih < 0 || iw < 0) continue;
             if (ih >= IH || iw >= IW) continue;
 
-            const unsigned int *src_ic =
-                src + ((mb*IH + ih)*IW + iw)*ICO;
-            const unsigned int *weights_ic_oci =
+            const int *src_ic = src + ((mb*IH + ih)*IW + iw)*ICO;
+            const int *weights_ic_oci =
                 weights + ((oco*KH +kh)*KW + kw)*ICO*OCI;
 
             for (int ico = 0; ico < ICO; ico++)
@@ -101,11 +99,11 @@ xnor_nn_status_t BcastConvolution::exec_default_simple(
                 int src_idx = ico;
                 int weights_idx = ico*OCI + oci;
 
-                unsigned int bsrc = src_ic[src_idx];
-                unsigned int bweights = weights_ic_oci[weights_idx];
+                int bsrc = src_ic[src_idx];
+                int bweights = weights_ic_oci[weights_idx];
 
-                unsigned int result = ~(bsrc ^ bweights);
-                d_arr[oci] += __builtin_popcount(result);
+                int result = ~(bsrc ^ bweights);
+                d_arr[oci] += __builtin_popcount(result)*2 - 32;
             }
         }
         for (int i = 0; i < OCI; i++)

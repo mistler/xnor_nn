@@ -40,13 +40,6 @@ xnor_nn_status_t xnor_nn_init_convolution(xnor_nn_convolution_t *c,
     c->state =
         (void*)new std::vector<xnor_nn::implementation::Implementation*>();
 
-    for (xnor_nn::implementation::Implementation *impl
-            : xnor_nn::implementation::Implementations()) {
-        if (impl->isApplicable(c)) {
-            impl->setupConvolution(c);
-        }
-    }
-
     LOG_INFO("convolution:\t", "create: ",
             "[", mb, "][", ic, "][", ih, "][", iw, "]",
             "x",
@@ -56,6 +49,13 @@ xnor_nn_status_t xnor_nn_init_convolution(xnor_nn_convolution_t *c,
             "stride: [", sh, "][", sw, "]",
             "pad: [", ph, "][", pw, "]",
             "Algorithm:", algorithm);
+
+    for (xnor_nn::implementation::Implementation *impl
+            : xnor_nn::implementation::Implementations()) {
+        if (impl->isApplicable(c)) {
+            impl->setupConvolution(c);
+        }
+    }
 
     return xnor_nn_success;
 }
