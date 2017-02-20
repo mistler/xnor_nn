@@ -61,6 +61,31 @@ void XnorNNConvolutionLayer<Dtype>::Forward_cpu(
     // TODO: use allocated memory
     // TODO: check that aligned instructions generated on arm
     xnor_nn_conv->forward(bottom_data, top_data);
+
+    const int MB = this->num_;
+    const int OC = this->num_output_;
+
+    const int IH = this->conv_input_shape_.cpu_data()[1];
+    const int IW = this->conv_input_shape_.cpu_data()[2];
+
+    const int KH = this->kernel_shape_.cpu_data()[0];
+    const int KW = this->kernel_shape_.cpu_data()[1];
+
+    const int SH = this->stride_.cpu_data()[0];
+    const int SW = this->stride_.cpu_data()[1];
+
+    const int PH = this->pad_.cpu_data()[0];
+    const int PW = this->pad_.cpu_data()[1];
+
+    const int OH = (IH + 2*PH - KH) / SH + 1;
+    const int OW = (IW + 2*PW - KW) / SW + 1;
+
+    Dtype mean = 0;
+    for (int i = 0; i < MB*OC*OH*OW; i++)
+        mean += top_data[i];
+    mean /= MB*OC*OH*OW;
+    for (int i = 0; i < MB*OC*OH*OW; i++)
+        top_data[i] -= mean;
   }
 
 
