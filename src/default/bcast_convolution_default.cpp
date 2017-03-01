@@ -81,7 +81,8 @@ xnor_nn_status_t BcastConvolution::exec_default_simple(
     for (int oco = 0; oco < OCO; oco++)
     for (int oh = 0; oh < OH; oh++)
     for (int ow = 0; ow < OW; ow++) {
-        int d_arr[OCI] = { 0u };
+        int operations_counter = 0;
+        int d_arr[OCI] = { 0 };
         for (int kh = 0; kh < KH; kh++)
         for (int kw = 0; kw < KW; kw++) {
             const int ih = oh*SH - PH + kh;
@@ -94,6 +95,7 @@ xnor_nn_status_t BcastConvolution::exec_default_simple(
             const int *weights_ic_oci =
                 weights + ((oco*KH +kh)*KW + kw)*ICO*OCI;
 
+            operations_counter += IC;
             for (int ico = 0; ico < ICO; ico++)
             for (int oci = 0; oci < OCI; oci++) {
                 int src_idx = ico;
@@ -103,12 +105,12 @@ xnor_nn_status_t BcastConvolution::exec_default_simple(
                 int bweights = weights_ic_oci[weights_idx];
 
                 int result = ~(bsrc ^ bweights);
-                d_arr[oci] += __builtin_popcount(result)*2 - 32;
+                d_arr[oci] += __builtin_popcount(result);
             }
         }
         for (int i = 0; i < OCI; i++)
             dst[((mb*OC + oco*OCI + i)*OH + oh)*OW + ow] =
-                d_arr[i] * *alpha * k[oh*OW + ow];
+                (d_arr[i]*2 - operations_counter) * *alpha * k[oh*OW + ow];
     }
 
     return xnor_nn_success;

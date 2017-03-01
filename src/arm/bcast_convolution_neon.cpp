@@ -83,9 +83,8 @@ xnor_nn_status_t BcastConvolution::exec_neon_simple(
     for (int oco = 0; oco < OCO; oco++)
     for (int oh = 0; oh < OH; oh++)
     for (int ow = 0; ow < OW; ow++) {
+        int operations_counter = 0;
         int32x4_t v_accum = veorq_s32(v_accum, v_accum);
-        int8x16_t v_eight = vmovq_n_s8(8);
-        int8x16_t v_two = vmovq_n_s8(2);
 
         for (int kh = 0; kh < KH; kh++)
         for (int kw = 0; kw < KW; kw++) {
@@ -99,6 +98,7 @@ xnor_nn_status_t BcastConvolution::exec_neon_simple(
             const int *weights_ic_oci =
                 weights + ((oco*KH +kh)*KW + kw)*ICO*OCI;
 
+            operations_counter += IC;
             for (int ico = 0; ico < ICO; ico++) {
                 int32x4_t v_src = vdupq_n_s32(src_ic[ico]);
                 int32x4_t v_weights = vld1q_s32(weights_ic_oci + ico*OCI);
@@ -107,9 +107,6 @@ xnor_nn_status_t BcastConvolution::exec_neon_simple(
                 int32x4_t v_xnor = vmvnq_s32(v_xor);
 
                 int8x16_t v_cnt16 = vcntq_s8(vreinterpretq_s8_s32(v_xnor));
-                v_cnt16 = vmulq_s8(v_cnt16, v_two);
-                v_cnt16 = vsubq_s8(v_cnt16, v_eight);
-
                 int16x8_t v_cnt8 = vpaddlq_s8(v_cnt16);
                 int32x4_t v_cnt4 = vpaddlq_s16(v_cnt8);
                 v_accum = vaddq_s32(v_cnt4, v_accum);
@@ -120,7 +117,7 @@ xnor_nn_status_t BcastConvolution::exec_neon_simple(
         vst1q_s32(d_arr, v_accum);
         for (int i = 0; i < OCI; i++)
             dst[((mb*OC + oco*OCI + i)*OH + oh)*OW + ow] =
-                d_arr[i] * *alpha * k[oh*OW + ow];
+                (d_arr[i]*2 - operations_counter) * *alpha * k[oh*OW + ow];
     }
 
     return xnor_nn_success;

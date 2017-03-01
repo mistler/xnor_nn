@@ -7,8 +7,7 @@ namespace implementation {
 
 bool DirectBase::isApplicable(const xnor_nn_convolution_t *c) const {
     bool ok = true
-        && c->algorithm == xnor_nn_algorithm_direct
-        && c->ic % xnor_nn::utils::Cpuid::vlen() == 0;
+        && c->algorithm == xnor_nn_algorithm_direct;
     return ok;
 }
 

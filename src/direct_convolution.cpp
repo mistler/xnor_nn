@@ -35,8 +35,6 @@ void DirectConvolution::setupConvolution(xnor_nn_convolution_t *c) {
         c->forward = exec_default_simple;
     }
 #endif
-
-    c->forward = exec_default_simple;
 }
 
 DirectConvolution::~DirectConvolution() {}

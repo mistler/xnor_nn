@@ -84,9 +84,9 @@ xnor_nn_status_t DirectConvolution::exec_neon_simple(
         float *d = dst + dst_idx;
         *d = 0.f;
         int32x4_t v_accum = veorq_s32(v_accum, v_accum);
-        int8x16_t v_eight = vmovq_n_s8(8);
-        int8x16_t v_two = vmovq_n_s8(2);
-        long long int dst_i = 0;
+
+        int dst_i = 0;
+        int operations_counter = 0;
 
         for (int kh = 0; kh < KH; kh++)
         for (int kw = 0; kw < KW; kw++) {
@@ -100,6 +100,8 @@ xnor_nn_status_t DirectConvolution::exec_neon_simple(
             const int *weights_ic =
                 weights + ((kh*KW + kw)*OC + oc)*ABIC/ELEM_SIZE;
 
+            operations_counter += IC;
+
             for (int vabic = 0; vabic < VECTORS_IN_ABIC; vabic++) {
                 int32x4_t v_src = vld1q_s32(src_ic + vabic*VLEN/ELEM_SIZE);
                 int32x4_t v_weights =
@@ -109,8 +111,6 @@ xnor_nn_status_t DirectConvolution::exec_neon_simple(
                 int32x4_t v_xnor = vmvnq_s32(v_xor);
 
                 int8x16_t v_cnt16 = vcntq_s8(vreinterpretq_s8_s32(v_xnor));
-                v_cnt16 = vmulq_s8(v_cnt16, v_two);
-                v_cnt16 = vsubq_s8(v_cnt16, v_eight);
                 int16x8_t v_cnt8 = vpaddlq_s8(v_cnt16);
                 int32x4_t v_cnt4 = vpaddlq_s16(v_cnt8);
                 v_accum = vaddq_s32(v_cnt4, v_accum);
@@ -119,7 +119,7 @@ xnor_nn_status_t DirectConvolution::exec_neon_simple(
         int64x2_t v_cnt2 = vpaddlq_s32(v_accum);
         dst_i += vgetq_lane_s64(v_cnt2, 0);
         dst_i += vgetq_lane_s64(v_cnt2, 1);
-        *d = (float)dst_i * *alpha * k[oh*OW + ow];
+        *d = (float)(dst_i*2 - operations_counter) * *alpha * k[oh*OW + ow];
     }
 
     return xnor_nn_success;

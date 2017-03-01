@@ -80,7 +80,11 @@ xnor_nn_status_t DirectConvolution::exec_default_simple(
     for (int ow = 0; ow < OW; ow++) {
         int dst_idx = ((mb*OC + oc)*OH + oh)*OW + ow;
         float *d = dst + dst_idx;
+        int dst_i = 0;
         *d = 0.f;
+
+        int operations_counter = 0;
+
         for (int kh = 0; kh < KH; kh++)
         for (int kw = 0; kw < KW; kw++) {
             const int ih = oh*SH - PH + kh;
@@ -93,6 +97,8 @@ xnor_nn_status_t DirectConvolution::exec_default_simple(
             const int *weights_ic =
                 weights + ((kh*KW + kw)*OC + oc)*ABIC/ELEM_SIZE;
 
+            operations_counter += IC;
+
             for (int vabic = 0; vabic < VECTORS_IN_ABIC; vabic++)
             for (int v = 0; v < VLEN / ELEM_SIZE; v++) {
                 int src_idx = vabic*VLEN/ELEM_SIZE + v;
@@ -103,10 +109,10 @@ xnor_nn_status_t DirectConvolution::exec_default_simple(
 
                 int result = ~(bsrc ^ bweights);
                 int cnt = __builtin_popcount(result);
-                *d += 2*cnt - ELEM_SIZE;
+                dst_i += cnt;
             }
         }
-        *d *= *alpha * k[oh*OW + ow];
+        *d = (float)(dst_i*2 - operations_counter) * *alpha * k[oh*OW + ow];
     }
 
     return xnor_nn_success;

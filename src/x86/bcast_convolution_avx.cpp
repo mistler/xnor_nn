@@ -85,7 +85,8 @@ xnor_nn_status_t BcastConvolution::exec_avx_simple(
     for (int oco = 0; oco < OCO; oco++)
     for (int oh = 0; oh < OH; oh++)
     for (int ow = 0; ow < OW; ow++) {
-        int d_arr[OCI] = { 0u };
+        int operations_counter = 0;
+        int d_arr[OCI] = { 0 };
         __m256 v_ones = _mm256_loadu_ps((float*)ones);
 
         for (int kh = 0; kh < KH; kh++)
@@ -101,6 +102,7 @@ xnor_nn_status_t BcastConvolution::exec_avx_simple(
             const int *weights_ic_oci =
                 weights + ((oco*KH +kh)*KW + kw)*ICO*OCI;
 
+            operations_counter += IC;
             for (int ico = 0; ico < ICO; ico++) {
                 __m256 v_src = _mm256_broadcast_ss((float*)src_ic + ico);
                 __m256 v_weights = _mm256_load_ps(
@@ -110,27 +112,19 @@ xnor_nn_status_t BcastConvolution::exec_avx_simple(
                 __m256i v_xnor =
                     _mm256_castps_si256(_mm256_xor_ps(v_xor, v_ones));
 
-                d_arr[0] += __builtin_popcount(_mm256_extract_epi32(v_xnor, 0))
-                    *2-32;
-                d_arr[1] += __builtin_popcount(_mm256_extract_epi32(v_xnor, 1))
-                    *2-32;
-                d_arr[2] += __builtin_popcount(_mm256_extract_epi32(v_xnor, 2))
-                    *2-32;
-                d_arr[3] += __builtin_popcount(_mm256_extract_epi32(v_xnor, 3))
-                    *2-32;
-                d_arr[4] += __builtin_popcount(_mm256_extract_epi32(v_xnor, 4))
-                    *2-32;
-                d_arr[5] += __builtin_popcount(_mm256_extract_epi32(v_xnor, 5))
-                    *2-32;
-                d_arr[6] += __builtin_popcount(_mm256_extract_epi32(v_xnor, 6))
-                    *2-32;
-                d_arr[7] += __builtin_popcount(_mm256_extract_epi32(v_xnor, 7))
-                    *2-32;
+                d_arr[0] += __builtin_popcount(_mm256_extract_epi32(v_xnor, 0));
+                d_arr[1] += __builtin_popcount(_mm256_extract_epi32(v_xnor, 1));
+                d_arr[2] += __builtin_popcount(_mm256_extract_epi32(v_xnor, 2));
+                d_arr[3] += __builtin_popcount(_mm256_extract_epi32(v_xnor, 3));
+                d_arr[4] += __builtin_popcount(_mm256_extract_epi32(v_xnor, 4));
+                d_arr[5] += __builtin_popcount(_mm256_extract_epi32(v_xnor, 5));
+                d_arr[6] += __builtin_popcount(_mm256_extract_epi32(v_xnor, 6));
+                d_arr[7] += __builtin_popcount(_mm256_extract_epi32(v_xnor, 7));
             }
         }
         for (int i = 0; i < OCI; i++)
             dst[((mb*OC + oco*OCI + i)*OH + oh)*OW + ow] =
-                d_arr[i] * *alpha * k[oh*OW + ow];
+                (d_arr[i]*2 - operations_counter) * *alpha * k[oh*OW + ow];
     }
 
     return xnor_nn_success;
