@@ -1,6 +1,7 @@
 #include "bcast_convolution.hpp"
 
 #include "cpuid.hpp"
+#include "isa_traits.hpp"
 #include "bcast_template_parameters.hpp"
 
 namespace xnor_nn {
@@ -21,19 +22,19 @@ void BcastConvolution::setupConvolution(xnor_nn_convolution_t *c) {
 
 #ifdef __x86_64__
     if (Cpuid::avx()) {
-        BCAST_TEMPLATE_ASSIGN(c, avx);
-        c->forward = exec_avx_simple;
+        BCAST_TEMPLATE_ASSIGN(c, xnor_nn::isa::isa_avx);
+        c->forward = exec_simple<xnor_nn::isa::isa_avx>;
     } else {
-        BCAST_TEMPLATE_ASSIGN(c, default);
-        c->forward = exec_default_simple;
+        BCAST_TEMPLATE_ASSIGN(c, xnor_nn::isa::isa_default);
+        c->forward = exec_simple<xnor_nn::isa::isa_default>;
     }
 #elif defined __arm__
     if (Cpuid::neon()) {
-        BCAST_TEMPLATE_ASSIGN(c, neon);
-        c->forward = exec_neon_simple;
+        BCAST_TEMPLATE_ASSIGN(c, xnor_nn::isa::isa_neon);
+        c->forward = exec_simple<xnor_nn::isa::isa_neon>;
     } else {
-        BCAST_TEMPLATE_ASSIGN(c, default);
-        c->forward = exec_default_simple;
+        BCAST_TEMPLATE_ASSIGN(c, xnor_nn::isa::isa_default);
+        c->forward = exec_simple<xnor_nn::isa::isa_default>;
     }
 #endif
 }

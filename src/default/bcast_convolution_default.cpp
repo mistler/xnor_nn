@@ -4,16 +4,20 @@
 #include "logger.hpp"
 
 #include "bcast_template_parameters.hpp"
+#include "isa_traits.hpp"
 
 namespace xnor_nn {
 namespace implementation {
 
+template<typename ... Args>
+xnor_nn_status_t exec(const xnor_nn_convolution_t *c, xnor_nn_resources_t res);
 #ifdef TEMPLATED
-template<int OC, int IC, int IH, int IW, int KH, int KW, int SH, int SW,
-    int PH, int PW>
-xnor_nn_status_t BcastConvolution::exec_default_template(
+template<typename ISA, int OC, int IC, int IH, int IW, int KH, int KW,
+    int SH, int SW, int PH, int PW>
+xnor_nn_status_t BcastConvolution::exec_template(
 #else
-xnor_nn_status_t BcastConvolution::exec_default_simple(
+template<typename ISA>
+xnor_nn_status_t BcastConvolution::exec_simple(
 #endif
         const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
     if (
@@ -117,9 +121,11 @@ xnor_nn_status_t BcastConvolution::exec_default_simple(
 }
 
 #ifdef TEMPLATED
-
-BCAST_TEMPLATE_INSTANTIATE(default);
-
+BCAST_TEMPLATE_INSTANTIATE(xnor_nn::isa::isa_default);
+#else
+template xnor_nn_status_t BcastConvolution::exec_simple<
+    xnor_nn::isa::isa_default>(const xnor_nn_convolution_t *c,
+            xnor_nn_resources_t res);
 #endif
 
 } // namespace implementation

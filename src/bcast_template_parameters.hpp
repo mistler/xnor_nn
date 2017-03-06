@@ -46,35 +46,34 @@ constexpr int template_parameters[][10] = {
         _TEMPLATE_PARAMS[INDEX][8], \
         _TEMPLATE_PARAMS[INDEX][9]
 
-#define _BCAST_TEMPLATE_INSTANTIATE(NAME, INDEX) \
-template xnor_nn_status_t BcastConvolution::exec_##NAME##_template < \
+#define _BCAST_TEMPLATE_INSTANTIATE(ISA, INDEX) \
+template xnor_nn_status_t BcastConvolution::exec_template <ISA, \
         BCAST_TEMPLATE_PARAMS(INDEX) \
         >(const xnor_nn_convolution_t *c, xnor_nn_resources_t res);
 
-#define BCAST_TEMPLATE_INSTANTIATE(NAME) \
-        _BCAST_TEMPLATE_INSTANTIATE(NAME, 0) \
-        _BCAST_TEMPLATE_INSTANTIATE(NAME, 1) \
-        _BCAST_TEMPLATE_INSTANTIATE(NAME, 2) \
-        _BCAST_TEMPLATE_INSTANTIATE(NAME, 3) \
-        _BCAST_TEMPLATE_INSTANTIATE(NAME, 4) \
-        _BCAST_TEMPLATE_INSTANTIATE(NAME, 5) \
-        _BCAST_TEMPLATE_INSTANTIATE(NAME, 6)
+#define BCAST_TEMPLATE_INSTANTIATE(ISA) \
+        _BCAST_TEMPLATE_INSTANTIATE(ISA, 0) \
+        _BCAST_TEMPLATE_INSTANTIATE(ISA, 1) \
+        _BCAST_TEMPLATE_INSTANTIATE(ISA, 2) \
+        _BCAST_TEMPLATE_INSTANTIATE(ISA, 3) \
+        _BCAST_TEMPLATE_INSTANTIATE(ISA, 4) \
+        _BCAST_TEMPLATE_INSTANTIATE(ISA, 5) \
+        _BCAST_TEMPLATE_INSTANTIATE(ISA, 6)
 
-#define _BCAST_TEMPLATE_ASSIGN(CONV, NAME, INDEX) \
+#define _BCAST_TEMPLATE_ASSIGN(CONV, ISA, INDEX) \
         if (BCAST_TEMPLATE_MATCHES(CONV, INDEX)) { \
-            CONV->forward = \
-                    exec_##NAME##_template<BCAST_TEMPLATE_PARAMS(INDEX)>; \
+            CONV->forward = exec_template<ISA, BCAST_TEMPLATE_PARAMS(INDEX)>; \
             return; \
         }
 
-#define BCAST_TEMPLATE_ASSIGN(CONV, NAME) \
-        _BCAST_TEMPLATE_ASSIGN(CONV, NAME, 0) \
-        _BCAST_TEMPLATE_ASSIGN(CONV, NAME, 1) \
-        _BCAST_TEMPLATE_ASSIGN(CONV, NAME, 2) \
-        _BCAST_TEMPLATE_ASSIGN(CONV, NAME, 3) \
-        _BCAST_TEMPLATE_ASSIGN(CONV, NAME, 4) \
-        _BCAST_TEMPLATE_ASSIGN(CONV, NAME, 5) \
-        _BCAST_TEMPLATE_ASSIGN(CONV, NAME, 6)
+#define BCAST_TEMPLATE_ASSIGN(CONV, ISA) \
+        _BCAST_TEMPLATE_ASSIGN(CONV, ISA, 0) \
+        _BCAST_TEMPLATE_ASSIGN(CONV, ISA, 1) \
+        _BCAST_TEMPLATE_ASSIGN(CONV, ISA, 2) \
+        _BCAST_TEMPLATE_ASSIGN(CONV, ISA, 3) \
+        _BCAST_TEMPLATE_ASSIGN(CONV, ISA, 4) \
+        _BCAST_TEMPLATE_ASSIGN(CONV, ISA, 5) \
+        _BCAST_TEMPLATE_ASSIGN(CONV, ISA, 6)
 
 } // namespace bcast
 } // namespace xnor_nn
