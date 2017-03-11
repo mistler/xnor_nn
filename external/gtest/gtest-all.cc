@@ -4046,11 +4046,6 @@ class TestNameIs {
   explicit TestNameIs(const char* name)
       : name_(name) {}
 
-  // Returns true iff the test name of test_info matches name_.
-  bool operator()(const TestInfo * test_info) const {
-    return test_info && test_info->name() == name_;
-  }
-
  private:
   std::string name_;
 };

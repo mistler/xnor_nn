@@ -1,7 +1,7 @@
 set(TARGET_NAME gtest)
 find_package(Threads REQUIRED)
 
-set(MAIN_SRC "gtest-all.cc" "gmock-gtest-all.cc")
+set(MAIN_SRC "gtest-all.cc")
 
 include_directories(${CMAKE_SOURCE_DIR}/external/gtest)
 source_group("" FILES ${MAIN_SRC})
