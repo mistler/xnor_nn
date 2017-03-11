@@ -1,5 +1,14 @@
 set(TARGET_NAME ${LIB_NAME})
 
+# DEFAULT
+file(GLOB_RECURSE DEFAULT_SOURCES
+    ${CMAKE_SOURCE_DIR}/src/default/*default.cpp)
+set(DEFAULT_OBJ_LIB default)
+
+add_library(${DEFAULT_OBJ_LIB} OBJECT ${DEFAULT_SOURCES})
+set_target_properties(${DEFAULT_OBJ_LIB}
+    PROPERTIES COMPILE_FLAGS "-fPIC")
+
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
 
 # AVX
@@ -9,29 +18,11 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
 
     add_library(${AVX_OBJ_LIB} OBJECT ${AVX_SOURCES})
     set_target_properties(${AVX_OBJ_LIB}
-        PROPERTIES COMPILE_FLAGS "-fPIC -mavx -mpopcnt -DVLEN=256")
+        PROPERTIES COMPILE_FLAGS "-fPIC -mavx -mpopcnt")
 
-    add_library(${AVX_OBJ_LIB}_templated OBJECT ${AVX_SOURCES})
-    set_target_properties(${AVX_OBJ_LIB}_templated
-        PROPERTIES COMPILE_FLAGS "-fPIC -mavx -mpopcnt -DVLEN=256 -DTEMPLATED")
-
-# SSE42
-    file(GLOB_RECURSE DEFAULT_SOURCES
-        ${CMAKE_SOURCE_DIR}/src/default/*default.cpp)
-    set(DEFAULT_OBJ_LIB x86_default)
-
-    add_library(${DEFAULT_OBJ_LIB} OBJECT ${DEFAULT_SOURCES})
-    set_target_properties(${DEFAULT_OBJ_LIB}
-        PROPERTIES COMPILE_FLAGS "-fPIC -msse4 -mpopcnt -DVLEN=128")
-    add_library(${DEFAULT_OBJ_LIB}_templated OBJECT ${DEFAULT_SOURCES})
-    set_target_properties(${DEFAULT_OBJ_LIB}_templated
-        PROPERTIES COMPILE_FLAGS "-fPIC -msse4.2 -mpopcnt -DVLEN=128 -DTEMPLATED")
-
-
-    set(OBJ_LIBS $<TARGET_OBJECTS:${DEFAULT_OBJ_LIB}>
-        $<TARGET_OBJECTS:${DEFAULT_OBJ_LIB}_templated>
-        $<TARGET_OBJECTS:${AVX_OBJ_LIB}>
-        $<TARGET_OBJECTS:${AVX_OBJ_LIB}_templated>)
+    set(OBJ_LIBS
+        $<TARGET_OBJECTS:${DEFAULT_OBJ_LIB}>
+        $<TARGET_OBJECTS:${AVX_OBJ_LIB}>)
 
 else(CMAKE_SYSTEM_PROCESSOR MATCHES "(armv7)|(armv8)")
 
@@ -42,30 +33,11 @@ else(CMAKE_SYSTEM_PROCESSOR MATCHES "(armv7)|(armv8)")
 
     add_library(${NEON_OBJ_LIB} OBJECT ${NEON_SOURCES})
     set_target_properties(${NEON_OBJ_LIB}
-        PROPERTIES COMPILE_FLAGS "-fPIC -mfpu=neon -DVLEN=128")
+        PROPERTIES COMPILE_FLAGS "-fPIC -mfpu=neon")
 
-    add_library(${NEON_OBJ_LIB}_templated OBJECT ${NEON_SOURCES})
-    set_target_properties(${NEON_OBJ_LIB}_templated
-        PROPERTIES COMPILE_FLAGS "-fPIC -mfpu=neon -DVLEN=128 -DTEMPLATED")
-
-# DEFAULT
-    file(GLOB_RECURSE DEFAULT_SOURCES
-        ${CMAKE_SOURCE_DIR}/src/default/*default.cpp)
-    set(DEFAULT_OBJ_LIB arm_default)
-
-    add_library(${DEFAULT_OBJ_LIB} OBJECT ${DEFAULT_SOURCES})
-    set_target_properties(${DEFAULT_OBJ_LIB}
-        PROPERTIES COMPILE_FLAGS "-fPIC -DVLEN=64")
-
-    add_library(${DEFAULT_OBJ_LIB}_templated OBJECT ${DEFAULT_SOURCES})
-    set_target_properties(${DEFAULT_OBJ_LIB}_templated
-        PROPERTIES COMPILE_FLAGS "-fPIC -DVLEN=64 -DTEMPLATED")
-
-
-    set(OBJ_LIBS $<TARGET_OBJECTS:${DEFAULT_OBJ_LIB}>
-        $<TARGET_OBJECTS:${DEFAULT_OBJ_LIB}_templated>
-        $<TARGET_OBJECTS:${NEON_OBJ_LIB}>
-        $<TARGET_OBJECTS:${NEON_OBJ_LIB}_templated>)
+    set(OBJ_LIBS
+        $<TARGET_OBJECTS:${DEFAULT_OBJ_LIB}>
+        $<TARGET_OBJECTS:${NEON_OBJ_LIB}>)
 
 endif()
 

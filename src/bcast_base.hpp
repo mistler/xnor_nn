@@ -17,19 +17,17 @@ public:
 
 protected:
 
-#ifdef VLEN
     static constexpr int constexpr_getICO(int IC) {
         return ((IC + BICI - 1) / BICI + SZ - 1) / SZ;
     }
 
-    static constexpr int constexpr_getOCO(int OC) {
-        return (OC + constexpr_getOCI() - 1) / constexpr_getOCI();
+    static constexpr int constexpr_getOCO(int OC, int VLEN) {
+        return (OC + constexpr_getOCI(VLEN) - 1) / constexpr_getOCI(VLEN);
     }
 
-    static constexpr int constexpr_getOCI() {
+    static constexpr int constexpr_getOCI(int VLEN) {
         return VLEN / SZ / BICI;
     }
-#endif
 
     static constexpr int getICO(int IC) {
         return ((IC + BICI - 1) / BICI + SZ - 1) / SZ;

@@ -1,7 +1,5 @@
 #include <vector>
-#include <functional>
 #include <iostream>
-#include <cmath>
 
 #include "xnor_nn.h"
 #include "timer.hpp"

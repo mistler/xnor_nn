@@ -120,11 +120,3 @@ params_t{ xnor_nn_algorithm_bcast, 2, 256, 384, 13, 13, 3, 3, 1, 1, 1, 1 },
 params_t{ xnor_nn_algorithm_bcast, 2, 384, 384, 13, 13, 3, 3, 1, 1, 1, 1 },
 params_t{ xnor_nn_algorithm_bcast, 2, 384, 256, 13, 13, 3, 3, 1, 1, 1, 1 }
 ));
-INSTANTIATE_TEST_CASE_P(ConvolutionDirectAlexNet,
-        ConvolutionForward, ::testing::Values(
-params_t{ xnor_nn_algorithm_direct, 2, 3, 96, 227, 227, 11, 11, 4, 4, 0, 0 },
-params_t{ xnor_nn_algorithm_direct, 2, 96, 256, 27, 27, 5, 5, 1, 1, 2, 2 },
-params_t{ xnor_nn_algorithm_direct, 2, 256, 384, 13, 13, 3, 3, 1, 1, 1, 1 },
-params_t{ xnor_nn_algorithm_direct, 2, 384, 384, 13, 13, 3, 3, 1, 1, 1, 1 },
-params_t{ xnor_nn_algorithm_direct, 2, 384, 256, 13, 13, 3, 3, 1, 1, 1, 1 }
-));

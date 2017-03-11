@@ -3,12 +3,9 @@
 #include <vector>
 
 #include "bcast_convolution.hpp"
-#include "direct_convolution.hpp"
 
 #include "bcast_binarize_weights.hpp"
-#include "direct_binarize_weights.hpp"
 #include "bcast_binarize_data.hpp"
-#include "direct_binarize_data.hpp"
 
 #include "reference_binarize_data.hpp"
 #include "reference_binarize_weights.hpp"
@@ -23,10 +20,6 @@ std::vector<Implementation*> Implementations() {
         new BcastBinarizeWeights(),
         new BcastBinarizeData(),
         new BcastConvolution(),
-
-        new DirectBinarizeWeights(),
-        new DirectBinarizeData(),
-        new DirectConvolution(),
 
         new ReferenceBinarizeWeights(),
         new ReferenceBinarizeData(),
