@@ -43,9 +43,6 @@ xnor_nn_status_t BcastBinarizeWeights::exec(
     BcastBinarizeWeights *state = reinterpret_cast<BcastBinarizeWeights*>(
             getState(c, xnor_nn_operation_binarize_weights));
 
-    constexpr int SZ = state->SZ;
-    constexpr int BICI = state->BICI;
-
     const int OCI = state->OCI;
     const int ICO = state->ICO;
     const int OCO = state->OCO;

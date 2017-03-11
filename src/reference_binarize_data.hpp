@@ -1,4 +1,4 @@
-#ifndef REFERENCE_BINARAZE_DATA_HPP
+#ifndef REFERENCE_BINARIZE_DATA_HPP
 #define REFERENCE_BINARIZE_DATA_HPP
 
 #include "implementation.hpp"
