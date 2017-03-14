@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
 import sys
+import os
 
 cpu = ""
+num_threads = 1
 
 conv_size = {"OC": 256, "IC": 384, "OH": 13, "OW": 13, "KH": 3, "KW": 3}
 
@@ -76,10 +78,10 @@ def theoretical_peak_gflops(mhz, vlen, num_threads, throughput, fma):
     return mhz*vlen*num_threads/throughput*(2 if fma else 1)
 
 def i7_theoretical_peak_gflops():
-    return theoretical_peak_gflops(2.4, 8, 1, 0.5, False)
+    return theoretical_peak_gflops(2.4, 8, num_threads, 0.5, False)
 
 def a53_theoretical_peak_gflops():
-    return theoretical_peak_gflops(1.2, 4, 1, 1, False)
+    return theoretical_peak_gflops(1.2, 4, num_threads, 1, False)
 
 def gemm_gflops(M, N, K, vlen, ops_counter, duration):
     operations = ops_counter(M, N, K, vlen)
@@ -137,11 +139,18 @@ def getConvSize(line):
     pw = int(line[24])
     return {"OC": oc, "IC": ic, "OH": getOH(ih, kh, sh, ph), "OW": getOW(iw, kw, sw, pw), "KH": kh, "KW": kw}
 
-def process_conv_params(conv_size, conv_time):
-    gflops_format = "{:.4f}"
-    time_format = "{:.4f}"
+def print_results(vlen, peak, cg, gg, conv_time, gemm_time, gemm_isa, conv_isa):
+    gflops_format = "{:.2f}"
+    time_format = "{:7.2f}"
     speedup_format = "{:.1f}x"
 
+    print "conv\t" + conv_isa + ":\t(" + time_format.format(conv_time*1000) + "ms) = " + gflops_format.format(cg) + " Gflops/s"
+    print "gemm\t" + gemm_isa + ":\t(" + time_format.format(gemm_time*1000) + "ms) = " + gflops_format.format(gg) + " Gflops/s"
+    print "current speedup:\t" + speedup_format.format(gemm_time / conv_time)
+    print "potential (ct gemm):\t" + speedup_format.format(gemm_time / conv_time * gg / cg)
+    print "potential (ct peak):\t" + speedup_format.format(gemm_time / conv_time * peak / cg)
+
+def process_conv_params(conv_size, conv_time):
     M = getM(conv_size)
     N = getN(conv_size)
     K = getK(conv_size)
@@ -152,22 +161,14 @@ def process_conv_params(conv_size, conv_time):
         i7_peak = i7_theoretical_peak_gflops()
         cg = conv_gflops(conv_size, vlen, ops_conv_avx, conv_time)
         gg = gemm_gflops(M, N, K, vlen, ops_gemm_sse4_2, gemm_time)
-        print "conv\tAVX:\t" + time_format.format(conv_time) + "ms.\t" + gflops_format.format(cg) + "\tGflops/s"
-        print "gemm\tSSE4.2:\t" + time_format.format(gemm_time) + "ms.\t" + gflops_format.format(gg) + "\tGflops/s"
-        print "current speedup: " + speedup_format.format(gemm_time / conv_time)
-        print "potential (ct gemm): " + speedup_format.format(gemm_time / conv_time * gg / cg)
-        print "potential (ct peak): " + speedup_format.format(gemm_time / conv_time * i7_peak / cg)
+        print_results(vlen, i7_peak, cg, gg, conv_time, gemm_time, "SSE4.2", "AVX")
 
     if cpu == "cortex-a53":
         vlen = 4
         a53_peak = a53_theoretical_peak_gflops()
         cg = conv_gflops(conv_size, vlen, ops_conv_neon, conv_time)
         gg = gemm_gflops(M, N, K, vlen, ops_gemm_neon, gemm_time)
-        print "conv\tNEON:\t" + time_format.format(conv_time) + "ms.\t" + gflops_format.format(cg) + "\tGflops/s"
-        print "gemm\tNEON:\t" + time_format.format(gemm_time) + "ms.\t" + gflops_format.format(gg) + "\tGflops/s"
-        print "current speedup: " + speedup_format.format(gemm_time / conv_time)
-        print "potential (ct gemm): " + speedup_format.format(gemm_time / conv_time * gg / cg)
-        print "potential (ct peak): " + speedup_format.format(gemm_time / conv_time * a53_peak / cg)
+        print_results(vlen, a53_peak, cg, gg, conv_time, gemm_time, "NEON", "NEON")
 
 def parse_perf():
     from subprocess import Popen, PIPE
@@ -203,15 +204,22 @@ def main():
     global cpu
     cpu = sys.argv[1]
 
+    if not "OMP_NUM_THREADS" in os.environ:
+        print "Please export OMP_NUM_THREADS variable"
+        return
+    global num_threads
+    num_threads = int(os.environ["OMP_NUM_THREADS"])
+
+    gflops = 0
     if cpu == "i7-3517u":
-        print "Theoretical peak i7-3517u (1 thread): " + str(i7_theoretical_peak_gflops()) + " Gflops/s"
+        gflops = i7_theoretical_peak_gflops()
     elif cpu == "cortex-a53":
-        print "Theoretical peak Cortex-A53 (1 thread): " + str(a53_theoretical_peak_gflops()) + " Gflops/s"
+        gflops = a53_theoretical_peak_gflops()
     else:
         print "Please specify processor codename"
         return
 
-    print "Executing perf test..."
+    print "Theoretical peak " + str(cpu) + " (" + str(num_threads) + " threads): " + str(gflops) + " Gflops/s"
     parse_perf()
 
 main()
