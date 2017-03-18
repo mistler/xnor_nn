@@ -56,6 +56,12 @@ void BcastConvolution::setupConvolution(xnor_nn_convolution_t *c) {
         if (!c->forward) c->forward = exec<isa>;
         return;
     }
+    if (Cpuid::sse3()) {
+        using isa = xnor_nn::isa::isa_traits<xnor_nn::isa::isa_sse3>;
+        c->forward = dispatcher<isa>::dispatch(c);
+        if (!c->forward) c->forward = exec<isa>;
+        return;
+    }
 #elif defined __arm__
     if (Cpuid::neon()) {
         using isa = xnor_nn::isa::isa_traits<xnor_nn::isa::isa_neon>;

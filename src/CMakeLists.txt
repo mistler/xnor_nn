@@ -11,17 +11,27 @@ set_target_properties(${DEFAULT_OBJ_LIB}
 
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
 
-# AVX
+#   ATOM
+    file(GLOB_RECURSE ATOM_SOURCES
+        ${CMAKE_SOURCE_DIR}/src/x86/*atom.cpp)
+    set(ATOM_OBJ_LIB x86_atom)
+
+    add_library(${ATOM_OBJ_LIB} OBJECT ${ATOM_SOURCES})
+    set_target_properties(${ATOM_OBJ_LIB}
+        PROPERTIES COMPILE_FLAGS "-fPIC -march=atom")
+
+#   AVX
     file(GLOB_RECURSE AVX_SOURCES
         ${CMAKE_SOURCE_DIR}/src/x86/*avx.cpp)
     set(AVX_OBJ_LIB x86_avx)
 
     add_library(${AVX_OBJ_LIB} OBJECT ${AVX_SOURCES})
     set_target_properties(${AVX_OBJ_LIB}
-        PROPERTIES COMPILE_FLAGS "-fPIC -mavx -mpopcnt")
+        PROPERTIES COMPILE_FLAGS "-fPIC -march=corei7-avx")
 
     set(OBJ_LIBS
         $<TARGET_OBJECTS:${DEFAULT_OBJ_LIB}>
+        $<TARGET_OBJECTS:${ATOM_OBJ_LIB}>
         $<TARGET_OBJECTS:${AVX_OBJ_LIB}>)
 
 else(CMAKE_SYSTEM_PROCESSOR MATCHES "(armv7)|(armv8)")

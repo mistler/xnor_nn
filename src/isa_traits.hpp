@@ -10,13 +10,15 @@ template<typename isa> struct isa_traits {};
 struct isa_avx512{};
 struct isa_avx2{};
 struct isa_avx{};
-struct isa_sse4_2{};
+struct isa_sse4{};
+struct isa_sse3{};
 struct isa_sse2{};
 
 template<> struct isa_traits<isa_avx512> { enum {vlen = 512}; };
 template<> struct isa_traits<isa_avx2> { enum {vlen = 256}; };
 template<> struct isa_traits<isa_avx> { enum {vlen = 256}; };
-template<> struct isa_traits<isa_sse4_2> { enum {vlen = 128}; };
+template<> struct isa_traits<isa_sse4> { enum {vlen = 128}; };
+template<> struct isa_traits<isa_sse3> { enum {vlen = 128}; };
 template<> struct isa_traits<isa_sse2> { enum {vlen = 128}; };
 #elif defined __arm__
 struct isa_neon{};

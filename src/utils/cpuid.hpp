@@ -22,6 +22,10 @@ public:
         if (inst._avx512f) return 512;
         if (inst._avx) return 256;
         if (inst._sse42) return 128;
+        if (inst._sse41) return 128;
+        if (inst._sse3) return 128;
+        if (inst._sse2) return 128;
+        if (inst._sse) return 128;
         return 64;
 #elif defined __arm__
         if (inst._neon) return 128;
@@ -95,8 +99,9 @@ private:
             environment_isa_ = env[0] - '0';
 #ifdef __x86_64__
             switch (environment_isa_) {
-                case 0: _avx512f = false; _avx = false; break;
-                case 1: _avx512f = false; break;
+                case 0: _sse42 = _sse41 = _sse3 = _sse2 = _sse = false;
+                case 1: _avx = false;
+                case 2: _avx512f = false;
             }
 #elif defined __arm__
             switch (environment_isa_) {
