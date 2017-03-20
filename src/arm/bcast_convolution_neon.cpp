@@ -86,7 +86,7 @@ xnor_nn_status_t BcastConvolution::exec(
                     const int *src_ic = src + ((mb*IH + ih)*IW + iw)*ICO;
 
                     auto kernel = [&](const int uico) {
-                        int32x4_t v_src = vdupq_n_s32(src_ic[ico+uico]);
+                        int32x4_t v_src = vld1q_dup_s32(src_ic + (ico+uico));
 
                         int32x4_t v_xor = veorq_s32(v_src, v_weights[uico]);
                         int32x4_t v_xnor = vmvnq_s32(v_xor);
