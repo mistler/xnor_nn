@@ -1,6 +1,7 @@
 #include "bcast_base.hpp"
 
 #include "cpuid.hpp"
+#include "utils.hpp"
 
 namespace xnor_nn {
 namespace implementation {
@@ -14,8 +15,8 @@ bool BcastBase::isApplicable(const xnor_nn_convolution_t *c) const {
 
 void BcastBase::setupConvolution(xnor_nn_convolution_t *c) {
     // TODO: unify
-    BIC = (c->ic + BITS - 1) / BITS;
-    ABIC = ((BIC + BICI - 1) / BICI) * BICI;
+    BIC = utils::div_up(c->ic, BITS);
+    ABIC = utils::div_up(BIC, BICI) * BICI;
 
     ICO = getICO(c->ic);
     OCO = getOCO(c->oc);

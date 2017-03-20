@@ -76,8 +76,8 @@ xnor_nn_status_t BcastConvolution::exec(
     float *dst = (float*)res[xnor_nn_resource_user_dst];
 
     const int MB = c->mb;
-    constexpr int OH = getOH(IH, KH, SH, PH);
-    constexpr int OW = getOW(IW, KW, SW, PW);
+    constexpr int OH = utils::getOH(IH, KH, SH, PH);
+    constexpr int OW = utils::getOW(IW, KW, SW, PW);
     constexpr int ICO = constexpr_getICO(IC);
     constexpr int OCO = constexpr_getOCO(OC, VLEN);
     constexpr int OCI = constexpr_getOCI(VLEN);

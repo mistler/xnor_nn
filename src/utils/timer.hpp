@@ -3,8 +3,6 @@
 
 #include <chrono>
 
-#include "utils.hpp"
-
 namespace xnor_nn{
 namespace utils{
 

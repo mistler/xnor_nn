@@ -10,8 +10,8 @@ xnor_nn_status_t xnor_nn_init_convolution(xnor_nn_convolution_t *c,
         const xnor_nn_algorithm_t algorithm,
         int mb, int oc, int ic, int ih, int iw,
         int kh, int kw, int sh, int sw, int ph, int pw) {
-    const int oh = getOH(ih, kh, sh, pw);
-    const int ow = getOW(iw, kw, sw, pw);
+    const int oh = xnor_nn::utils::getOH(ih, kh, sh, pw);
+    const int ow = xnor_nn::utils::getOW(iw, kw, sw, pw);
 
     c->algorithm = algorithm;
 
