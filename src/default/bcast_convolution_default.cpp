@@ -14,7 +14,7 @@ inline static void execute(const int MB, const int OC,
         const int PH, const int PW,
         const int ICO, const int OCO, const int OCI, const int VLEN,
         const int *src, const int *weights, const float *alpha, const float *k,
-        float *dst) {
+        const int *op_c, float *dst) {
     (void)VLEN;
 
     // TODO: potentially loops can be reordered
@@ -24,7 +24,6 @@ inline static void execute(const int MB, const int OC,
     for (int oco = 0; oco < OCO; oco++)
     for (int oh = 0; oh < OH; oh++)
     for (int ow = 0; ow < OW; ow++) {
-        int operations_counter = 0;
         int d_arr[16] = { 0 };
         for (int kh = 0; kh < KH; kh++)
         for (int kw = 0; kw < KW; kw++) {
@@ -35,10 +34,8 @@ inline static void execute(const int MB, const int OC,
             if (ih >= IH || iw >= IW) continue;
 
             const int *src_ic = src + ((mb*IH + ih)*IW + iw)*ICO;
-            const int *weights_ic_oci =
-                weights + ((oco*KH +kh)*KW + kw)*ICO*OCI;
+            const int *weights_ic_oci = weights + ((oco*KH +kh)*KW + kw)*ICO*OCI;
 
-            operations_counter += IC;
             for (int ico = 0; ico < ICO; ico++)
             for (int oci = 0; oci < OCI; oci++) {
                 int src_idx = ico;
@@ -51,9 +48,10 @@ inline static void execute(const int MB, const int OC,
                 d_arr[oci] += __builtin_popcount(result);
             }
         }
+        const int oi = oh*OW + ow;
         for (int i = 0; i < OCI; i++)
             dst[((mb*OC + oco*OCI + i)*OH + oh)*OW + ow] =
-                (d_arr[i]*2 - operations_counter) * *alpha * k[oh*OW + ow];
+                (d_arr[i]*2 - op_c[oi]) * *alpha * k[oi];
     }
 }
 
@@ -67,12 +65,14 @@ xnor_nn_status_t BcastConvolution::exec(
         || res[xnor_nn_resource_bin_weights] == nullptr
         || res[xnor_nn_resource_user_dst] == nullptr
         || res[xnor_nn_resource_k] == nullptr
+        || res[xnor_nn_resource_operations_count] == nullptr
         || c == nullptr
     ) return xnor_nn_error_invalid_input;
     const int *src = (int*)res[xnor_nn_resource_bin_src];
     const int *weights = (int*)res[xnor_nn_resource_bin_weights];
     const float *alpha = (const float*)&res[xnor_nn_resource_alpha];
     const float *k = (const float*)res[xnor_nn_resource_k];
+    const int *op_c = (const int*)res[xnor_nn_resource_operations_count];
     float *dst = (float*)res[xnor_nn_resource_user_dst];
 
     const int MB = c->mb;
@@ -93,7 +93,7 @@ xnor_nn_status_t BcastConvolution::exec(
             "Algorithm:", "bcast", "ISA:", "default" , "Templated");
 
     execute(MB, OC, OH, OW, IC, IH, IW, KH, KW, SH, SW, PH, PW,
-        ICO, OCO, OCI, VLEN, src, weights, alpha, k, dst);
+        ICO, OCO, OCI, VLEN, src, weights, alpha, k, op_c, dst);
 
     return xnor_nn_success;
 }
@@ -107,12 +107,14 @@ xnor_nn_status_t BcastConvolution::exec(
         || res[xnor_nn_resource_bin_weights] == nullptr
         || res[xnor_nn_resource_user_dst] == nullptr
         || res[xnor_nn_resource_k] == nullptr
+        || res[xnor_nn_resource_operations_count] == nullptr
         || c == nullptr
     ) return xnor_nn_error_invalid_input;
     const int *src = (int*)res[xnor_nn_resource_bin_src];
     const int *weights = (int*)res[xnor_nn_resource_bin_weights];
     const float *alpha = (const float*)&res[xnor_nn_resource_alpha];
     const float *k = (const float*)res[xnor_nn_resource_k];
+    const int *op_c = (const int*)res[xnor_nn_resource_operations_count];
     float *dst = (float*)res[xnor_nn_resource_user_dst];
 
     const int MB = c->mb;
@@ -148,7 +150,7 @@ xnor_nn_status_t BcastConvolution::exec(
             "Algorithm:", "bcast", "ISA:", "AVX");
 
     execute(MB, OC, OH, OW, IC, IH, IW, KH, KW, SH, SW, PH, PW,
-        ICO, OCO, OCI, VLEN, src, weights, alpha, k, dst);
+        ICO, OCO, OCI, VLEN, src, weights, alpha, k, op_c, dst);
 
     return xnor_nn_success;
 }

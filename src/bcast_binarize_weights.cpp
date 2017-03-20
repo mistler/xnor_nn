@@ -27,6 +27,7 @@ xnor_nn_status_t BcastBinarizeWeights::exec(
     if (
         res[xnor_nn_resource_user_weights] == nullptr
         || res[xnor_nn_resource_bin_weights] == nullptr
+        || res[xnor_nn_resource_operations_count] == nullptr
         || c == nullptr
     ) return xnor_nn_error_invalid_input;
 
@@ -34,6 +35,8 @@ xnor_nn_status_t BcastBinarizeWeights::exec(
     unsigned char *to = (unsigned char*)res[xnor_nn_resource_bin_weights];
     float *alpha = (float*)&res[xnor_nn_resource_alpha];
     const unsigned int *f = (unsigned int*)from;
+
+    int *op_c = (int*)res[xnor_nn_resource_operations_count];
 
     const int OC = c->oc;
     const int IC = c->ic;
@@ -92,6 +95,31 @@ xnor_nn_status_t BcastBinarizeWeights::exec(
     const float cckhw = 1.f / elems;
     *alpha = 0.f;
     for (int i = 0; i < elems; i++) *alpha += std::fabs(from[i]) * cckhw;
+
+    const int IH = c->ih;
+    const int IW = c->iw;
+    const int OH = c->oh;
+    const int OW = c->ow;
+    const int SH = c->sh;
+    const int SW = c->sw;
+    const int PH = c->ph;
+    const int PW = c->pw;
+
+    for (int oh = 0; oh < OH; oh++)
+    for (int ow = 0; ow < OW; ow++) {
+        op_c[oh*OW + ow] = 0;
+
+        for (int kh = 0; kh < KH; kh++)
+        for (int kw = 0; kw < KW; kw++) {
+            const int ih = oh*SH - PH + kh;
+            const int iw = ow*SW - PW + kw;
+
+            if (ih < 0 || iw < 0) continue;
+            if (ih >= IH || iw >= IW) continue;
+
+            op_c[oh*OW + ow] += IC;
+        }
+    }
 
     return xnor_nn_success;
 }

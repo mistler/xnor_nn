@@ -6,16 +6,10 @@
 #include "logger.hpp"
 
 #include "isa_traits.hpp"
+#include "unroller.hpp"
 
 namespace xnor_nn {
 namespace implementation {
-
-inline constexpr int get_unroll_factor(const int total, const int max_unroll) {
-    int unroll = 0;
-    for (int u = 1; u < max_unroll; u++)
-        if (total % u == 0) unroll = u;
-    return unroll;
-}
 
 template<typename isa_traits, int OC, int IC, int IH, int IW, int KH, int KW,
     int SH, int SW, int PH, int PW>
@@ -28,12 +22,14 @@ xnor_nn_status_t BcastConvolution::exec(
         || res[xnor_nn_resource_bin_weights] == nullptr
         || res[xnor_nn_resource_user_dst] == nullptr
         || res[xnor_nn_resource_k] == nullptr
+        || res[xnor_nn_resource_operations_count] == nullptr
         || c == nullptr
     ) return xnor_nn_error_invalid_input;
     const int *src = (int*)res[xnor_nn_resource_bin_src];
     const int *weights = (int*)res[xnor_nn_resource_bin_weights];
     const float alpha = *((const float*)&res[xnor_nn_resource_alpha]);
     const float *k = (const float*)res[xnor_nn_resource_k];
+    const int *op_c = (const int*)res[xnor_nn_resource_operations_count];
     float *dst = (float*)res[xnor_nn_resource_user_dst];
 
     const int MB = c->mb;
@@ -43,6 +39,12 @@ xnor_nn_status_t BcastConvolution::exec(
     constexpr int OCO = constexpr_getOCO(OC, VLEN);
     constexpr int OCI = constexpr_getOCI(VLEN);
 
+    constexpr int MAX_ICO_UNROLL = 4;
+    constexpr int MAX_OW_UNROLL = 4;
+
+    constexpr int unroll_ow = get_unroll_factor(OW, MAX_OW_UNROLL);
+    constexpr int unroll_ico = get_unroll_factor(ICO, MAX_ICO_UNROLL);
+
     LOG_INFO("convolution:\t", "execute:",
             "[", MB, "][", IC, "][", IH, "][", IW, "]",
             "x",
@@ -51,80 +53,78 @@ xnor_nn_status_t BcastConvolution::exec(
             "[", MB, "][", OC, "][", OH, "][", OW, "]",
             "stride: [", SH, "][", SW, "]",
             "pad: [", PH, "][", PW, "]",
-            "Algorithm:", "bcast", "ISA:", "ATOM", "Templated");
-
-    constexpr int MAX_ICO_UNROLL = 12;
-    constexpr int MAX_OW_UNROLL = 4;
-
-    constexpr int unroll_ow = get_unroll_factor(OW, MAX_OW_UNROLL);
-    //constexpr int unroll_ico = get_unroll_factor(ICO, MAX_ICO_UNROLL);
+            "bcast", "ATOM", "uow:", unroll_ow, "uico:", unroll_ico);
 
 #   pragma omp parallel for collapse(3) schedule(static)
     for (int mb = 0; mb < MB; mb++)
     for (int oco = 0; oco < OCO; oco++)
     for (int oh = 0; oh < OH; oh++)
     for (int ow = 0; ow < OW; ow += unroll_ow) {
-        int operations_counter[MAX_OW_UNROLL] __attribute__ ((aligned(64))) = {0};
-
-        __m128i d_arr[MAX_OW_UNROLL];
-        for (int i = 0; i < MAX_OW_UNROLL; i++) d_arr[i] = _mm_set1_epi8(0);
+        __m128i d_arr[unroll_ow];
+        for (int i = 0; i < unroll_ow; i++) d_arr[i] = _mm_set1_epi8(0);
         const __m128i v_ones = _mm_set1_epi32(-1);
 
         for (int kh = 0; kh < KH; kh++)
         for (int kw = 0; kw < KW; kw++) {
             const int *weights_ic_oci = weights + ((oco*KH +kh)*KW + kw)*ICO*OCI;
 
-            __m128i v_weights[MAX_ICO_UNROLL];
-            for (int ico = 0; ico < ICO; ico++)
-                v_weights[ico] = _mm_castps_si128(_mm_load_ps((float*)weights_ic_oci + ico*OCI));
+            for (int ico = 0; ico < ICO; ico += unroll_ico) {
+                __m128i v_weights[unroll_ico];
+                auto load_v_weights = [&](const int uico) {
+                    v_weights[uico] = _mm_castps_si128(_mm_load_ps((float*)weights_ic_oci + (ico+uico)*OCI));
+                };
+                unroller<unroll_ico>::unroll(load_v_weights);
 
-            for (int uow = 0; uow < unroll_ow; uow++) {
-                const int ih = oh*SH - PH + kh;
-                const int iw = (ow + uow)*SW - PW + kw;
+                for (int uow = 0; uow < unroll_ow; uow++) {
+                    const int ih = oh*SH - PH + kh;
+                    const int iw = (ow + uow)*SW - PW + kw;
 
-                if (PH != 0 || PW != 0) { // May be incorrect for assymet pad
-                    if (ih < 0 || iw < 0) continue;
-                    if (ih >= IH || iw >= IW) continue;
-                }
-                operations_counter[uow] += IC;
+                    if (PH != 0 || PW != 0) { // May be incorrect for assymet pad
+                        if (ih < 0 || iw < 0) continue;
+                        if (ih >= IH || iw >= IW) continue;
+                    }
+                    const int *src_ic = src + ((mb*IH + ih)*IW + iw)*ICO;
 
-                const int *src_ic = src + ((mb*IH + ih)*IW + iw)*ICO;
+                    auto kernel = [&](const int uico) {
+                        __m128 s_src = _mm_load_ss((float*)src_ic + (ico+uico));
+                        __m128i v_src = _mm_shuffle_epi32(_mm_castps_si128(s_src), 0);
 
-                for (int ico = 0; ico < ICO; ico++) {
-                    __m128 s_src = _mm_load_ss((float*)src_ic + ico);
-                    __m128i v_src = _mm_shuffle_epi32(_mm_castps_si128(s_src), 0);
+                        const __m128i v_xor = _mm_xor_si128(v_src, v_weights[uico]);
+                        const __m128i v_xnor = _mm_xor_si128(v_xor, v_ones);
 
-                    const __m128i v_xor = _mm_xor_si128(v_src, v_weights[ico]);
-                    const __m128i v_xnor = _mm_xor_si128(v_xor, v_ones);
+                        const __m128i v_mask_8 = _mm_set1_epi16(0x000F);
+                        const __m128i v_mask_16 = _mm_set1_epi32(0x0000FFFF);
+                        const __m128i v_popcnt_table = _mm_setr_epi8(0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4);
 
-                    const __m128i v_mask_8 = _mm_set1_epi16(0x000F);
-                    const __m128i v_mask_16 = _mm_set1_epi32(0x0000FFFF);
-                    const __m128i v_popcnt_table = _mm_setr_epi8(0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4);
-
-                    const __m128i v_popcnt_8hi = _mm_shuffle_epi8(v_popcnt_table, _mm_and_si128(v_xnor, v_mask_8));
-                    const __m128i v_popcnt_8lo = _mm_shuffle_epi8(v_popcnt_table, _mm_and_si128(_mm_srli_epi16(v_xnor, 4), v_mask_8));
-                    const __m128i v_popcnt_8 = _mm_add_epi16(v_popcnt_8lo, v_popcnt_8hi);
-                    const __m128i v_popcnt_16hi = _mm_shuffle_epi8(v_popcnt_table, _mm_and_si128(_mm_srli_epi16(v_xnor, 8), v_mask_8));
-                    const __m128i v_popcnt_16lo = _mm_shuffle_epi8(v_popcnt_table, _mm_and_si128(_mm_srli_epi16(v_xnor, 12), v_mask_8));
-                    const __m128i v_popcnt_16 = _mm_add_epi16(_mm_add_epi16(v_popcnt_16lo, v_popcnt_16hi), v_popcnt_8);
-                    const __m128i v_popcnt_32hi = _mm_and_si128(v_popcnt_16, v_mask_16);
-                    const __m128i v_popcnt_32lo = _mm_and_si128(_mm_srli_epi32(v_popcnt_16, 16), v_mask_16);
-                    d_arr[uow] = _mm_add_epi32(d_arr[uow], v_popcnt_32lo);
-                    d_arr[uow] = _mm_add_epi32(d_arr[uow], v_popcnt_32hi);
+                        const __m128i v_popcnt_8hi = _mm_shuffle_epi8(v_popcnt_table, _mm_and_si128(v_xnor, v_mask_8));
+                        const __m128i v_popcnt_8lo = _mm_shuffle_epi8(v_popcnt_table, _mm_and_si128(_mm_srli_epi16(v_xnor, 4), v_mask_8));
+                        const __m128i v_popcnt_8 = _mm_add_epi16(v_popcnt_8lo, v_popcnt_8hi);
+                        const __m128i v_popcnt_16hi = _mm_shuffle_epi8(v_popcnt_table, _mm_and_si128(_mm_srli_epi16(v_xnor, 8), v_mask_8));
+                        const __m128i v_popcnt_16lo = _mm_shuffle_epi8(v_popcnt_table, _mm_and_si128(_mm_srli_epi16(v_xnor, 12), v_mask_8));
+                        const __m128i v_popcnt_16 = _mm_add_epi16(_mm_add_epi16(v_popcnt_16lo, v_popcnt_16hi), v_popcnt_8);
+                        const __m128i v_popcnt_32hi = _mm_and_si128(v_popcnt_16, v_mask_16);
+                        const __m128i v_popcnt_32lo = _mm_and_si128(_mm_srli_epi32(v_popcnt_16, 16), v_mask_16);
+                        d_arr[uow] = _mm_add_epi32(d_arr[uow], v_popcnt_32lo);
+                        d_arr[uow] = _mm_add_epi32(d_arr[uow], v_popcnt_32hi);
+                    };
+                    unroller<unroll_ico>::unroll(kernel);
                 }
             }
         }
 
-        for (int uow = 0; uow < unroll_ow; uow++) {
+        auto store = [&](const int uow) {
+            const int oi = oh*OW + (ow+uow);
             dst[((mb*OC + oco*OCI + 0)*OH + oh)*OW + (ow+uow)] =
-                ((_mm_extract_epi16(d_arr[uow], 0)+_mm_extract_epi16(d_arr[uow], 1))*2 - operations_counter[uow]) * alpha * k[oh*OW + (ow+uow)];
+                ((_mm_extract_epi16(d_arr[uow], 0)+_mm_extract_epi16(d_arr[uow], 1))*2 - op_c[oi]) * alpha * k[oi];
             dst[((mb*OC + oco*OCI + 1)*OH + oh)*OW + (ow+uow)] =
-                ((_mm_extract_epi16(d_arr[uow], 2)+_mm_extract_epi16(d_arr[uow], 3))*2 - operations_counter[uow]) * alpha * k[oh*OW + (ow+uow)];
+                ((_mm_extract_epi16(d_arr[uow], 2)+_mm_extract_epi16(d_arr[uow], 3))*2 - op_c[oi]) * alpha * k[oi];
             dst[((mb*OC + oco*OCI + 2)*OH + oh)*OW + (ow+uow)] =
-                ((_mm_extract_epi16(d_arr[uow], 4)+_mm_extract_epi16(d_arr[uow], 5))*2 - operations_counter[uow]) * alpha * k[oh*OW + (ow+uow)];
+                ((_mm_extract_epi16(d_arr[uow], 4)+_mm_extract_epi16(d_arr[uow], 5))*2 - op_c[oi]) * alpha * k[oi];
             dst[((mb*OC + oco*OCI + 3)*OH + oh)*OW + (ow+uow)] =
-                ((_mm_extract_epi16(d_arr[uow], 6)+_mm_extract_epi16(d_arr[uow], 7))*2 - operations_counter[uow]) * alpha * k[oh*OW + (ow+uow)];
-        }
+                ((_mm_extract_epi16(d_arr[uow], 6)+_mm_extract_epi16(d_arr[uow], 7))*2 - op_c[oi]) * alpha * k[oi];
+        };
+
+        unroller<unroll_ow>::unroll(store);
     }
 
     return xnor_nn_success;
@@ -140,12 +140,14 @@ xnor_nn_status_t BcastConvolution::exec(
         || res[xnor_nn_resource_bin_weights] == nullptr
         || res[xnor_nn_resource_user_dst] == nullptr
         || res[xnor_nn_resource_k] == nullptr
+        || res[xnor_nn_resource_operations_count] == nullptr
         || c == nullptr
     ) return xnor_nn_error_invalid_input;
     const int *src = (int*)res[xnor_nn_resource_bin_src];
     const int *weights = (int*)res[xnor_nn_resource_bin_weights];
     const float alpha = *((const float*)&res[xnor_nn_resource_alpha]);
     const float *k = (const float*)res[xnor_nn_resource_k];
+    const int *op_c = (const int*)res[xnor_nn_resource_operations_count];
     float *dst = (float*)res[xnor_nn_resource_user_dst];
 
     const int MB = c->mb;
@@ -185,7 +187,6 @@ xnor_nn_status_t BcastConvolution::exec(
     for (int oco = 0; oco < OCO; oco++)
     for (int oh = 0; oh < OH; oh++)
     for (int ow = 0; ow < OW; ow++) {
-        int operations_counter = 0;
         __m128i d_arr = _mm_set1_epi8(0);
         const __m128i v_ones = _mm_set1_epi32(-1);
 
@@ -200,7 +201,6 @@ xnor_nn_status_t BcastConvolution::exec(
             const int *src_ic = src + ((mb*IH + ih)*IW + iw)*ICO;
             const int *weights_ic_oci = weights + ((oco*KH +kh)*KW + kw)*ICO*OCI;
 
-            operations_counter += IC;
             for (int ico = 0; ico < ICO; ico++) {
                 const __m128 s_src = _mm_load_ss((float*)src_ic + ico);
                 const __m128i v_src = _mm_castps_si128(_mm_shuffle_ps(s_src, s_src, 0));
@@ -226,14 +226,15 @@ xnor_nn_status_t BcastConvolution::exec(
                 d_arr = _mm_add_epi32(d_arr, v_popcnt_32hi);
             }
         }
+        const int oi = oh*OW + ow;
         dst[((mb*OC + oco*OCI + 0)*OH + oh)*OW + ow] =
-            ((_mm_extract_epi16(d_arr, 0)+_mm_extract_epi16(d_arr, 1))*2 - operations_counter) * alpha * k[oh*OW + ow];
+            ((_mm_extract_epi16(d_arr, 0)+_mm_extract_epi16(d_arr, 1))*2 - op_c[oi]) * alpha * k[oi];
         dst[((mb*OC + oco*OCI + 1)*OH + oh)*OW + ow] =
-            ((_mm_extract_epi16(d_arr, 2)+_mm_extract_epi16(d_arr, 3))*2 - operations_counter) * alpha * k[oh*OW + ow];
+            ((_mm_extract_epi16(d_arr, 2)+_mm_extract_epi16(d_arr, 3))*2 - op_c[oi]) * alpha * k[oi];
         dst[((mb*OC + oco*OCI + 2)*OH + oh)*OW + ow] =
-            ((_mm_extract_epi16(d_arr, 4)+_mm_extract_epi16(d_arr, 5))*2 - operations_counter) * alpha * k[oh*OW + ow];
+            ((_mm_extract_epi16(d_arr, 4)+_mm_extract_epi16(d_arr, 5))*2 - op_c[oi]) * alpha * k[oi];
         dst[((mb*OC + oco*OCI + 3)*OH + oh)*OW + ow] =
-            ((_mm_extract_epi16(d_arr, 6)+_mm_extract_epi16(d_arr, 7))*2 - operations_counter) * alpha * k[oh*OW + ow];
+            ((_mm_extract_epi16(d_arr, 6)+_mm_extract_epi16(d_arr, 7))*2 - op_c[oi]) * alpha * k[oi];
     }
 
     return xnor_nn_success;

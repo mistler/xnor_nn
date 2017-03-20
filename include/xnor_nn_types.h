@@ -22,17 +22,20 @@ typedef enum {
 } xnor_nn_algorithm_t;
 
 typedef enum {
-    xnor_nn_resource_number = 8,
-
     xnor_nn_resource_user_src = 0,
     xnor_nn_resource_user_weights = 1,
     xnor_nn_resource_user_dst = 2,
 
-    xnor_nn_resource_bin_src = 3,
-    xnor_nn_resource_bin_weights = 4,
-    xnor_nn_resource_a = 5,
-    xnor_nn_resource_k = 6,
-    xnor_nn_resource_alpha = 7,
+    xnor_nn_resource_alpha = 3,
+
+    xnor_nn_resource_internal = 4, // for iteration
+    xnor_nn_resource_bin_src = 4,
+    xnor_nn_resource_bin_weights = 5,
+    xnor_nn_resource_a = 6,
+    xnor_nn_resource_k = 7,
+    xnor_nn_resource_operations_count = 8,
+
+    xnor_nn_resource_number = 9,
 } xnor_nn_resource_type_t;
 
 typedef enum {

@@ -23,14 +23,8 @@ void xnor_nn_memory_free(void *ptr) {
 xnor_nn_status_t xnor_nn_allocate_resources(const xnor_nn_convolution_t *c,
         xnor_nn_resources_t res) {
     try {
-        xnor_nn_memory_allocate(res + xnor_nn_resource_bin_src,
-                c->resource_size[xnor_nn_resource_bin_src]);
-        xnor_nn_memory_allocate(res + xnor_nn_resource_bin_weights,
-                c->resource_size[xnor_nn_resource_bin_weights]);
-        xnor_nn_memory_allocate(res + xnor_nn_resource_a,
-                c->resource_size[xnor_nn_resource_a]);
-        xnor_nn_memory_allocate(res + xnor_nn_resource_k,
-                c->resource_size[xnor_nn_resource_k]);
+        for (int i = xnor_nn_resource_internal; i < xnor_nn_resource_number; i++)
+            xnor_nn_memory_allocate(res + i, c->resource_size[i]);
     } catch (int err) {
         xnor_nn_free_resources(res);
         return xnor_nn_error_memory;
@@ -39,12 +33,8 @@ xnor_nn_status_t xnor_nn_allocate_resources(const xnor_nn_convolution_t *c,
 }
 
 void xnor_nn_free_resources(xnor_nn_resources_t res) {
-        xnor_nn_memory_free(res[xnor_nn_resource_bin_src]);
-        xnor_nn_memory_free(res[xnor_nn_resource_bin_weights]);
-        xnor_nn_memory_free(res[xnor_nn_resource_a]);
-        xnor_nn_memory_free(res[xnor_nn_resource_k]);
-        res[xnor_nn_resource_bin_src] = nullptr;
-        res[xnor_nn_resource_bin_weights] = nullptr;
-        res[xnor_nn_resource_a] = nullptr;
-        res[xnor_nn_resource_k] = nullptr;
+    for (int i = xnor_nn_resource_internal; i < xnor_nn_resource_number; i++) {
+        xnor_nn_memory_free(res[i]);
+        res[i] = nullptr;
+    }
 } // namespace

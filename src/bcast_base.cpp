@@ -28,9 +28,15 @@ void BcastBase::setupConvolution(xnor_nn_convolution_t *c) {
         OCO * c->kh * c->kw * ICO * OCI * sizeof(int);
     c->resource_size[xnor_nn_resource_a] = c->ih * c->iw * sizeof(float);
     c->resource_size[xnor_nn_resource_k] = c->oh * c->ow * sizeof(float);
+    c->resource_size[xnor_nn_resource_operations_count]
+        = c->oh * c->ow * sizeof(int);
 }
 
 BcastBase::~BcastBase() {}
+
+constexpr int BcastBase::SZ;
+constexpr int BcastBase::BITS;
+constexpr int BcastBase::BICI;
 
 } // namespace implementation
 } // namespace xnor_nn

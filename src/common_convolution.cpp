@@ -37,6 +37,9 @@ xnor_nn_status_t xnor_nn_init_convolution(xnor_nn_convolution_t *c,
     c->calculate_k = nullptr;
     c->forward = nullptr;
 
+    for (int i = xnor_nn_resource_internal; i < xnor_nn_resource_number; i++)
+        c->resource_size[i] = 0;
+
     c->state =
         (void*)new std::vector<xnor_nn::implementation::Implementation*>();
 
