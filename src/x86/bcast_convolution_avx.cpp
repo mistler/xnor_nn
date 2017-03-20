@@ -55,7 +55,6 @@ xnor_nn_status_t BcastConvolution::exec(
             "pad: [", PH, "][", PW, "]",
             "bcast", "AVX", "uow:", unroll_ow, "uico:", unroll_ico);
 
-
 #   pragma omp parallel for collapse(3) schedule(static)
     for (int mb = 0; mb < MB; mb++)
     for (int oco = 0; oco < OCO; oco++)
