@@ -40,7 +40,7 @@ layer {
   }
   data_param {
     source: "data/task/train_lmdb"
-    batch_size: 32
+    batch_size: 512
     backend: LMDB
   }
 }
