@@ -12,7 +12,7 @@ layer {
   }
   data_param {
     source: "data/cifar10/cifar10_train_lmdb"
-    batch_size: 32
+    batch_size: 64
     backend: LMDB
   }
 }

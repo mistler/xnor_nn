@@ -1,6 +1,6 @@
 net: "models/caffe_task/train_val.prototxt"
-test_iter: 100
-test_interval: 25
+test_iter: 10
+test_interval: 10
 base_lr: 1.0
 momentum: 0.9
 weight_decay: 0.0005

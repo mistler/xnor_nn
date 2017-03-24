@@ -55,9 +55,12 @@ layer {
   include {
     phase: TEST
   }
+  transform_param {
+    scale: 0.00392156862745
+  }
   data_param {
     source: "data/task/val_lmdb"
-    batch_size: 50
+    batch_size: 128
     backend: LMDB
   }
 }
@@ -67,10 +70,6 @@ layer {
   type: "Convolution"
   bottom: "data"
   top: "conv1"
-  param {
-    lr_mult: 1
-    decay_mult: 1
-  }
   convolution_param {
     num_output: 32
     kernel_size: 3
@@ -91,7 +90,7 @@ layer {
   name: "drop1"
   type: "Dropout"
   bottom: "conv1"
-  top: "drop1"
+  top: "conv1"
   dropout_param {
     dropout_ratio: 0.4
   }
@@ -99,7 +98,7 @@ layer {
 layer {
   name: "pool1"
   type: "Pooling"
-  bottom: "drop1"
+  bottom: "conv1"
   top: "pool1"
   pooling_param {
     pool: MAX
@@ -132,7 +131,7 @@ layer {
   name: "drop2"
   type: "Dropout"
   bottom: "conv2"
-  top: "drop2"
+  top: "conv2"
   dropout_param {
     dropout_ratio: 0.4
   }
@@ -140,12 +139,12 @@ layer {
 layer {
   name: "pool2"
   type: "Pooling"
-  bottom: "drop2"
+  bottom: "conv2"
   top: "pool2"
   pooling_param {
     pool: MAX
     kernel_size: 3
-    stride: 1
+    stride: 3
   }
 }
 layer {
@@ -170,7 +169,7 @@ layer {
   name: "drop3"
   type: "Dropout"
   bottom: "fc1"
-  top: "drop3"
+  top: "fc1"
   dropout_param {
     dropout_ratio: 0.3
   }
@@ -178,7 +177,7 @@ layer {
 layer {
   name: "fc2"
   type: "InnerProduct"
-  bottom: "drop3"
+  bottom: "fc1"
   top: "fc2"
   inner_product_param {
     num_output: 51
