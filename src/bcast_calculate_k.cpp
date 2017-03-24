@@ -1,14 +1,14 @@
-#include "reference_convolution.hpp"
+#include "bcast_convolution.hpp"
 
 #include <cmath>
 
-#include "xnor_nn_types.h"
 #include "logger.hpp"
+#include "xnor_nn_types.h"
 
 namespace xnor_nn {
 namespace implementation {
 
-xnor_nn_status_t ReferenceConvolution::calculate_k(
+xnor_nn_status_t BcastConvolution::calculate_k(
         const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
     if (
         res[xnor_nn_resource_user_src] == nullptr

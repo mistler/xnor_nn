@@ -19,10 +19,8 @@ public:
 
 protected:
     // TODO: maybe const implementation
-    void setState(xnor_nn_convolution_t *c, Implementation *impl,
-            const xnor_nn_operation_t operation);
-    static Implementation *getState(const xnor_nn_convolution_t *c,
-            const xnor_nn_operation_t operation);
+    void setState(xnor_nn_convolution_t *c, Implementation *impl);
+    static Implementation *getState(const xnor_nn_convolution_t *c);
 
 };
 

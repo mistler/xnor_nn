@@ -38,15 +38,36 @@ struct dispatcher{
 };
 
 bool BcastConvolution::isApplicable(const xnor_nn_convolution_t *c) const {
-    bool ok = this->BcastBase::isApplicable(c)
+    bool ok = true
+        && c->algorithm == xnor_nn_algorithm_bcast
+        && c->oc % getOCI() == 0
         && c->forward == nullptr;
     return ok;
 }
 
 void BcastConvolution::setupConvolution(xnor_nn_convolution_t *c) {
-    BcastConvolution *op = new BcastConvolution;
-    op->BcastBase::setupConvolution(c);
-    setState(c, op, xnor_nn_operation_convolution_forward);
+    BIC = utils::div_up(c->ic, BITS);
+    ABIC = utils::div_up(BIC, BICI) * BICI;
+
+    ICO = getICO(c->ic);
+    OCO = getOCO(c->oc);
+    OCI = getOCI();
+
+    c->resource_size[xnor_nn_resource_bin_src] =
+        c->mb * ABIC * c->ih * c->iw * sizeof(char);
+    c->resource_size[xnor_nn_resource_bin_weights] =
+        OCO * c->kh * c->kw * ICO * OCI * sizeof(int);
+    c->resource_size[xnor_nn_resource_a] = c->ih * c->iw * sizeof(float);
+    c->resource_size[xnor_nn_resource_k] = c->oh * c->ow * sizeof(float);
+    c->resource_size[xnor_nn_resource_operations_count]
+        = c->oh * c->ow * sizeof(int);
+
+    BcastConvolution *op = new BcastConvolution(*this);
+    setState(c, op);
+
+    c->binarize_data = binarize_data;
+    c->binarize_weights = binarize_weights;
+    c->calculate_k = calculate_k;
 
     using Cpuid = xnor_nn::utils::Cpuid;
 #ifdef __x86_64__
@@ -76,6 +97,10 @@ void BcastConvolution::setupConvolution(xnor_nn_convolution_t *c) {
 }
 
 BcastConvolution::~BcastConvolution() {}
+
+constexpr int BcastConvolution::SZ;
+constexpr int BcastConvolution::BITS;
+constexpr int BcastConvolution::BICI;
 
 } // namespace implementation
 } // namespace xnor_nn

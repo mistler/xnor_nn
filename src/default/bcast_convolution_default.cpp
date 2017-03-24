@@ -119,8 +119,7 @@ xnor_nn_status_t BcastConvolution::exec(
 
     const int MB = c->mb;
 
-    BcastConvolution *state = reinterpret_cast<BcastConvolution*>(
-            getState(c, xnor_nn_operation_convolution_forward));
+    BcastConvolution *state = reinterpret_cast<BcastConvolution*>(getState(c));
 
     const int OC = c->oc;
     const int OH = c->oh;

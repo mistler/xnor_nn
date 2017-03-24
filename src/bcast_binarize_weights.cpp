@@ -1,28 +1,14 @@
-#include "bcast_binarize_weights.hpp"
+#include "bcast_convolution.hpp"
 
 #include <cmath>
 
 #include "logger.hpp"
+#include "xnor_nn_types.h"
 
 namespace xnor_nn {
 namespace implementation {
 
-bool BcastBinarizeWeights::isApplicable(const xnor_nn_convolution_t *c) const {
-    bool ok = this->BcastBase::isApplicable(c)
-        && c->binarize_weights == nullptr;
-    return ok;
-}
-
-void BcastBinarizeWeights::setupConvolution(xnor_nn_convolution_t *c) {
-    BcastBinarizeWeights *op = new BcastBinarizeWeights;
-    op->BcastBase::setupConvolution(c);
-    setState(c, op, xnor_nn_operation_binarize_weights);
-    c->binarize_weights = op->exec;
-}
-
-BcastBinarizeWeights::~BcastBinarizeWeights() {}
-
-xnor_nn_status_t BcastBinarizeWeights::exec(
+xnor_nn_status_t BcastConvolution::binarize_weights(
         const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
     if (
         res[xnor_nn_resource_user_weights] == nullptr
@@ -43,8 +29,7 @@ xnor_nn_status_t BcastBinarizeWeights::exec(
     const int KH = c->kh;
     const int KW = c->kw;
 
-    BcastBinarizeWeights *state = reinterpret_cast<BcastBinarizeWeights*>(
-            getState(c, xnor_nn_operation_binarize_weights));
+    BcastConvolution *state = reinterpret_cast<BcastConvolution*>(getState(c));
 
     const int OCI = state->OCI;
     const int ICO = state->ICO;

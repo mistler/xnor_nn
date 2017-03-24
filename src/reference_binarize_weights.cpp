@@ -1,33 +1,14 @@
-#include "reference_binarize_weights.hpp"
+#include "reference_convolution.hpp"
 
 #include <cmath>
 
+#include "xnor_nn_types.h"
 #include "logger.hpp"
 
 namespace xnor_nn {
 namespace implementation {
 
-bool ReferenceBinarizeWeights::isApplicable(
-        const xnor_nn_convolution_t *c) const {
-    if (c->binarize_weights != nullptr) return false;
-    return true;
-}
-
-void ReferenceBinarizeWeights::setupConvolution(
-        xnor_nn_convolution_t *c) {
-    ReferenceBinarizeWeights *op =
-        new ReferenceBinarizeWeights;
-
-    c->binarize_weights = op->exec;
-
-    std::vector<Implementation*> *vec =
-        (std::vector<Implementation*>*)c->state;
-    vec->push_back(op);
-}
-
-ReferenceBinarizeWeights::~ReferenceBinarizeWeights() {}
-
-xnor_nn_status_t ReferenceBinarizeWeights::exec(
+xnor_nn_status_t ReferenceConvolution::binarize_weights(
         const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
     if (
         res[xnor_nn_resource_user_weights] == nullptr

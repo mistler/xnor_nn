@@ -1,32 +1,14 @@
-#include "reference_binarize_data.hpp"
+#include "reference_convolution.hpp"
 
 #include <cmath>
 
+#include "xnor_nn_types.h"
 #include "logger.hpp"
 
 namespace xnor_nn {
 namespace implementation {
 
-bool ReferenceBinarizeData::isApplicable(
-        const xnor_nn_convolution_t *c) const {
-    if (c->binarize_data != nullptr) return false;
-    return true;
-}
-
-void ReferenceBinarizeData::setupConvolution(
-        xnor_nn_convolution_t *c) {
-    ReferenceBinarizeData *op = new ReferenceBinarizeData;
-
-    c->binarize_data = op->exec;
-
-    std::vector<Implementation*> *vec =
-        (std::vector<Implementation*>*)c->state;
-    vec->push_back(op);
-}
-
-ReferenceBinarizeData::~ReferenceBinarizeData() {}
-
-xnor_nn_status_t ReferenceBinarizeData::exec(
+xnor_nn_status_t ReferenceConvolution::binarize_data(
         const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
     if (
         res[xnor_nn_resource_user_src] == nullptr

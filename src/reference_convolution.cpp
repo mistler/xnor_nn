@@ -12,9 +12,7 @@ bool ReferenceConvolution::isApplicable(
 }
 
 void ReferenceConvolution::setupConvolution(xnor_nn_convolution_t *c) {
-    ReferenceConvolution *op = new ReferenceConvolution;
-
-    const size_t ELEM_SIZE = sizeof(float);
+    const int ELEM_SIZE = sizeof(float);
 
     c->resource_size[xnor_nn_resource_bin_src] =
         c->mb * c->ic * c->ih * c->iw * ELEM_SIZE;
@@ -23,11 +21,13 @@ void ReferenceConvolution::setupConvolution(xnor_nn_convolution_t *c) {
     c->resource_size[xnor_nn_resource_a] = c->ih * c->iw * sizeof(float);
     c->resource_size[xnor_nn_resource_k] = c->oh * c->ow * sizeof(float);
 
-    c->forward = op->exec;
+    c->binarize_data = binarize_data;
+    c->binarize_weights = binarize_weights;
+    c->calculate_k = calculate_k;
+    c->forward = exec;
 
-    std::vector<Implementation*> *vec =
-        (std::vector<Implementation*>*)c->state;
-    vec->push_back(op);
+    ReferenceConvolution *op = new ReferenceConvolution(*this);
+    setState(c, op);
 }
 
 ReferenceConvolution::~ReferenceConvolution() {}
