@@ -24,4 +24,11 @@ template struct instantiator<tp_elems-1>;
 template xnor_nn_status_t algorithm::exec<isa>(
             const xnor_nn_convolution_t *c, xnor_nn_resources_t res);
 
+template<> template<>
+xnor_nn_status_t BcastConvolution<ConvolutionTraits<
+    RuntimeConvolutionTraits>>::exec<isa>(
+        const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
+        (void)c; (void)res; return xnor_nn_unimplemented;
+    }
+
 #endif // INSTANTIATOR_HPP

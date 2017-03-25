@@ -27,6 +27,7 @@ constexpr int tp_elems = sizeof(tp) / sizeof(tp[0]) / tp_size;
 static_assert((sizeof(tp) / sizeof(tp[0])) % tp_size == 0,
         "Incorrect tp params");
 
+template<typename ConvTraits>
 class BcastConvolution : public Implementation{
 public:
     ~BcastConvolution();
@@ -35,35 +36,36 @@ public:
 
 protected:
     static constexpr int constexpr_getICO(int IC) {
-        return utils::div_up(utils::div_up(IC, BICI), SZ);
+        return utils::div_up(utils::div_up(IC, ConvTraits::bici),
+                ConvTraits::sz);
+    }
+
+    static constexpr int constexpr_getOCI(int VLEN) {
+        return VLEN / ConvTraits::sz / ConvTraits::bici;
     }
 
     static constexpr int constexpr_getOCO(int OC, int VLEN) {
         return utils::div_up(OC, constexpr_getOCI(VLEN));
     }
 
-    static constexpr int constexpr_getOCI(int VLEN) {
-        return VLEN / SZ / BICI;
-    }
-
-    static constexpr int getICO(int IC) {
+    static int getICO(int IC) {
         return utils::div_up(utils::div_up(IC, BICI), SZ);
-    }
-
-    static int getOCO(int OC) {
-        return utils::div_up(OC, getOCI());
     }
 
     static int getOCI() {
         return xnor_nn::utils::Cpuid::vlen() / SZ / BICI;
     }
 
+    static int getOCO(int OC) {
+        return utils::div_up(OC, getOCI());
+    }
+
 protected:
     int BIC, ABIC, ICO, OCO, OCI;
 
-    static constexpr int SZ = 8;
-    static constexpr int BITS = sizeof(char) * SZ;
-    static constexpr int BICI = sizeof(int);
+    static constexpr int SZ = ConvTraits::sz;
+    static constexpr int BITS = ConvTraits::bits;
+    static constexpr int BICI = ConvTraits::bici;
 
 private:
 template<typename isa_traits, int OC, int IC, int IH, int IW, int KH, int KW,
@@ -84,10 +86,15 @@ static xnor_nn_status_t binarize_weights(
 static xnor_nn_status_t calculate_k(
         const xnor_nn_convolution_t *c, xnor_nn_resources_t res);
 
+// I am friend of myself
+template<typename T>
+friend class BcastConvolution;
+
 // template helpers
 template<int N>
 friend struct instantiator;
-template<typename isa_traits, int N>
+
+template<typename CT, typename isa_traits, int N>
 friend struct dispatch_helper;
 };
 

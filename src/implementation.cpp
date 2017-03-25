@@ -4,6 +4,8 @@
 
 #include "xnor_nn_types.h"
 
+#include "convolution_traits.hpp"
+
 #include "bcast_convolution.hpp"
 #include "reference_convolution.hpp"
 
@@ -13,7 +15,8 @@ namespace implementation {
     // TODO: use class instead of pointer to object
 std::vector<Implementation*> Implementations() {
     static std::vector<Implementation*> impls = {
-        new BcastConvolution(),
+        new BcastConvolution<ConvolutionTraits<IntConvolutionTraits>>(),
+
         new ReferenceConvolution(),
     };
     return impls;

@@ -4,11 +4,13 @@
 
 #include "logger.hpp"
 #include "xnor_nn_types.h"
+#include "convolution_traits.hpp"
 
 namespace xnor_nn {
 namespace implementation {
 
-xnor_nn_status_t BcastConvolution::calculate_k(
+template<typename Traits>
+xnor_nn_status_t BcastConvolution<Traits>::calculate_k(
         const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
     if (
         res[xnor_nn_resource_user_src] == nullptr
@@ -77,6 +79,16 @@ xnor_nn_status_t BcastConvolution::calculate_k(
 
     return xnor_nn_success;
 }
+
+template xnor_nn_status_t BcastConvolution<ConvolutionTraits<
+    IntConvolutionTraits>>::calculate_k(
+        const xnor_nn_convolution_t *c, xnor_nn_resources_t res);
+
+template<> xnor_nn_status_t BcastConvolution<ConvolutionTraits<
+    RuntimeConvolutionTraits>>::calculate_k(
+        const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
+        (void)c; (void)res; return xnor_nn_unimplemented;
+    }
 
 } // namespace implementation
 } // namespace xnor_nn

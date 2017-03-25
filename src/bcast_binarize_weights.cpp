@@ -4,11 +4,13 @@
 
 #include "logger.hpp"
 #include "xnor_nn_types.h"
+#include "convolution_traits.hpp"
 
 namespace xnor_nn {
 namespace implementation {
 
-xnor_nn_status_t BcastConvolution::binarize_weights(
+template<typename Traits>
+xnor_nn_status_t BcastConvolution<Traits>::binarize_weights(
         const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
     if (
         res[xnor_nn_resource_user_weights] == nullptr
@@ -29,7 +31,8 @@ xnor_nn_status_t BcastConvolution::binarize_weights(
     const int KH = c->kh;
     const int KW = c->kw;
 
-    BcastConvolution *state = reinterpret_cast<BcastConvolution*>(getState(c));
+    auto *state = reinterpret_cast<BcastConvolution<ConvolutionTraits<
+        RuntimeConvolutionTraits>>*>(getState(c));
 
     const int OCI = state->OCI;
     const int ICO = state->ICO;
@@ -108,6 +111,16 @@ xnor_nn_status_t BcastConvolution::binarize_weights(
 
     return xnor_nn_success;
 }
+
+template xnor_nn_status_t BcastConvolution<ConvolutionTraits<
+    IntConvolutionTraits>>::binarize_weights(
+        const xnor_nn_convolution_t *c, xnor_nn_resources_t res);
+
+template<> xnor_nn_status_t BcastConvolution<ConvolutionTraits<
+    RuntimeConvolutionTraits>>::binarize_weights(
+        const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
+        (void)c; (void)res; return xnor_nn_unimplemented;
+    }
 
 } // namespace implementation
 } // namespace xnor_nn

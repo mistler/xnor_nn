@@ -6,14 +6,16 @@
 #include "logger.hpp"
 
 #include "isa_traits.hpp"
+#include "convolution_traits.hpp"
 #include "unroller.hpp"
 
 namespace xnor_nn {
 namespace implementation {
 
+template<typename Traits>
 template<typename isa_traits, int OC, int IC, int IH, int IW, int KH, int KW,
     int SH, int SW, int PH, int PW>
-xnor_nn_status_t BcastConvolution::exec(
+xnor_nn_status_t BcastConvolution<Traits>::exec(
         const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
     constexpr int VLEN = isa_traits::vlen;
     (void)VLEN;
@@ -154,8 +156,9 @@ xnor_nn_status_t BcastConvolution::exec(
     return xnor_nn_success;
 }
 
+template<typename Traits>
 template<typename isa_traits>
-xnor_nn_status_t BcastConvolution::exec(
+xnor_nn_status_t BcastConvolution<Traits>::exec(
         const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
     constexpr int VLEN = isa_traits::vlen;
     (void)VLEN;
@@ -176,7 +179,8 @@ xnor_nn_status_t BcastConvolution::exec(
 
     const int MB = c->mb;
 
-    BcastConvolution *state = reinterpret_cast<BcastConvolution*>(getState(c));
+    auto *state = reinterpret_cast<BcastConvolution<ConvolutionTraits<
+        IntConvolutionTraits>>*>(getState(c));
 
     const int OC = c->oc;
     const int OH = c->oh;
@@ -251,7 +255,7 @@ xnor_nn_status_t BcastConvolution::exec(
 }
 
 using isa = xnor_nn::isa::isa_traits<xnor_nn::isa::isa_avx>;
-using algorithm = BcastConvolution;
+using algorithm = BcastConvolution<ConvolutionTraits<IntConvolutionTraits>>;
 #include "instantiator.hxx"
 
 } // namespace implementation
