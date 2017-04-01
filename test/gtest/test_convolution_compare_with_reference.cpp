@@ -4,16 +4,7 @@
 
 #include "xnor_nn.hpp"
 
-typedef struct {
-    xnor_nn_algorithm_t algorithm;
-    int mb;
-    int ic, oc;
-    int ih, iw;
-    int kh, kw;
-    int sh, sw;
-    int ph, pw;
-    int oh, ow;
-} params_t;
+using namespace xnor_nn::test;
 
 static void fill_src(float *d, const params_t &p) {
 #   pragma omp parallel for collapse(3) schedule(static)
@@ -82,9 +73,9 @@ TEST_P(ConvolutionForward, compare_with_reference)
 INSTANTIATE_TEST_CASE_P(ConvolutionBcastTask,
         ConvolutionForward, ::testing::Values(
 params_t{ xnor_nn_algorithm_bcast, 1, 1, 32, 60, 61, 3, 3, 1, 1, 0, 0 },
-params_t{ xnor_nn_algorithm_bcast, 256, 1, 32, 60, 61, 3, 3, 1, 1, 0, 0 },
+params_t{ xnor_nn_algorithm_bcast, 64, 1, 32, 60, 61, 3, 3, 1, 1, 0, 0 },
 params_t{ xnor_nn_algorithm_bcast, 1, 32, 32, 20, 20, 3, 3, 1, 1, 0, 0 },
-params_t{ xnor_nn_algorithm_bcast, 256, 32, 32, 20, 20, 3, 3, 1, 1, 0, 0 }
+params_t{ xnor_nn_algorithm_bcast, 64, 32, 32, 20, 20, 3, 3, 1, 1, 0, 0 }
 ));
 INSTANTIATE_TEST_CASE_P(ConvolutionBcastSmall,
         ConvolutionForward, ::testing::Values(
@@ -127,4 +118,12 @@ params_t{ xnor_nn_algorithm_bcast, 2, 96, 128, 27, 27, 5, 5, 1, 1, 2, 2 },
 params_t{ xnor_nn_algorithm_bcast, 2, 256, 256, 13, 13, 3, 3, 1, 1, 1, 1 },
 params_t{ xnor_nn_algorithm_bcast, 2, 12, 128, 13, 13, 3, 3, 1, 1, 1, 1 },
 params_t{ xnor_nn_algorithm_bcast, 2, 384, 64, 13, 13, 3, 3, 1, 1, 1, 1 }
+));
+INSTANTIATE_TEST_CASE_P(ConvolutionBcastCifar10,
+        ConvolutionForward, ::testing::Values(
+params_t{ xnor_nn_algorithm_bcast, 2, 128, 128, 32, 32, 3, 3, 1, 1, 1, 1 },
+params_t{ xnor_nn_algorithm_bcast, 2, 128, 256, 16, 16, 3, 3, 1, 1, 1, 1 },
+params_t{ xnor_nn_algorithm_bcast, 2, 256, 256, 16, 16, 3, 3, 1, 1, 1, 1 },
+params_t{ xnor_nn_algorithm_bcast, 2, 256, 512, 8, 8, 3, 3, 1, 1, 1, 1 },
+params_t{ xnor_nn_algorithm_bcast, 2, 512, 512, 8, 8, 3, 3, 1, 1, 1, 1 }
 ));

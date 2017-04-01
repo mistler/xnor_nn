@@ -1,12 +1,37 @@
 #ifndef COMMON_HPP
 #define COMMON_HPP
 
+#include <limits>
+#include <cstdint>
+
 #include "gtest.h"
 
 #include "xnor_nn.h"
+#include "utils.hpp"
 
 namespace xnor_nn {
 namespace test {
+
+typedef struct {
+    xnor_nn_algorithm_t algorithm;
+    int mb;
+    int ic, oc;
+    int ih, iw;
+    int kh, kw;
+    int sh, sw;
+    int ph, pw;
+    int oh, ow;
+} params_t;
+
+int getBICI(const params_t &p) {
+#if 1
+    return p.ic * p.kh * p.kw > std::numeric_limits<int16_t>::max()
+        ? sizeof(int32_t) : sizeof(int16_t);
+#else
+    (void)p;
+    return sizeof(int32_t);
+#endif
+}
 
 template <typename A, typename E>
 void check_data(int MB, int C, int H, int W, int AC,
@@ -84,12 +109,32 @@ template<typename T> void check_weights(
     }
 }
 
-// TODO: check space, filled with ONES
-void check_weights_bcast(int OC, int IC, int KH, int KW, int VLEN,
+void check_data_bcast(int MB, int IC, int IH, int IW, int BICI,
         const unsigned char *a, const float *e) {
     constexpr int SZ = 8;
 
-    constexpr int BICI = 4;
+    const int BIC = xnor_nn::utils::div_up(IC, SZ);
+    const int ABIC = xnor_nn::utils::div_up(BIC, BICI) * BICI;
+
+    int wrong = 0;
+    for (int mb = 0; mb < MB; mb++)
+    for (int h = 0; h < IH; h++)
+    for (int w = 0; w < IW; w++)
+    for (int c = 0; c < IC; c++) {
+        bool actual = a[((mb*IH + h)*IW + w)*ABIC + (c / SZ)] &
+            (1 << (SZ - 1 - (c % SZ)));
+        bool expected = !(bool)
+            (((unsigned int*)e)[((mb*IC + c)*IH + h)*IW + w] >> 31);
+        EXPECT_EQ(expected, actual) << "mb: " << mb << ", c: "
+            << c << ", h: " << h << ", w: " << w << ". wrong/total: "
+            << ++wrong << "/" << MB*IC*IH*IW;
+    }
+}
+
+// TODO: check space, filled with ONES
+void check_weights_bcast(int OC, int IC, int KH, int KW, int BICI, int VLEN,
+        const unsigned char *a, const float *e) {
+    constexpr int SZ = 8;
 
     constexpr int ELEM_SIZE = sizeof(char);
     constexpr int BITS = ELEM_SIZE * SZ;

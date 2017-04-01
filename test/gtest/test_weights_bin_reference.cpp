@@ -54,11 +54,11 @@ TEST(WeightsBinarizeReference, reference_precalculated) {
     };
 
     // Precalculated alpha
-    const float alpha = P;
+    const float alpha[OC] = {P, P};
 
     // Binarizer setup
     xnor_nn_resources_t res = {0};
-    float *actual_alpha = (float*)(&res[xnor_nn_resource_alpha]);
+    float *actual_alpha;
 
     xnor_nn_status_t st;
     char st_msg[16];
@@ -82,7 +82,8 @@ TEST(WeightsBinarizeReference, reference_precalculated) {
     xnor_nn::test::check_4d(OC, IC, KH, KW,
             (float*)res[xnor_nn_resource_bin_weights], expected_weights_bin);
 
-    xnor_nn::test::check_value(*actual_alpha, alpha);
+    actual_alpha = (float*)res[xnor_nn_resource_alpha];
+    xnor_nn::test::check_arrays(OC, actual_alpha, alpha);
 
 label:
     xnor_nn_free_resources(res);

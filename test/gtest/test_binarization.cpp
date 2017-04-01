@@ -5,16 +5,7 @@
 #include "xnor_nn.hpp"
 #include "cpuid.hpp"
 
-typedef struct {
-    xnor_nn_algorithm_t algorithm;
-    int mb;
-    int ic, oc;
-    int ih, iw;
-    int kh, kw;
-    int sh, sw;
-    int ph, pw;
-    int oh, ow;
-} params_t;
+using namespace xnor_nn::test;
 
 static void fill_src(float *d, const params_t &p) {
 #   pragma omp parallel for collapse(3) schedule(static)
@@ -55,13 +46,12 @@ protected:
         char st_msg[16];
 
         xnor_nn_convolution_t convolution;
+        const int bici = getBICI(p);
+        const int vlen = xnor_nn::utils::Cpuid::vlen();
 
         st = xnor_nn_init_convolution(&convolution, p.algorithm,
                 p.mb, p.oc, p.ic, p.ih, p.iw, p.kh, p.kw,
                 p.sh, p.sw, p.ph, p.pw);
-        const int VLEN = xnor_nn::utils::Cpuid::vlen();
-        const int BIC = ((p.ic + 8 - 1) / 8) * 8;
-        const int ABIC = ((BIC + VLEN - 1) / VLEN) * VLEN;
         if (st != xnor_nn_success) goto label;
 
         st = xnor_nn_allocate_resources(&convolution, res);
@@ -78,19 +68,11 @@ protected:
         if (st != xnor_nn_success) goto label;
 
         // Check result
-        if (p.algorithm == xnor_nn_algorithm_bcast) {
-            // TODO: some better checks
-            xnor_nn::test::check_weights_bcast(p.oc, p.ic, p.kh, p.kw, VLEN,
-                    (unsigned char*)res[xnor_nn_resource_bin_weights], weights);
-            xnor_nn::test::check_data(p.mb, p.ic, p.ih, p.iw,
-                    ((p.ic + 4 - 1) / 4 + 8 - 1) / 8 * 4 * 8,
-                    (unsigned char*)res[xnor_nn_resource_bin_src], src);
-        } else {
-            xnor_nn::test::check_weights(p.oc, p.ic, p.kh, p.kw, ABIC,
-                    (unsigned char*)res[xnor_nn_resource_bin_weights], weights);
-            xnor_nn::test::check_data(p.mb, p.ic, p.ih, p.iw, ABIC,
-                    (unsigned char*)res[xnor_nn_resource_bin_src], src);
-        }
+        xnor_nn::test::check_weights_bcast(p.oc, p.ic, p.kh, p.kw, bici, vlen,
+                (unsigned char*)res[xnor_nn_resource_bin_weights], weights);
+        xnor_nn::test::check_data_bcast(p.mb, p.ic, p.ih, p.iw, bici,
+                (unsigned char*)res[xnor_nn_resource_bin_src], src);
+        // TODO: check alpha, k, a
 
 label:
         delete[] src;
