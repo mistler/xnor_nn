@@ -15,6 +15,7 @@ namespace implementation {
     // TODO: use class instead of pointer to object
 std::vector<Implementation*> Implementations() {
     static std::vector<Implementation*> impls = {
+        new BcastConvolution<ConvolutionTraits<ShortConvolutionTraits>>(),
         new BcastConvolution<ConvolutionTraits<IntConvolutionTraits>>(),
 
         new ReferenceConvolution(),

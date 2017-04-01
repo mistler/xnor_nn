@@ -26,9 +26,8 @@ typedef enum {
     xnor_nn_resource_user_weights = 1,
     xnor_nn_resource_user_dst = 2,
 
+    xnor_nn_resource_internal = 3, // for iteration
     xnor_nn_resource_alpha = 3,
-
-    xnor_nn_resource_internal = 4, // for iteration
     xnor_nn_resource_bin_src = 4,
     xnor_nn_resource_bin_weights = 5,
     xnor_nn_resource_a = 6,

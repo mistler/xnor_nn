@@ -26,13 +26,10 @@ xnor_nn_status_t BcastConvolution<Traits>::binarize_data(
     auto *state = reinterpret_cast<BcastConvolution<ConvolutionTraits<
         RuntimeConvolutionTraits>>*>(getState(c));
 
+    const int SZ = state->SZ;
+
     const int BIC = state->BIC;
     const int ABIC = state->ABIC;
-
-    /*
-    const int BIC = (c->ic + 8 - 1) / 8;
-    const int ABIC = ((BIC + 4 - 1) / 4) * 4;
-    */
 
     LOG_INFO("binarize_data:\t", "execute:",
             "[", MB, "][", IC, "][", IH, "][", IW, "]",
@@ -70,12 +67,15 @@ xnor_nn_status_t BcastConvolution<Traits>::binarize_data(
 template xnor_nn_status_t BcastConvolution<ConvolutionTraits<
     IntConvolutionTraits>>::binarize_data(
         const xnor_nn_convolution_t *c, xnor_nn_resources_t res);
+template xnor_nn_status_t BcastConvolution<ConvolutionTraits<
+    ShortConvolutionTraits>>::binarize_data(
+        const xnor_nn_convolution_t *c, xnor_nn_resources_t res);
 
 template<> xnor_nn_status_t BcastConvolution<ConvolutionTraits<
-    RuntimeConvolutionTraits>>::binarize_data(
-        const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
-        (void)c; (void)res; return xnor_nn_unimplemented;
-    }
+            RuntimeConvolutionTraits>>::binarize_data(
+    const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
+    (void)c; (void)res; return xnor_nn_unimplemented;
+}
 
 } // namespace implementation
 } // namespace xnor_nn

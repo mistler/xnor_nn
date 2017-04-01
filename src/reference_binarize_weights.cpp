@@ -17,7 +17,7 @@ xnor_nn_status_t ReferenceConvolution::binarize_weights(
     ) return xnor_nn_error_invalid_input;
     const float *from = (float*)res[xnor_nn_resource_user_weights];
     float *to = (float*)res[xnor_nn_resource_bin_weights];
-    float *alpha = (float*)&res[xnor_nn_resource_alpha];
+    float *alpha = (float*)res[xnor_nn_resource_alpha];
 
     const int OC = c->oc;
     const int IC = c->ic;
@@ -35,11 +35,19 @@ xnor_nn_status_t ReferenceConvolution::binarize_weights(
 #   pragma omp parallel for schedule(static)
     for(int i = 0; i < elems; i++) to[i] = from[i];
 
-    const float cckhw = 1.f / elems;
+    const float chw = 1.f / (IC*KH*KW);
 
     // Calculate alpha
-    *alpha = 0.f;
-    for (int i = 0; i < elems; i++) *alpha += std::fabs(from[i]) * cckhw;
+#   pragma omp parallel for schedule(static)
+    for (int oc = 0; oc < OC; oc++) {
+        float *curr_alpha = alpha + oc;
+        *curr_alpha = 0.f;
+        for (int ic = 0; ic < IC; ic++)
+        for (int kh = 0; kh < KH; kh++)
+        for (int kw = 0; kw < KW; kw++)
+            *curr_alpha +=
+                std::fabs(from[((oc*IC + ic)*KH + kh)*KW + kw]) * chw;
+    }
 
     return xnor_nn_success;
 }

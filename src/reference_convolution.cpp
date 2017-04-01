@@ -18,8 +18,11 @@ void ReferenceConvolution::setupConvolution(xnor_nn_convolution_t *c) {
         c->mb * c->ic * c->ih * c->iw * ELEM_SIZE;
     c->resource_size[xnor_nn_resource_bin_weights] =
         c->oc * c->ic * c->kh * c->kw * ELEM_SIZE;
-    c->resource_size[xnor_nn_resource_a] = c->ih * c->iw * sizeof(float);
-    c->resource_size[xnor_nn_resource_k] = c->oh * c->ow * sizeof(float);
+    c->resource_size[xnor_nn_resource_a] =
+        c->mb * c->ih * c->iw * sizeof(float);
+    c->resource_size[xnor_nn_resource_k] =
+        c->mb * c->oh * c->ow * sizeof(float);
+    c->resource_size[xnor_nn_resource_alpha] = c->oc * sizeof(float);
 
     c->binarize_data = binarize_data;
     c->binarize_weights = binarize_weights;
@@ -44,7 +47,7 @@ xnor_nn_status_t ReferenceConvolution::exec(
     const float *src = (float *)res[xnor_nn_resource_bin_src];
     const float *weights = (float*)res[xnor_nn_resource_bin_weights];
     float *dst = (float*)res[xnor_nn_resource_user_dst];
-    float *alpha = (float*)&res[xnor_nn_resource_alpha];
+    float *alpha = (float*)res[xnor_nn_resource_alpha];
     const float *k = (float*)res[xnor_nn_resource_k];
 
     const int MB = c->mb;
@@ -99,8 +102,8 @@ xnor_nn_status_t ReferenceConvolution::exec(
                 *d += result*2.f-1.f; // {0,1} -> {-1,1}
             }
         }
-        *d *= *alpha;
-        *d *= k[oh*OW + ow];
+        *d *= alpha[oc];
+        *d *= k[(mb*OH + oh)*OW + ow];
     }
 
     return xnor_nn_success;

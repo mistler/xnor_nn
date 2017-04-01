@@ -39,18 +39,18 @@ xnor_nn_status_t ReferenceConvolution::calculate_k(
     LOG_INFO("calculate_k:\t", "execute:",
             "[", MB, "][", IC, "][", IH, "][", IW, "]",
             "->",
-            "[", "1", "]",
+            "[", MB, "][", IH, "][", IW, "]",
             "+",
-            "[", IH, "][", IW, "]",
+            "[", MB, "][", OH, "][", OW, "]",
             "Algorithm:", "reference");
 
     // Calculate A
-#   pragma omp parallel for collapse(2) schedule(static)
+#   pragma omp parallel for collapse(3) schedule(static)
+    for (int mb = 0; mb < MB; mb++)
     for (int ih = 0; ih < IH; ih++)
     for (int iw = 0; iw < IW; iw++) {
-        float *a_curr = a + ih*IW + iw;
+        float *a_curr = a + (mb*IH + ih)*IW + iw;
         *a_curr = 0.f;
-        for (int mb = 0; mb < MB; mb++)
         for (int ic = 0; ic < IC; ic++) {
             int src_idx = ((mb*IC + ic)*IH + ih)*IW + iw;
             *a_curr += std::fabs(from[src_idx]) * C;
@@ -58,10 +58,11 @@ xnor_nn_status_t ReferenceConvolution::calculate_k(
     }
 
     // Calculate K
-#   pragma omp parallel for collapse(2) schedule(static)
+#   pragma omp parallel for collapse(3) schedule(static)
+    for (int mb = 0; mb < MB; mb++)
     for (int oh = 0; oh < OH; oh++)
     for (int ow = 0; ow < OW; ow++) {
-        float *k_curr = k + oh*OW + ow;
+        float *k_curr = k + (mb*OH + oh)*OW + ow;
         *k_curr = 0.f;
         for (int kh = 0; kh < KH; kh++)
         for (int kw = 0; kw < KW; kw++) {
@@ -71,7 +72,7 @@ xnor_nn_status_t ReferenceConvolution::calculate_k(
             if (ih < 0 || iw < 0) continue;
             if (ih >= IH || iw >= IW) continue;
 
-            *k_curr += a[ih*IW + iw] * KHW;
+            *k_curr += a[(mb*IH + ih)*IW + iw] * KHW;
         }
     }
 

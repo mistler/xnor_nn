@@ -12,14 +12,20 @@ namespace implementation {
 
 constexpr static const int tp[] = {
     // AlexNet
-     96, 3, 227, 227, 11, 11, 4, 4, 0, 0,
-     256, 96, 27, 27, 5, 5, 1, 1, 2, 2,
-     384, 256, 13, 13, 3, 3, 1, 1, 1, 1,
-     384, 384, 13, 13, 3, 3, 1, 1, 1, 1,
-     256, 384, 13, 13, 3, 3, 1, 1, 1, 1,
+    96, 3, 227, 227, 11, 11, 4, 4, 0, 0,
+    256, 96, 27, 27, 5, 5, 1, 1, 2, 2,
+    384, 256, 13, 13, 3, 3, 1, 1, 1, 1,
+    384, 384, 13, 13, 3, 3, 1, 1, 1, 1,
+    256, 384, 13, 13, 3, 3, 1, 1, 1, 1,
     // Task
-     32, 1, 60, 61, 3, 3, 1, 1, 0, 0,
-     32, 32, 20, 20, 3, 3, 1, 1, 0, 0,
+    32, 1, 60, 61, 3, 3, 1, 1, 0, 0,
+    32, 32, 20, 20, 3, 3, 1, 1, 0, 0,
+    // Cifar10
+    128, 128, 32, 32, 3, 3, 1, 1, 1, 1,
+    256, 128, 16, 16, 3, 3, 1, 1, 1, 1,
+    256, 256, 16, 16, 3, 3, 1, 1, 1, 1,
+    512, 256, 8, 8, 3, 3, 1, 1, 1, 1,
+    512, 512, 8, 8, 3, 3, 1, 1, 1, 1,
 };
 constexpr int tp_size = 10;
 constexpr int tp_elems = sizeof(tp) / sizeof(tp[0]) / tp_size;
@@ -35,37 +41,30 @@ public:
     void setupConvolution(xnor_nn_convolution_t *c);
 
 protected:
-    static constexpr int constexpr_getICO(int IC) {
+    static constexpr int getICO(const int IC) {
         return utils::div_up(utils::div_up(IC, ConvTraits::bici),
                 ConvTraits::sz);
     }
 
-    static constexpr int constexpr_getOCI(int VLEN) {
+    static constexpr int getOCI(const int VLEN) {
         return VLEN / ConvTraits::sz / ConvTraits::bici;
     }
 
-    static constexpr int constexpr_getOCO(int OC, int VLEN) {
-        return utils::div_up(OC, constexpr_getOCI(VLEN));
+    static constexpr int getOCO(const int OC, const int VLEN) {
+        return utils::div_up(OC, getOCI(VLEN));
     }
 
-    static int getICO(int IC) {
-        return utils::div_up(utils::div_up(IC, BICI), SZ);
+    static constexpr int getBIC(const int IC) {
+        return utils::div_up(IC, ConvTraits::bits);
     }
 
-    static int getOCI() {
-        return xnor_nn::utils::Cpuid::vlen() / SZ / BICI;
-    }
-
-    static int getOCO(int OC) {
-        return utils::div_up(OC, getOCI());
+    static constexpr int getABIC(const int IC) {
+        return utils::div_up(getBIC(IC), ConvTraits::bici) * ConvTraits::bici;
     }
 
 protected:
-    int BIC, ABIC, ICO, OCO, OCI;
-
-    static constexpr int SZ = ConvTraits::sz;
-    static constexpr int BITS = ConvTraits::bits;
-    static constexpr int BICI = ConvTraits::bici;
+    int SZ, BICI, BITS;
+    int BIC, ABIC, ICO, OCI, OCO;
 
 private:
 template<typename isa_traits, int OC, int IC, int IH, int IW, int KH, int KW,
@@ -91,7 +90,7 @@ template<typename T>
 friend class BcastConvolution;
 
 // template helpers
-template<int N>
+template<typename T, int N>
 friend struct instantiator;
 
 template<typename CT, typename isa_traits, int N>

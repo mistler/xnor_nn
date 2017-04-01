@@ -16,15 +16,18 @@ xnor_nn_status_t BcastConvolution<Traits>::binarize_weights(
         res[xnor_nn_resource_user_weights] == nullptr
         || res[xnor_nn_resource_bin_weights] == nullptr
         || res[xnor_nn_resource_operations_count] == nullptr
+        || res[xnor_nn_resource_alpha] == nullptr
         || c == nullptr
     ) return xnor_nn_error_invalid_input;
 
+    typedef typename Traits::data_t data_t;
+
     const float *from = (float*)res[xnor_nn_resource_user_weights];
     unsigned char *to = (unsigned char*)res[xnor_nn_resource_bin_weights];
-    float *alpha = (float*)&res[xnor_nn_resource_alpha];
+    float *alpha = (float*)res[xnor_nn_resource_alpha];
+    data_t *op_c = (data_t*)res[xnor_nn_resource_operations_count];
     const unsigned int *f = (unsigned int*)from;
 
-    int *op_c = (int*)res[xnor_nn_resource_operations_count];
 
     const int OC = c->oc;
     const int IC = c->ic;
@@ -34,11 +37,12 @@ xnor_nn_status_t BcastConvolution<Traits>::binarize_weights(
     auto *state = reinterpret_cast<BcastConvolution<ConvolutionTraits<
         RuntimeConvolutionTraits>>*>(getState(c));
 
+    const int SZ = state->SZ;
+    const int BICI = state->BICI;
+
     const int OCI = state->OCI;
     const int ICO = state->ICO;
     const int OCO = state->OCO;
-
-    const int elems = OC*IC*KH*KW;
 
     LOG_INFO("binarize_weights:", "execute:",
             "[", OC, "][", IC, "][", KH, "][", KW, "]",
@@ -79,10 +83,19 @@ xnor_nn_status_t BcastConvolution<Traits>::binarize_weights(
         }
     }
 
+    const float chw = 1.f / (IC*KH*KW);
+
     // Calculate alpha
-    const float cckhw = 1.f / elems;
-    *alpha = 0.f;
-    for (int i = 0; i < elems; i++) *alpha += std::fabs(from[i]) * cckhw;
+#   pragma omp parallel for schedule(static)
+    for (int oc = 0; oc < OC; oc++) {
+        float *curr_alpha = alpha + oc;
+        *curr_alpha = 0.f;
+        for (int ic = 0; ic < IC; ic++)
+        for (int kh = 0; kh < KH; kh++)
+        for (int kw = 0; kw < KW; kw++)
+            *curr_alpha +=
+                std::fabs(from[((oc*IC + ic)*KH + kh)*KW + kw]) * chw;
+    }
 
     const int IH = c->ih;
     const int IW = c->iw;
@@ -93,9 +106,11 @@ xnor_nn_status_t BcastConvolution<Traits>::binarize_weights(
     const int PH = c->ph;
     const int PW = c->pw;
 
+#   pragma omp parallel for collapse(2) schedule(static)
     for (int oh = 0; oh < OH; oh++)
     for (int ow = 0; ow < OW; ow++) {
-        op_c[oh*OW + ow] = 0;
+        data_t *curr_op_c = op_c + oh*OW + ow;
+        *curr_op_c = 0;
 
         for (int kh = 0; kh < KH; kh++)
         for (int kw = 0; kw < KW; kw++) {
@@ -105,7 +120,7 @@ xnor_nn_status_t BcastConvolution<Traits>::binarize_weights(
             if (ih < 0 || iw < 0) continue;
             if (ih >= IH || iw >= IW) continue;
 
-            op_c[oh*OW + ow] += IC;
+            *curr_op_c += IC;
         }
     }
 
@@ -115,12 +130,15 @@ xnor_nn_status_t BcastConvolution<Traits>::binarize_weights(
 template xnor_nn_status_t BcastConvolution<ConvolutionTraits<
     IntConvolutionTraits>>::binarize_weights(
         const xnor_nn_convolution_t *c, xnor_nn_resources_t res);
+template xnor_nn_status_t BcastConvolution<ConvolutionTraits<
+    ShortConvolutionTraits>>::binarize_weights(
+        const xnor_nn_convolution_t *c, xnor_nn_resources_t res);
 
 template<> xnor_nn_status_t BcastConvolution<ConvolutionTraits<
-    RuntimeConvolutionTraits>>::binarize_weights(
-        const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
-        (void)c; (void)res; return xnor_nn_unimplemented;
-    }
+        RuntimeConvolutionTraits>>::binarize_weights(
+    const xnor_nn_convolution_t *c, xnor_nn_resources_t res) {
+    (void)c; (void)res; return xnor_nn_unimplemented;
+}
 
 } // namespace implementation
 } // namespace xnor_nn

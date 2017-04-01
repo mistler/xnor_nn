@@ -5,7 +5,7 @@ namespace xnor_nn{
 
 inline constexpr int get_unroll_factor(const int total, const int max_unroll) {
     int unroll = 0;
-    for (int u = 1; u < max_unroll; u++)
+    for (int u = 1; u <= max_unroll; u++)
         if (total % u == 0) unroll = u;
     return unroll;
 }

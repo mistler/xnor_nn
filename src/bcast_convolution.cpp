@@ -1,6 +1,7 @@
 #include "bcast_convolution.hpp"
 
 #include <vector>
+#include <stdexcept>
 
 #include "xnor_nn_types.h"
 #include "cpuid.hpp"
@@ -44,30 +45,41 @@ struct dispatcher{
 template<typename Traits>
 bool BcastConvolution<Traits>::isApplicable(
         const xnor_nn_convolution_t *c) const {
+    using Cpuid = xnor_nn::utils::Cpuid;
+
     bool ok = true
         && c->algorithm == xnor_nn_algorithm_bcast
-        && c->oc % getOCI() == 0
-        && c->forward == nullptr;
+        && c->oc % getOCI(Cpuid::vlen()) == 0
+        && c->forward == nullptr
+        && Traits::isApplicable(c);
     return ok;
 }
 
 template<typename Traits>
 void BcastConvolution<Traits>::setupConvolution(xnor_nn_convolution_t *c) {
-    BIC = utils::div_up(c->ic, BITS);
-    ABIC = utils::div_up(BIC, BICI) * BICI;
+    using Cpuid = xnor_nn::utils::Cpuid;
 
+    SZ = Traits::sz;
+    BICI = Traits::bici;
+    BITS = Traits::bits;
+
+    BIC = getBIC(c->ic);
+    ABIC = getABIC(c->ic);
     ICO = getICO(c->ic);
-    OCO = getOCO(c->oc);
-    OCI = getOCI();
+    OCI = getOCI(Cpuid::vlen());
+    OCO = getOCO(c->oc, Cpuid::vlen());
 
     c->resource_size[xnor_nn_resource_bin_src] =
         c->mb * ABIC * c->ih * c->iw * sizeof(char);
     c->resource_size[xnor_nn_resource_bin_weights] =
         OCO * c->kh * c->kw * ICO * OCI * sizeof(int);
-    c->resource_size[xnor_nn_resource_a] = c->ih * c->iw * sizeof(float);
-    c->resource_size[xnor_nn_resource_k] = c->oh * c->ow * sizeof(float);
+    c->resource_size[xnor_nn_resource_a] =
+        c->mb * c->ih * c->iw * sizeof(float);
+    c->resource_size[xnor_nn_resource_k] =
+        c->mb * c->oh * c->ow * sizeof(float);
+    c->resource_size[xnor_nn_resource_alpha] = c->oc * sizeof(float);
     c->resource_size[xnor_nn_resource_operations_count] =
-        c->oh * c->ow * sizeof(int);
+        c->oh * c->ow * sizeof(typename Traits::data_t);
 
     using runtime_traits = ConvolutionTraits<RuntimeConvolutionTraits>;
     using runtime_conv = BcastConvolution<runtime_traits>;
@@ -78,43 +90,45 @@ void BcastConvolution<Traits>::setupConvolution(xnor_nn_convolution_t *c) {
     c->binarize_weights = binarize_weights;
     c->calculate_k = calculate_k;
 
-    using Cpuid = xnor_nn::utils::Cpuid;
-    using CT = ConvolutionTraits<IntConvolutionTraits>;
 #ifdef __x86_64__
     if (Cpuid::avx()) {
         using isa = xnor_nn::isa::isa_traits<xnor_nn::isa::isa_avx>;
-        c->forward = dispatcher<CT, isa>::dispatch(c);
+        c->forward = dispatcher<Traits, isa>::dispatch(c);
         if (!c->forward) c->forward = exec<isa>;
         return;
     }
     if (Cpuid::sse3()) {
         using isa = xnor_nn::isa::isa_traits<xnor_nn::isa::isa_sse3>;
-        c->forward = dispatcher<CT, isa>::dispatch(c);
+        c->forward = dispatcher<Traits, isa>::dispatch(c);
         if (!c->forward) c->forward = exec<isa>;
         return;
     }
 #elif defined __arm__
     if (Cpuid::neon()) {
         using isa = xnor_nn::isa::isa_traits<xnor_nn::isa::isa_neon>;
-        c->forward = dispatcher<CT, isa>::dispatch(c);
+        c->forward = dispatcher<Traits, isa>::dispatch(c);
         if (!c->forward) c->forward = exec<isa>;
         return;
     }
 #endif
     using isa = xnor_nn::isa::isa_traits<xnor_nn::isa::isa_default>;
-    c->forward = dispatcher<CT, isa>::dispatch(c);
+    c->forward = dispatcher<Traits, isa>::dispatch(c);
     if (!c->forward) c->forward = exec<isa>;
+}
+
+template<> void BcastConvolution<ConvolutionTraits<
+    RuntimeConvolutionTraits>>::setupConvolution(xnor_nn_convolution_t *c) {
+    (void)c;
+    throw std::runtime_error(
+            "Runtime convolution traits has no setup method");
 }
 
 template<typename Traits>
 BcastConvolution<Traits>::~BcastConvolution() {}
 
-template<typename T> constexpr int BcastConvolution<T>::BICI;
-template<typename T> constexpr int BcastConvolution<T>::BITS;
-template<typename T> constexpr int BcastConvolution<T>::SZ;
-
-template class BcastConvolution<ConvolutionTraits<RuntimeConvolutionTraits>>;
+template class BcastConvolution<ConvolutionTraits<ShortConvolutionTraits>>;
 template class BcastConvolution<ConvolutionTraits<IntConvolutionTraits>>;
+template class BcastConvolution<ConvolutionTraits<RuntimeConvolutionTraits>>;
 
 } // namespace implementation
 } // namespace xnor_nn
