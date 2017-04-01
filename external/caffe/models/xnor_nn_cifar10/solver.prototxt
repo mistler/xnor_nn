@@ -14,7 +14,7 @@ base_lr: 0.001
 momentum: 0.9
 weight_decay: 0.004
 # The learning rate policy
-type: "Adam"
+#type: "Adam"
 lr_policy: "step"
 gamma: 0.1
 stepsize: 25000

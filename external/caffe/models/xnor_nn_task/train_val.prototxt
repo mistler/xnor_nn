@@ -77,6 +77,9 @@ layer {
     weight_filler {
       type: "xavier"
     }
+    bias_filler {
+      type: "constant"
+    }
   }
 }
 layer {
@@ -114,10 +117,12 @@ layer {
     num_output: 32
     kernel_size: 3
     stride: 1
-    bias_term: false
     engine: XNOR_NN
     weight_filler {
       type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
     }
   }
 }
@@ -157,6 +162,9 @@ layer {
     weight_filler {
       type: "xavier"
     }
+    bias_filler {
+      type: "constant"
+    }
   }
 }
 layer {
@@ -183,6 +191,9 @@ layer {
     num_output: 51
     weight_filler {
       type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
     }
   }
 }

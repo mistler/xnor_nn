@@ -42,11 +42,9 @@ layer {
     num_output: 128
     pad: 1
     kernel_size: 3
+    bias_term: false
     weight_filler {
       type: "xavier"
-    }
-    bias_filler {
-      type: "constant"
     }
   }
 }
@@ -55,11 +53,29 @@ layer {
   type: "BatchNorm"
   bottom: "conv1"
   top: "bn1"
+  param {
+    lr_mult: 0
+  }
+  param {
+    lr_mult: 0
+  }
+  param {
+    lr_mult: 0
+  }
+}
+layer {
+  name: "scale1"
+  type: "Scale"
+  bottom: "bn1"
+  top: "scale1"
+  scale_param {
+    bias_term: true
+  }
 }
 layer {
   name: "conv2"
   type: "Convolution"
-  bottom: "bn1"
+  bottom: "scale1"
   top: "conv2"
   convolution_param {
     num_output: 128
@@ -88,11 +104,29 @@ layer {
   type: "BatchNorm"
   bottom: "pool2"
   top: "bn2"
+  param {
+    lr_mult: 0
+  }
+  param {
+    lr_mult: 0
+  }
+  param {
+    lr_mult: 0
+  }
+}
+layer {
+  name: "scale2"
+  type: "Scale"
+  bottom: "bn2"
+  top: "scale2"
+  scale_param {
+    bias_term: true
+  }
 }
 layer {
   name: "conv3"
   type: "Convolution"
-  bottom: "bn2"
+  bottom: "scale2"
   top: "conv3"
   convolution_param {
     num_output: 256
@@ -110,11 +144,29 @@ layer {
   type: "BatchNorm"
   bottom: "conv3"
   top: "bn3"
+  param {
+    lr_mult: 0
+  }
+  param {
+    lr_mult: 0
+  }
+  param {
+    lr_mult: 0
+  }
+}
+layer {
+  name: "scale3"
+  type: "Scale"
+  bottom: "bn3"
+  top: "scale3"
+  scale_param {
+    bias_term: true
+  }
 }
 layer {
   name: "conv4"
   type: "Convolution"
-  bottom: "bn3"
+  bottom: "scale3"
   top: "conv4"
   convolution_param {
     num_output: 256
@@ -143,11 +195,29 @@ layer {
   type: "BatchNorm"
   bottom: "pool4"
   top: "bn4"
+  param {
+    lr_mult: 0
+  }
+  param {
+    lr_mult: 0
+  }
+  param {
+    lr_mult: 0
+  }
+}
+layer {
+  name: "scale4"
+  type: "Scale"
+  bottom: "bn4"
+  top: "scale4"
+  scale_param {
+    bias_term: true
+  }
 }
 layer {
   name: "conv5"
   type: "Convolution"
-  bottom: "bn4"
+  bottom: "scale4"
   top: "conv5"
   convolution_param {
     num_output: 512
@@ -165,11 +235,29 @@ layer {
   type: "BatchNorm"
   bottom: "conv5"
   top: "bn5"
+  param {
+    lr_mult: 0
+  }
+  param {
+    lr_mult: 0
+  }
+  param {
+    lr_mult: 0
+  }
+}
+layer {
+  name: "scale5"
+  type: "Scale"
+  bottom: "bn5"
+  top: "scale5"
+  scale_param {
+    bias_term: true
+  }
 }
 layer {
   name: "conv6"
   type: "Convolution"
-  bottom: "bn5"
+  bottom: "scale5"
   top: "conv6"
   convolution_param {
     num_output: 512
@@ -198,11 +286,29 @@ layer {
   type: "BatchNorm"
   bottom: "pool6"
   top: "bn6"
+  param {
+    lr_mult: 0
+  }
+  param {
+    lr_mult: 0
+  }
+  param {
+    lr_mult: 0
+  }
+}
+layer {
+  name: "scale6"
+  type: "Scale"
+  bottom: "bn6"
+  top: "scale6"
+  scale_param {
+    bias_term: true
+  }
 }
 layer {
   name: "ip7"
   type: "InnerProduct"
-  bottom: "bn6"
+  bottom: "scale6"
   top: "ip7"
   inner_product_param {
     num_output: 1024
@@ -219,11 +325,29 @@ layer {
   type: "BatchNorm"
   bottom: "ip7"
   top: "bn7"
+  param {
+    lr_mult: 0
+  }
+  param {
+    lr_mult: 0
+  }
+  param {
+    lr_mult: 0
+  }
+}
+layer {
+  name: "scale7"
+  type: "Scale"
+  bottom: "bn7"
+  top: "scale7"
+  scale_param {
+    bias_term: true
+  }
 }
 layer {
   name: "ip8"
   type: "InnerProduct"
-  bottom: "bn7"
+  bottom: "scale7"
   top: "ip8"
   inner_product_param {
     num_output: 1024
@@ -240,11 +364,29 @@ layer {
   type: "BatchNorm"
   bottom: "ip8"
   top: "bn8"
+  param {
+    lr_mult: 0
+  }
+  param {
+    lr_mult: 0
+  }
+  param {
+    lr_mult: 0
+  }
+}
+layer {
+  name: "scale8"
+  type: "Scale"
+  bottom: "bn8"
+  top: "scale8"
+  scale_param {
+    bias_term: true
+  }
 }
 layer {
   name: "ip9"
   type: "InnerProduct"
-  bottom: "bn8"
+  bottom: "scale8"
   top: "ip9"
   inner_product_param {
     num_output: 10

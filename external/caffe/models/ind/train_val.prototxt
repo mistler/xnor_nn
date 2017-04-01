@@ -1,40 +1,60 @@
 name: "ind"
 layer {
   name: "data"
-  type: "Data"
+  type: "DummyData"
   top: "data"
-  top: "label"
   include {
     phase: TRAIN
   }
-  transform_param {
-    mirror: true
-    crop_size: 90
-    mean_file: "data/imagenet/imagenet_mean.binaryproto"
-  }
-  data_param {
-    source: "data/imagenet/ilsvrc12_train_lmdb"
-    batch_size: 32
-    backend: LMDB
+  dummy_data_param {
+    shape: { dim: 1 dim: 3 dim: 90 dim: 124 }
+    data_filler {
+      type: "constant"
+      value: 0.01
+    }
   }
 }
 layer {
   name: "data"
-  type: "Data"
+  type: "DummyData"
+  top: "label"
+  include {
+    phase: TRAIN
+  }
+  dummy_data_param {
+    shape: { dim: 1  }
+    data_filler {
+      type: "constant"
+    }
+  }
+}
+layer {
+  name: "data"
+  type: "DummyData"
   top: "data"
+  include {
+    phase: TEST
+  }
+  dummy_data_param {
+    shape: { dim: 1 dim: 3 dim: 90 dim: 124 }
+    data_filler {
+      type: "constant"
+      value: 0.01
+    }
+  }
+}
+layer {
+  name: "data"
+  type: "DummyData"
   top: "label"
   include {
     phase: TEST
   }
-  transform_param {
-    mirror: false
-    crop_size: 90
-    mean_file: "data/imagenet/imagenet_mean.binaryproto"
-  }
-  data_param {
-    source: "data/imagenet/ilsvrc12_val_lmdb"
-    batch_size: 50
-    backend: LMDB
+  dummy_data_param {
+    shape: { dim: 1  }
+    data_filler {
+      type: "constant"
+    }
   }
 }
 

@@ -47,10 +47,12 @@ layer {
     num_output: 32
     kernel_size: 5
     stride: 1
-    bias_term: false
     engine: XNOR_NN
     weight_filler {
       type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
     }
   }
 }
@@ -92,10 +94,12 @@ layer {
     num_output: 48
     kernel_size: 5
     stride: 1
-    bias_term: false
     engine: XNOR_NN
     weight_filler {
       type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
     }
   }
 }
