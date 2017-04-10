@@ -1,38 +1,31 @@
 name: "LeNet"
 layer {
-  name: "mnist"
-  type: "Data"
+  name: "data"
+  type: "DummyData"
   top: "data"
+  include {
+    phase: TRAIN
+  }
+  dummy_data_param {
+    shape: { dim: 1 dim: 1 dim: 28 dim: 28 }
+    data_filler {
+      type: "constant"
+      value: 0.01
+    }
+  }
+}
+layer {
+  name: "data"
+  type: "DummyData"
   top: "label"
   include {
     phase: TRAIN
   }
-  transform_param {
-    scale: 0.00390625
-    mean_value: 127
-  }
-  data_param {
-    source: "data/mnist/mnist_train_lmdb"
-    batch_size: 64
-    backend: LMDB
-  }
-}
-layer {
-  name: "mnist"
-  type: "Data"
-  top: "data"
-  top: "label"
-  include {
-    phase: TEST
-  }
-  transform_param {
-    scale: 0.00390625
-    mean_value: 127
-  }
-  data_param {
-    source: "data/mnist/mnist_test_lmdb"
-    batch_size: 100
-    backend: LMDB
+  dummy_data_param {
+    shape: { dim: 1  }
+    data_filler {
+      type: "constant"
+    }
   }
 }
 layer {

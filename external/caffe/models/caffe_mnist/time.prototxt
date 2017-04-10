@@ -1,38 +1,31 @@
 name: "LeNet"
 layer {
-  name: "mnist"
-  type: "Data"
+  name: "data"
+  type: "DummyData"
   top: "data"
+  include {
+    phase: TRAIN
+  }
+  dummy_data_param {
+    shape: { dim: 1 dim: 1 dim: 28 dim: 28 }
+    data_filler {
+      type: "constant"
+      value: 0.01
+    }
+  }
+}
+layer {
+  name: "data"
+  type: "DummyData"
   top: "label"
   include {
     phase: TRAIN
   }
-  transform_param {
-    scale: 0.00390625
-    mean_value: 127
-  }
-  data_param {
-    source: "data/mnist/mnist_train_lmdb"
-    batch_size: 64
-    backend: LMDB
-  }
-}
-layer {
-  name: "mnist"
-  type: "Data"
-  top: "data"
-  top: "label"
-  include {
-    phase: TEST
-  }
-  transform_param {
-    scale: 0.00390625
-    mean_value: 127
-  }
-  data_param {
-    source: "data/mnist/mnist_test_lmdb"
-    batch_size: 100
-    backend: LMDB
+  dummy_data_param {
+    shape: { dim: 1  }
+    data_filler {
+      type: "constant"
+    }
   }
 }
 layer {
@@ -41,18 +34,15 @@ layer {
   bottom: "data"
   top: "conv1"
   param {
-    lr_mult: 0.1
+    lr_mult: 1
   }
   convolution_param {
     num_output: 24
     kernel_size: 5
     stride: 1
-    engine: XNOR_NN
+    bias_term: false
     weight_filler {
       type: "xavier"
-    }
-    bias_filler {
-      type: "constant"
     }
   }
 }
@@ -68,38 +58,20 @@ layer {
   }
 }
 layer {
-  name: "bn1"
-  type: "BatchNorm"
-  bottom: "pool1"
-  top: "bn1"
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 1
-  }
-  param {
-    lr_mult: 1
-  }
-}
-layer {
   name: "conv2"
   type: "Convolution"
-  bottom: "bn1"
+  bottom: "pool1"
   top: "conv2"
   param {
-    lr_mult: 0.1
+    lr_mult: 1
   }
   convolution_param {
     num_output: 48
     kernel_size: 5
     stride: 1
-    engine: XNOR_NN
+    bias_term: false
     weight_filler {
       type: "xavier"
-    }
-    bias_filler {
-      type: "constant"
     }
   }
 }

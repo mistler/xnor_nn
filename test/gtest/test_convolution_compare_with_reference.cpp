@@ -119,11 +119,22 @@ params_t{ xnor_nn_algorithm_bcast, 2, 256, 256, 13, 13, 3, 3, 1, 1, 1, 1 },
 params_t{ xnor_nn_algorithm_bcast, 2, 12, 128, 13, 13, 3, 3, 1, 1, 1, 1 },
 params_t{ xnor_nn_algorithm_bcast, 2, 384, 64, 13, 13, 3, 3, 1, 1, 1, 1 }
 ));
-INSTANTIATE_TEST_CASE_P(ConvolutionBcastCifar10,
+INSTANTIATE_TEST_CASE_P(ConvolutionBcastCifar10_tmp,
         ConvolutionForward, ::testing::Values(
 params_t{ xnor_nn_algorithm_bcast, 2, 128, 128, 32, 32, 3, 3, 1, 1, 1, 1 },
 params_t{ xnor_nn_algorithm_bcast, 2, 128, 256, 16, 16, 3, 3, 1, 1, 1, 1 },
 params_t{ xnor_nn_algorithm_bcast, 2, 256, 256, 16, 16, 3, 3, 1, 1, 1, 1 },
 params_t{ xnor_nn_algorithm_bcast, 2, 256, 512, 8, 8, 3, 3, 1, 1, 1, 1 },
 params_t{ xnor_nn_algorithm_bcast, 2, 512, 512, 8, 8, 3, 3, 1, 1, 1, 1 }
+));
+INSTANTIATE_TEST_CASE_P(ConvolutionBcastCifar10,
+        ConvolutionForward, ::testing::Values(
+params_t{ xnor_nn_algorithm_bcast, 2, 3, 32, 32, 32, 5, 5, 1, 1, 2, 2 },
+params_t{ xnor_nn_algorithm_bcast, 2, 32, 32, 32, 32, 5, 5, 1, 1, 2, 2 },
+params_t{ xnor_nn_algorithm_bcast, 2, 32, 64, 32, 32, 5, 5, 1, 1, 2, 2 }
+));
+INSTANTIATE_TEST_CASE_P(ConvolutionBcastMnist,
+        ConvolutionForward, ::testing::Values(
+params_t{ xnor_nn_algorithm_bcast, 2, 1, 24, 28, 28, 5, 5, 1, 1, 0, 0 },
+params_t{ xnor_nn_algorithm_bcast, 2, 24, 48, 8, 8, 5, 5, 1, 1, 0, 0 }
 ));
