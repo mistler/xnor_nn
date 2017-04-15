@@ -46,8 +46,8 @@ xnor_nn_status_t BcastConvolution<Traits>::exec(
     constexpr int OCO = getOCO(OC, VLEN);
     constexpr int OCI = getOCI(VLEN);
 
-    constexpr int MAX_ICO_UNROLL = 4;
-    constexpr int MAX_OW_UNROLL = 4;
+    constexpr int MAX_ICO_UNROLL = 32;
+    constexpr int MAX_OW_UNROLL = 24;
 
     constexpr int unroll_ow = get_unroll_factor(OW, MAX_OW_UNROLL);
     constexpr int unroll_ico = get_unroll_factor(ICO, MAX_ICO_UNROLL);
