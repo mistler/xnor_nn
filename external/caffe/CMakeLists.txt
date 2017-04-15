@@ -31,9 +31,6 @@ add_custom_target(
     COMMAND rm ${CAFFE_RUNNER}
 )
 
-set(CAFFE_TIME_VARS OMP_PLACES=cores OMP_NUM_THREADS=1)
-set(CAFFE_TRAIN_VARS OMP_PLACES=cores OMP_NUM_THREADS=2)
-
 set(CAFFE_TIME_RUN ${CAFFE_RUNNER} time)
 set(CAFFE_TRAIN_RUN ${CAFFE_RUNNER} train)
 
@@ -62,7 +59,7 @@ foreach(CURRENT_MODEL ${CAFFE_MODELS})
         WORKING_DIRECTORY ${CAFFE_SOURCE_DIR}
         DEPENDS ${CAFFE_RUNNER}
 
-        COMMAND ${CAFFE_TRAIN_VARS} ${CAFFE_TRAIN_RUN}
+        COMMAND ${CAFFE_TRAIN_RUN}
             ${CAFFE_SOLVER_PARAM}/${CURRENT_MODEL}/solver.prototxt
     )
 endforeach()
@@ -74,42 +71,42 @@ add_custom_target(
 
     COMMAND echo ___${CMAKE_SYSTEM_PROCESSOR}_caffe_time___
     COMMAND echo caffe_task
-    COMMAND ${CAFFE_TIME_VARS} ${CAFFE_TIME_RUN}
+    COMMAND ${CAFFE_TIME_RUN}
         -iterations=800 ${CAFFE_MODEL_PARAM}/caffe_task/time.prototxt
         ${CAFFE_GREP}
 
     COMMAND echo && echo xnor_nn_task
-    COMMAND ${CAFFE_TIME_VARS} ${CAFFE_TIME_RUN}
+    COMMAND ${CAFFE_TIME_RUN}
         -iterations=800 ${CAFFE_MODEL_PARAM}/xnor_nn_task/time.prototxt
         ${CAFFE_GREP}
 
     COMMAND echo && echo caffe_alexnet
-    COMMAND ${CAFFE_TIME_VARS} ${CAFFE_TIME_RUN}
+    COMMAND ${CAFFE_TIME_RUN}
         -iterations=8 ${CAFFE_MODEL_PARAM}/caffe_alexnet/time.prototxt
         ${CAFFE_GREP}
 
     COMMAND echo && echo xnor_nn_alexnet
-    COMMAND ${CAFFE_TIME_VARS} ${CAFFE_TIME_RUN}
+    COMMAND ${CAFFE_TIME_RUN}
         -iterations=8 ${CAFFE_MODEL_PARAM}/xnor_nn_alexnet/time.prototxt
         ${CAFFE_GREP}
 
     COMMAND echo && echo caffe_cifar10
-    COMMAND ${CAFFE_TIME_VARS} ${CAFFE_TIME_RUN}
+    COMMAND ${CAFFE_TIME_RUN}
         -iterations=800 ${CAFFE_MODEL_PARAM}/caffe_cifar10/time.prototxt
         ${CAFFE_GREP}
 
     COMMAND echo && echo xnor_nn_cifar10
-    COMMAND ${CAFFE_TIME_VARS} ${CAFFE_TIME_RUN}
+    COMMAND ${CAFFE_TIME_RUN}
         -iterations=800 ${CAFFE_MODEL_PARAM}/xnor_nn_cifar10/time.prototxt
         ${CAFFE_GREP}
 
     COMMAND echo && echo caffe_mnist
-    COMMAND ${CAFFE_TIME_VARS} ${CAFFE_TIME_RUN}
+    COMMAND ${CAFFE_TIME_RUN}
         -iterations=800 ${CAFFE_MODEL_PARAM}/caffe_mnist/time.prototxt
         ${CAFFE_GREP}
 
     COMMAND echo && echo xnor_nn_mnist
-    COMMAND ${CAFFE_TIME_VARS} ${CAFFE_TIME_RUN}
+    COMMAND ${CAFFE_TIME_RUN}
         -iterations=800 ${CAFFE_MODEL_PARAM}/xnor_nn_mnist/time.prototxt
         ${CAFFE_GREP}
 )
