@@ -6,11 +6,9 @@ import os
 cpu = ""
 num_threads = 1
 
-conv_size = {"OC": 256, "IC": 384, "OH": 13, "OW": 13, "KH": 3, "KW": 3}
-
-avx_cycles = {"LOAD": 1.0, "STORE": 1.0, "FMA": 1.0, "BCAST": 1.0, "MUL": 1.0, "ADD": 1.0, "XOR": 1.0, "POPCNT": 1.0, "EXTRACT": 1.0}
-sse4_2_cycles = {"LOAD": 1.0, "STORE": 1.0, "FMA": 1.0, "BCAST": 1.0, "MUL": 1.0, "ADD": 1.0, "XOR": 1.0, "POPCNT": 1.0, "EXTRACT": 1.0}
-neon_cycles = {"LOAD": 1.0, "STORE": 1.0, "FMA": 1.0, "BCAST": 1.0, "MUL": 1.0, "ADD": 1.0, "XOR": 1.0, "POPCNT": 1.0, "EXTRACT": 1.0}
+avx_cycles = {"LOAD": 1.0, "STORE": 1.0, "BCAST": 2.0, "MUL": 0.5, "ADD": 0.5, "LOGIC": 0.5}
+sse3_cycles = {"LOAD": 1.0, "STORE": 1.0, "BCAST": 2.0, "MUL": 0.5, "ADD": 0.5, "LOGIC": 0.33}
+neon_cycles = {"LOAD": 1.0, "STORE": 1.0, "FMA": 1.0, "BCAST": 1.0, "MUL": 1.0, "ADD": 1.0, "LOGIC": 1.0}
 
 def div_up(a, b):
     if b == 0: raise ArithmeticError("Division by zero in div_up")
@@ -43,67 +41,61 @@ def gemm_execute(M, N, K):
     duration = (t2-t1) / iters;
     return duration
 
-def ops_gemm_avx2(M, N, K, vlen):
-    Mp = M / 12
-    Kp = K / 3
-    Nv = N / vlen
-    total = Mp*Nv*Kp
-    return {"LOAD": 3*total, "FMA": 36*total, "BCAST": 36*total, "STORE": 12*Mp*Nv}
+def ops_gemm_avx(M, N, K, vlen):
+    return {"MUL": M*N*K/vlen, "ADD": M*N*K/vlen, "STORE": M*N/vlen, "LOAD": M*N*K/vlen/2}
 
-def ops_gemm_sse4_2(M, N, K, vlen):
-    total = M*N*K
-    stores = M*N
+def ops_gemm_sse3(M, N, K, vlen):
     return {"MUL": M*N*K/vlen, "ADD": M*N*K/vlen, "STORE": M*N/vlen, "LOAD": M*N*K/vlen/2}
 
 def ops_gemm_neon(M, N, K, vlen):
-    total = M*N*K
-    stores = M*N
-    return {"FMA": M*N*K/vlen, "STORE": M*N/vlen, "LOAD": M*N*K/vlen/2}
+    return {"MUL": M*N*K/vlen, "ADD": M*N*K/vlen, "STORE": M*N/vlen, "LOAD": M*N*K/vlen/2}
 
 def ops_conv_avx(s, vlen):
     OCO = div_up(s["OC"], vlen)
-    ICO = div_up(s["IC"], 32)
+    ICO = div_up(s["IC"], 16)
     stores = OCO*s["OH"]*s["OW"]
     inner = OCO*s["OH"]*s["OW"]*s["KH"]*s["KW"]*ICO
-    return {"MUL": stores*3, "ADD": stores + 8*inner, "STORE": stores, "BCAST": inner, "LOAD": inner, "XOR": 2*inner, "EXTRACT": 2*inner}
+    return {"MUL": stores*3, "ADD": stores, "STORE": stores, "BCAST": inner, "LOAD": inner, "LOGICS256": 4*inner, "LOGICS128": 31*inner+stores*16}
 
 def ops_conv_neon(s, vlen):
     OCO = div_up(s["OC"], vlen)
-    ICO = div_up(s["IC"], 32)
+    ICO = div_up(s["IC"], 16)
     stores = OCO*s["OH"]*s["OW"]
     inner = OCO*s["OH"]*s["OW"]*s["KH"]*s["KW"]*ICO
-    return {"ADD": 3*inner, "STORE": stores, "BCAST": inner, "LOAD": inner, "XOR": 2*inner, "VPOPCNT": inner}
+    return {"ADD": 2*inner, "STORE": stores, "BCAST": inner, "LOAD": inner, "LOGICS128": 3*inner}
 
-def theoretical_peak_gflops(mhz, vlen, num_threads, throughput, fma):
+def theoretical_peak_ops(mhz, vlen, num_threads, throughput, fma):
     return mhz*vlen*num_threads/throughput*(2 if fma else 1)
 
-def i7_theoretical_peak_gflops():
-    return theoretical_peak_gflops(2.4, 8, num_threads, 0.5, False)
+def i7_theoretical_peak_ops():
+    return theoretical_peak_ops(2.4, 8, num_threads, 0.5, False)
 
-def a53_theoretical_peak_gflops():
-    return theoretical_peak_gflops(1.2, 4, num_threads, 1, False)
+def atom_theoretical_peak_ops():
+    return theoretical_peak_ops(2.4, 4, num_threads, 0.5, False)
 
-def gemm_gflops(M, N, K, vlen, ops_counter, duration):
+def a53_theoretical_peak_ops():
+    return theoretical_peak_ops(1.2, 4, num_threads, 1, False)
+
+def gemm_ops(M, N, K, vlen, ops_counter, duration):
     operations = ops_counter(M, N, K, vlen)
-    fp = ops_to_fp(operations, vlen)
+    fp = ops_to_sops(operations, vlen)
     return fp / duration / 1000 / 1000 / 1000
 
-def conv_gflops(s, vlen, ops_counter, duration):
+def conv_ops(s, vlen, ops_counter, duration):
     operations = ops_counter(s, vlen)
-    fp = ops_to_fp(operations, vlen)
+    fp = ops_to_sops(operations, vlen)
     return fp / duration / 1000 / 1000 / 1000
 
 def check_add(dictionary, val, multiplier):
     return dictionary[val]*multiplier if val in dictionary else 0
 
-def ops_to_fp(ops, vlen):
+def ops_to_sops(ops, vlen):
     result = 0
     result += check_add(ops, "FMA", vlen*2)
     result += check_add(ops, "MUL", vlen)
     result += check_add(ops, "ADD", vlen)
-    result += check_add(ops, "XOR", vlen)
-    result += check_add(ops, "VPOPCNT", vlen)
-    result += check_add(ops, "POPCNT", vlen)
+    result += check_add(ops, "LOGICS128", 4)
+    result += check_add(ops, "LOGICS256", 8)
     return result
 
 def ops_to_cycles(ops):
@@ -111,12 +103,11 @@ def ops_to_cycles(ops):
     result += check_add(ops, "FMA", c["FMA"])
     result += check_add(ops, "MUL", c["MUL"])
     result += check_add(ops, "ADD", c["ADD"])
-    result += check_add(ops, "XOR", c["XOR"])
-    result += check_add(ops, "VPOPCNT", c["VPOPCNT"])
-    result += check_add(ops, "POPCNT", c["POPCNT"])
     result += check_add(ops, "LOAD", c["LOAD"])
     result += check_add(ops, "STORE", c["STORE"])
     result += check_add(ops, "BCAST", c["BCAST"])
+    result += check_add(ops, "LOGICS128", c["LOGICS128"])
+    result += check_add(ops, "LOGICS256", c["LOGICS256"])
     return result
 
 def getOH(ih, kh, sh, ph):
@@ -140,12 +131,12 @@ def getConvSize(line):
     return {"OC": oc, "IC": ic, "OH": getOH(ih, kh, sh, ph), "OW": getOW(iw, kw, sw, pw), "KH": kh, "KW": kw}
 
 def print_results(vlen, peak, cg, gg, conv_time, gemm_time, gemm_isa, conv_isa):
-    gflops_format = "{:.2f}"
+    ops_format = "{:.2f}"
     time_format = "{:7.2f}"
     speedup_format = "{:.1f}x"
 
-    print "conv\t" + conv_isa + ":\t(" + time_format.format(conv_time*1000) + "ms) = " + gflops_format.format(cg) + " Gflops/s"
-    print "gemm\t" + gemm_isa + ":\t(" + time_format.format(gemm_time*1000) + "ms) = " + gflops_format.format(gg) + " Gflops/s"
+    print "conv\t" + conv_isa + ":\t(" + time_format.format(conv_time*1000) + "ms) = " + ops_format.format(cg) + " Ops/s"
+    print "gemm\t" + gemm_isa + ":\t(" + time_format.format(gemm_time*1000) + "ms) = " + ops_format.format(gg) + " Ops/s"
     print "current speedup:\t" + speedup_format.format(gemm_time / conv_time)
     print "potential (ct gemm):\t" + speedup_format.format(gemm_time / conv_time * gg / cg)
     print "potential (ct peak):\t" + speedup_format.format(gemm_time / conv_time * peak / cg)
@@ -158,22 +149,22 @@ def process_conv_params(conv_size, conv_time):
 
     if cpu == "i7-3517u":
         vlen = 8
-        i7_peak = i7_theoretical_peak_gflops()
-        cg = conv_gflops(conv_size, vlen, ops_conv_avx, conv_time)
-        gg = gemm_gflops(M, N, K, vlen, ops_gemm_sse4_2, gemm_time)
-        print_results(vlen, i7_peak, cg, gg, conv_time, gemm_time, "SSE4.2", "AVX")
+        i7_peak = i7_theoretical_peak_ops()
+        cg = conv_ops(conv_size, vlen, ops_conv_avx, conv_time)
+        gg = gemm_ops(M, N, K, vlen, ops_gemm_sse3, gemm_time)
+        print_results(vlen, i7_peak, cg, gg, conv_time, gemm_time, "SSE3", "AVX")
 
     if cpu == "cortex-a53":
         vlen = 4
-        a53_peak = a53_theoretical_peak_gflops()
-        cg = conv_gflops(conv_size, vlen, ops_conv_neon, conv_time)
-        gg = gemm_gflops(M, N, K, vlen, ops_gemm_neon, gemm_time)
+        a53_peak = a53_theoretical_peak_ops()
+        cg = conv_ops(conv_size, vlen, ops_conv_neon, conv_time)
+        gg = gemm_ops(M, N, K, vlen, ops_gemm_neon, gemm_time)
         print_results(vlen, a53_peak, cg, gg, conv_time, gemm_time, "NEON", "NEON")
 
 def parse_perf():
+
     from subprocess import Popen, PIPE
     cmd = Popen(["./test/perf/test_simple_net"], stdout=PIPE)
-
     lines = cmd.stdout
     """
     with open('out.txt') as f:
@@ -210,16 +201,16 @@ def main():
     global num_threads
     num_threads = int(os.environ["OMP_NUM_THREADS"])
 
-    gflops = 0
+    ops = 0
     if cpu == "i7-3517u":
-        gflops = i7_theoretical_peak_gflops()
+        ops = i7_theoretical_peak_ops()
     elif cpu == "cortex-a53":
-        gflops = a53_theoretical_peak_gflops()
+        ops = a53_theoretical_peak_ops()
     else:
         print "Please specify processor codename"
         return
 
-    print "Theoretical peak " + str(cpu) + " (" + str(num_threads) + " threads): " + str(gflops) + " Gflops/s"
+    print "Theoretical peak " + str(cpu) + " (" + str(num_threads) + " threads): " + str(ops) + " Ops/s"
     parse_perf()
 
 main()
