@@ -13,9 +13,9 @@ template<typename Type>
 struct ConvolutionTraits{
     typedef void data_t;
     typedef void udata_t;
-    static constexpr int sz = 0;
-    static constexpr int bits = 0;
-    static constexpr int bici = 0;
+    static constexpr int sz = -1;
+    static constexpr int bits = -1;
+    static constexpr int bici = -1;
     static bool isApplicable(const xnor_nn_convolution_t *c) {
         (void)c;
         return false;
