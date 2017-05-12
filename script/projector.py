@@ -51,14 +51,14 @@ def ops_gemm_neon(M, N, K, vlen):
     return {"MUL": M*N*K/vlen, "ADD": M*N*K/vlen, "STORE": M*N/vlen, "LOAD": M*N*K/vlen/2}
 
 def ops_conv_avx(s, vlen):
-    OCO = div_up(s["OC"], vlen)
+    OCO = div_up(s["OC"], vlen*2)
     ICO = div_up(s["IC"], 16)
     stores = OCO*s["OH"]*s["OW"]
     inner = OCO*s["OH"]*s["OW"]*s["KH"]*s["KW"]*ICO
     return {"MUL": stores*3, "ADD": stores, "STORE": stores, "BCAST": inner, "LOAD": inner, "LOGICS256": 4*inner, "LOGICS128": 31*inner+stores*16}
 
 def ops_conv_neon(s, vlen):
-    OCO = div_up(s["OC"], vlen)
+    OCO = div_up(s["OC"], vlen*2)
     ICO = div_up(s["IC"], 16)
     stores = OCO*s["OH"]*s["OW"]
     inner = OCO*s["OH"]*s["OW"]*s["KH"]*s["KW"]*ICO
@@ -135,8 +135,8 @@ def print_results(vlen, peak, cg, gg, conv_time, gemm_time, gemm_isa, conv_isa):
     time_format = "{:7.2f}"
     speedup_format = "{:.1f}x"
 
-    print "conv\t" + conv_isa + ":\t(" + time_format.format(conv_time*1000) + "ms) = " + ops_format.format(cg) + " Ops/s"
-    print "gemm\t" + gemm_isa + ":\t(" + time_format.format(gemm_time*1000) + "ms) = " + ops_format.format(gg) + " Ops/s"
+    print "conv\t" + conv_isa + ":\t(" + time_format.format(conv_time*1000) + "ms) = " + ops_format.format(cg) + " Gops/s"
+    print "gemm\t" + gemm_isa + ":\t(" + time_format.format(gemm_time*1000) + "ms) = " + ops_format.format(gg) + " Gops/s"
     print "current speedup:\t" + speedup_format.format(gemm_time / conv_time)
     print "potential (ct gemm):\t" + speedup_format.format(gemm_time / conv_time * gg / cg)
     print "potential (ct peak):\t" + speedup_format.format(gemm_time / conv_time * peak / cg)
@@ -210,7 +210,7 @@ def main():
         print "Please specify processor codename"
         return
 
-    print "Theoretical peak " + str(cpu) + " (" + str(num_threads) + " threads): " + str(ops) + " Ops/s"
+    print "Theoretical peak " + str(cpu) + " (" + str(num_threads) + " threads): " + str(ops) + " Gops/s"
     parse_perf()
 
 main()
