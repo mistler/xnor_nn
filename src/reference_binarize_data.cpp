@@ -3,7 +3,7 @@
 #include <cmath>
 
 #include "xnor_nn_types.h"
-#include "logger.hpp"
+#include "convolution_logger.hpp"
 
 namespace xnor_nn {
 namespace implementation {
@@ -23,16 +23,28 @@ xnor_nn_status_t ReferenceConvolution::binarize_data(
     const int IH = c->ih;
     const int IW = c->iw;
 
-    const int elems = MB*IC*IH*IW;
+    const auto sfmt = c->src_format;
+    if (sfmt != xnor_nn_data_format_nchw && sfmt != xnor_nn_data_format_nhwc)
+        return xnor_nn_unimplemented;
 
-    LOG_INFO("binarize_data:\t", "execute:",
-            "[", MB, "][", IC, "][", IH, "][", IW, "]",
-            "->",
-            "[", MB, "][", IC, "][", IH, "][", IW, "]",
-            "Algorithm:", "reference");
+    using namespace xnor_nn::utils;
+    logger::log<logger::exec, logger::data>::info(c);
 
-#   pragma omp parallel for schedule(static)
-    for(int i = 0; i < elems; i++) to[i] = from[i];
+#   pragma omp parallel for collapse(2) schedule(static)
+    for (int mb = 0; mb < MB; mb++)
+    for (int ih = 0; ih < IH; ih++)
+    for (int iw = 0; iw < IW; iw++)
+    for (int ic = 0; ic < IC; ic++) {
+        int src_idx = -1;
+        switch (sfmt) {
+        case xnor_nn_data_format_nchw:
+            src_idx = ((mb*IC + ic)*IH + ih)*IW + iw; break;
+        case xnor_nn_data_format_nhwc:
+            src_idx = ((mb*IH + ih)*IW + iw)*IC + ic; break;
+        default: break;
+        }
+        to[((mb*IH + ih)*IW + iw)*IC + ic] = from[src_idx];
+    }
 
     return xnor_nn_success;
 }

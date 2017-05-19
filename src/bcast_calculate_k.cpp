@@ -2,7 +2,7 @@
 
 #include <cmath>
 
-#include "logger.hpp"
+#include "convolution_logger.hpp"
 #include "xnor_nn_types.h"
 #include "convolution_traits.hpp"
 
@@ -35,16 +35,15 @@ xnor_nn_status_t BcastConvolution<Traits>::calculate_k(
     const int PH = c->ph;
     const int PW = c->pw;
 
+    const auto sfmt = c->src_format;
+    if (sfmt != xnor_nn_data_format_nchw && sfmt != xnor_nn_data_format_nhwc)
+        return xnor_nn_unimplemented;
+
     const float C = 1.f / IC;
     const float KHW = 1.f / KH / KW;
 
-    LOG_INFO("calculate_k:\t", "execute:",
-            "[", MB, "][", IC, "][", IH, "][", IW, "]",
-            "->",
-            "[", MB, "][", IH, "][", IW, "]",
-            "+",
-            "[", MB, "][", OH, "][", OW, "]",
-            "Algorithm:", "bcast");
+    using namespace xnor_nn::utils;
+    logger::log<logger::exec, logger::k>::info(c);
 
     // Calculate A
 #   pragma omp parallel for collapse(3) schedule(static)
@@ -54,8 +53,15 @@ xnor_nn_status_t BcastConvolution<Traits>::calculate_k(
         float *a_curr = a + (mb*IH + ih)*IW + iw;
         *a_curr = 0.f;
         for (int ic = 0; ic < IC; ic++) {
-            int src_idx = ((mb*IC + ic)*IH + ih)*IW + iw;
-            *a_curr += std::fabs(from[src_idx]) * C;
+            int from_idx = -1;
+            switch (sfmt) {
+            case xnor_nn_data_format_nchw:
+                from_idx = ((mb*IC + ic)*IH + ih)*IW + iw; break;
+            case xnor_nn_data_format_nhwc:
+                from_idx = ((mb*IH + ih)*IW + iw)*IC + ic; break;
+            default: break;
+            }
+            *a_curr += std::fabs(from[from_idx]) * C;
         }
     }
 

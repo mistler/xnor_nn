@@ -44,6 +44,9 @@ void XnorNNConvolutionLayer<Dtype>::Forward_cpu(
     const int PH = this->pad_.cpu_data()[0];
     const int PW = this->pad_.cpu_data()[1];
     xnor_nn_conv.reset(new xnor_nn::Convolution{xnor_nn_algorithm_bcast,
+            xnor_nn_data_format_nchw,
+            xnor_nn_weights_format_oihw,
+            xnor_nn_data_format_nchw,
             MB, OC, IC, IH, IW, KH, KW, SH, SW, PH, PW, weight});
 
     binWeights.reserve(OC*IC*KH*KW);

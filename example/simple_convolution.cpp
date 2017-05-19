@@ -19,6 +19,9 @@ int main(){
 
     // Convolution setup
     xnor_nn::Convolution convolution{xnor_nn_algorithm_best,
+            xnor_nn_data_format_nchw,
+            xnor_nn_weights_format_oihw,
+            xnor_nn_data_format_nchw,
             MB, OC, IC, IH, IW, KH, KW, SH, SW, PH, PW, weights};
     delete[] weights;
 

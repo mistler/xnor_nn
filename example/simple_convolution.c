@@ -32,6 +32,9 @@ int main(void){
 
     // Setup
     st = xnor_nn_init_convolution(&convolution, xnor_nn_algorithm_best,
+            xnor_nn_data_format_nchw,
+            xnor_nn_weights_format_oihw,
+            xnor_nn_data_format_nchw,
             MB, OC, IC, IH, IW, KH, KW, SH, SW, PH, PW);
     if (st != xnor_nn_success) goto label;
 

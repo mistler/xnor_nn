@@ -11,10 +11,14 @@ namespace xnor_nn {
 class Convolution {
 public:
     Convolution(const xnor_nn_algorithm_t algorithm,
+            const xnor_nn_tensor_format_t src_fmt,
+            const xnor_nn_tensor_format_t weights_fmt,
+            const xnor_nn_tensor_format_t dst_fmt,
             int MB, int OC, int IC, int IH, int IW,
             int KH, int KW, int SH, int SW, int PH, int PW,
             const void *weights) : res_{0} {
         check_status(xnor_nn_init_convolution(&convolution_, algorithm,
+                    src_fmt, weights_fmt, dst_fmt,
                     MB, OC, IC, IH, IW, KH, KW, SH, SW, PH, PW));
 
         // Internal memory

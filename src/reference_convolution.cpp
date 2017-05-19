@@ -1,6 +1,6 @@
 #include "reference_convolution.hpp"
 
-#include "logger.hpp"
+#include "convolution_logger.hpp"
 
 namespace xnor_nn {
 namespace implementation {
@@ -64,35 +64,39 @@ xnor_nn_status_t ReferenceConvolution::exec(
     const int PH = c->ph;
     const int PW = c->pw;
 
-    LOG_INFO("convolution:\t", "execute:",
-            "[", MB, "][", IC, "][", IH, "][", IW, "]",
-            "x",
-            "[", OC, "][", IC, "][", KH, "][", KW, "]",
-            "=",
-            "[", MB, "][", OC, "][", OH, "][", OW, "]",
-            "stride: [", SH, "][", SW, "]",
-            "pad: [", PH, "][", PW, "]",
-            "Algorithm:", "reference");
+    const auto dfmt = c->dst_format;
+    if (dfmt != xnor_nn_data_format_nchw && dfmt != xnor_nn_data_format_nhwc)
+        return xnor_nn_unimplemented;
+
+    using namespace xnor_nn::utils;
+    logger::log<logger::exec, logger::convolution>::info(c);
 
 #   pragma omp parallel for collapse(2) schedule(static)
     for (int mb = 0; mb < MB; mb++)
     for (int oc = 0; oc < OC; oc++)
     for (int oh = 0; oh < OH; oh++)
     for (int ow = 0; ow < OW; ow++) {
-        int dst_idx = ((mb*OC + oc)*OH + oh)*OW + ow;
+        int dst_idx = -1;
+        switch (dfmt) {
+        case xnor_nn_data_format_nchw:
+            dst_idx = ((mb*OC + oc)*OH + oh)*OW + ow; break;
+        case xnor_nn_data_format_nhwc:
+            dst_idx = ((mb*OH + oh)*OW + ow)*OC + oc; break;
+        default: break;
+        }
         float *d = dst + dst_idx;
         *d = 0.f;
-        for (int ic = 0; ic < IC; ic++) {
-            for (int kh = 0; kh < KH; kh++)
-            for (int kw = 0; kw < KW; kw++) {
-                const int ih = oh*SH - PH + kh;
-                const int iw = ow*SW - PW + kw;
+        for (int kh = 0; kh < KH; kh++)
+        for (int kw = 0; kw < KW; kw++) {
+            const int ih = oh*SH - PH + kh;
+            const int iw = ow*SW - PW + kw;
 
-                if (ih < 0 || iw < 0) continue;
-                if (ih >= IH || iw >= IW) continue;
+            if (ih < 0 || iw < 0) continue;
+            if (ih >= IH || iw >= IW) continue;
 
-                int src_idx = ((mb*IC + ic)*IH + ih)*IW + iw;
-                int weights_idx = ((oc*IC + ic)*KH + kh)*KW + kw;
+            for (int ic = 0; ic < IC; ic++) {
+                int src_idx = ((mb*IH + ih)*IW + iw)*IC + ic;
+                int weights_idx = ((kh*KW + kw)*IC + ic)*OC + oc;
 
                 // TODO: optimize me
                 bool bsrc = src[src_idx] >= 0 ? true : false;

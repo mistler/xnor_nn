@@ -4,7 +4,7 @@
 #include <cstdint>
 
 #include "utils.hpp"
-#include "logger.hpp"
+#include "convolution_logger.hpp"
 
 #include "isa_traits.hpp"
 #include "convolution_traits.hpp"
@@ -41,6 +41,10 @@ xnor_nn_status_t BcastConvolution<Traits>::exec(
     float *dst = (float*)res[xnor_nn_resource_user_dst];
 
     const int MB = c->mb;
+    const auto dfmt = c->dst_format;
+    if (dfmt != xnor_nn_data_format_nchw && dfmt != xnor_nn_data_format_nhwc)
+        return xnor_nn_unimplemented;
+
     constexpr int OH = utils::getOH(IH, KH, SH, PH);
     constexpr int OW = utils::getOW(IW, KW, SW, PW);
     constexpr int ICO = getICO(IC);
@@ -53,14 +57,8 @@ xnor_nn_status_t BcastConvolution<Traits>::exec(
     constexpr int unroll_ow = get_unroll_factor(OW, MAX_OW_UNROLL);
     constexpr int unroll_ico = get_unroll_factor(ICO, MAX_ICO_UNROLL);
 
-    LOG_INFO("convolution:\t", "execute:",
-            "[", MB, "][", IC, "][", IH, "][", IW, "]",
-            "x",
-            "[", OC, "][", IC, "][", KH, "][", KW, "]",
-            "=",
-            "[", MB, "][", OC, "][", OH, "][", OW, "]",
-            "stride: [", SH, "][", SW, "]",
-            "pad: [", PH, "][", PW, "]",
+    using namespace xnor_nn::utils;
+    logger::log<logger::exec, logger::convolution>::info(c,
             sizeof(data_t) == sizeof(int32_t) ? "bcast_int" : "bcast_short",
             "AVX", "uow:", unroll_ow, "uico:", unroll_ico);
 
@@ -148,56 +146,69 @@ xnor_nn_status_t BcastConvolution<Traits>::exec(
         }
 
         auto store = [&](const int uow) {
+            int dst_idx = -1;
+            int dst_idx_mul = -1;
+            switch (dfmt) {
+            case xnor_nn_data_format_nchw:
+                dst_idx = ((mb*OC + oco*OCI + 0)*OH + oh)*OW + (ow+uow);
+                dst_idx_mul = OH*OW;
+                break;
+            case xnor_nn_data_format_nhwc:
+                dst_idx = ((mb*OH + oh)*OW + (ow+uow))*OC + oco*OCI;
+                dst_idx_mul = 1;
+                break;
+            default: break;
+            }
             if (sizeof(data_t) == sizeof(int32_t)) {
-                dst[((mb*OC + oco*OCI + 0)*OH + oh)*OW + (ow+uow)] =
+                dst[dst_idx + 0*dst_idx_mul] =
                     (_mm_extract_epi32(d_arr[uow][0], 0)*2 - op_c[oh*OW + (ow+uow)]) * alpha[oco*OCI + 0] * k[(mb*OH + oh)*OW + (ow+uow)];
-                dst[((mb*OC + oco*OCI + 1)*OH + oh)*OW + (ow+uow)] =
+                dst[dst_idx + 1*dst_idx_mul] =
                     (_mm_extract_epi32(d_arr[uow][0], 1)*2 - op_c[oh*OW + (ow+uow)]) * alpha[oco*OCI + 1] * k[(mb*OH + oh)*OW + (ow+uow)];
-                dst[((mb*OC + oco*OCI + 2)*OH + oh)*OW + (ow+uow)] =
+                dst[dst_idx + 2*dst_idx_mul] =
                     (_mm_extract_epi32(d_arr[uow][0], 2)*2 - op_c[oh*OW + (ow+uow)]) * alpha[oco*OCI + 2] * k[(mb*OH + oh)*OW + (ow+uow)];
-                dst[((mb*OC + oco*OCI + 3)*OH + oh)*OW + (ow+uow)] =
+                dst[dst_idx + 3*dst_idx_mul] =
                     (_mm_extract_epi32(d_arr[uow][0], 3)*2 - op_c[oh*OW + (ow+uow)]) * alpha[oco*OCI + 3] * k[(mb*OH + oh)*OW + (ow+uow)];
-                dst[((mb*OC + oco*OCI + 4)*OH + oh)*OW + (ow+uow)] =
+                dst[dst_idx + 4*dst_idx_mul] =
                     (_mm_extract_epi32(d_arr[uow][1], 0)*2 - op_c[oh*OW + (ow+uow)]) * alpha[oco*OCI + 4] * k[(mb*OH + oh)*OW + (ow+uow)];
-                dst[((mb*OC + oco*OCI + 5)*OH + oh)*OW + (ow+uow)] =
+                dst[dst_idx + 5*dst_idx_mul] =
                     (_mm_extract_epi32(d_arr[uow][1], 1)*2 - op_c[oh*OW + (ow+uow)]) * alpha[oco*OCI + 5] * k[(mb*OH + oh)*OW + (ow+uow)];
-                dst[((mb*OC + oco*OCI + 6)*OH + oh)*OW + (ow+uow)] =
+                dst[dst_idx + 6*dst_idx_mul] =
                     (_mm_extract_epi32(d_arr[uow][1], 2)*2 - op_c[oh*OW + (ow+uow)]) * alpha[oco*OCI + 6] * k[(mb*OH + oh)*OW + (ow+uow)];
-                dst[((mb*OC + oco*OCI + 7)*OH + oh)*OW + (ow+uow)] =
+                dst[dst_idx + 7*dst_idx_mul] =
                     (_mm_extract_epi32(d_arr[uow][1], 3)*2 - op_c[oh*OW + (ow+uow)]) * alpha[oco*OCI + 7] * k[(mb*OH + oh)*OW + (ow+uow)];
             } else {
-                dst[((mb*OC + oco*OCI + 0)*OH + oh)*OW + (ow+uow)] =
+                dst[dst_idx + 0*dst_idx_mul] =
                     (_mm_extract_epi16(d_arr[uow][0], 0)*2 - op_c[oh*OW + (ow+uow)]) * alpha[oco*OCI + 0] * k[(mb*OH + oh)*OW + (ow+uow)];
-                dst[((mb*OC + oco*OCI + 1)*OH + oh)*OW + (ow+uow)] =
+                dst[dst_idx + 1*dst_idx_mul] =
                     (_mm_extract_epi16(d_arr[uow][0], 1)*2 - op_c[oh*OW + (ow+uow)]) * alpha[oco*OCI + 1] * k[(mb*OH + oh)*OW + (ow+uow)];
-                dst[((mb*OC + oco*OCI + 2)*OH + oh)*OW + (ow+uow)] =
+                dst[dst_idx + 2*dst_idx_mul] =
                     (_mm_extract_epi16(d_arr[uow][0], 2)*2 - op_c[oh*OW + (ow+uow)]) * alpha[oco*OCI + 2] * k[(mb*OH + oh)*OW + (ow+uow)];
-                dst[((mb*OC + oco*OCI + 3)*OH + oh)*OW + (ow+uow)] =
+                dst[dst_idx + 3*dst_idx_mul] =
                     (_mm_extract_epi16(d_arr[uow][0], 3)*2 - op_c[oh*OW + (ow+uow)]) * alpha[oco*OCI + 3] * k[(mb*OH + oh)*OW + (ow+uow)];
-                dst[((mb*OC + oco*OCI + 4)*OH + oh)*OW + (ow+uow)] =
+                dst[dst_idx + 4*dst_idx_mul] =
                     (_mm_extract_epi16(d_arr[uow][0], 4)*2 - op_c[oh*OW + (ow+uow)]) * alpha[oco*OCI + 4] * k[(mb*OH + oh)*OW + (ow+uow)];
-                dst[((mb*OC + oco*OCI + 5)*OH + oh)*OW + (ow+uow)] =
+                dst[dst_idx + 5*dst_idx_mul] =
                     (_mm_extract_epi16(d_arr[uow][0], 5)*2 - op_c[oh*OW + (ow+uow)]) * alpha[oco*OCI + 5] * k[(mb*OH + oh)*OW + (ow+uow)];
-                dst[((mb*OC + oco*OCI + 6)*OH + oh)*OW + (ow+uow)] =
+                dst[dst_idx + 6*dst_idx_mul] =
                     (_mm_extract_epi16(d_arr[uow][0], 6)*2 - op_c[oh*OW + (ow+uow)]) * alpha[oco*OCI + 6] * k[(mb*OH + oh)*OW + (ow+uow)];
-                dst[((mb*OC + oco*OCI + 7)*OH + oh)*OW + (ow+uow)] =
+                dst[dst_idx + 7*dst_idx_mul] =
                     (_mm_extract_epi16(d_arr[uow][0], 7)*2 - op_c[oh*OW + (ow+uow)]) * alpha[oco*OCI + 7] * k[(mb*OH + oh)*OW + (ow+uow)];
 
-                dst[((mb*OC + oco*OCI + 8)*OH + oh)*OW + (ow+uow)] =
+                dst[dst_idx + 8*dst_idx_mul] =
                     (_mm_extract_epi16(d_arr[uow][1], 0)*2 - op_c[oh*OW + (ow+uow)]) * alpha[oco*OCI + 8] * k[(mb*OH + oh)*OW + (ow+uow)];
-                dst[((mb*OC + oco*OCI + 9)*OH + oh)*OW + (ow+uow)] =
+                dst[dst_idx + 9*dst_idx_mul] =
                     (_mm_extract_epi16(d_arr[uow][1], 1)*2 - op_c[oh*OW + (ow+uow)]) * alpha[oco*OCI + 9] * k[(mb*OH + oh)*OW + (ow+uow)];
-                dst[((mb*OC + oco*OCI + 10)*OH + oh)*OW + (ow+uow)] =
+                dst[dst_idx + 10*dst_idx_mul] =
                     (_mm_extract_epi16(d_arr[uow][1], 2)*2 - op_c[oh*OW + (ow+uow)]) * alpha[oco*OCI + 10] * k[(mb*OH + oh)*OW + (ow+uow)];
-                dst[((mb*OC + oco*OCI + 11)*OH + oh)*OW + (ow+uow)] =
+                dst[dst_idx + 11*dst_idx_mul] =
                     (_mm_extract_epi16(d_arr[uow][1], 3)*2 - op_c[oh*OW + (ow+uow)]) * alpha[oco*OCI + 11] * k[(mb*OH + oh)*OW + (ow+uow)];
-                dst[((mb*OC + oco*OCI + 12)*OH + oh)*OW + (ow+uow)] =
+                dst[dst_idx + 12*dst_idx_mul] =
                     (_mm_extract_epi16(d_arr[uow][1], 4)*2 - op_c[oh*OW + (ow+uow)]) * alpha[oco*OCI + 12] * k[(mb*OH + oh)*OW + (ow+uow)];
-                dst[((mb*OC + oco*OCI + 13)*OH + oh)*OW + (ow+uow)] =
+                dst[dst_idx + 13*dst_idx_mul] =
                     (_mm_extract_epi16(d_arr[uow][1], 5)*2 - op_c[oh*OW + (ow+uow)]) * alpha[oco*OCI + 13] * k[(mb*OH + oh)*OW + (ow+uow)];
-                dst[((mb*OC + oco*OCI + 14)*OH + oh)*OW + (ow+uow)] =
+                dst[dst_idx + 14*dst_idx_mul] =
                     (_mm_extract_epi16(d_arr[uow][1], 6)*2 - op_c[oh*OW + (ow+uow)]) * alpha[oco*OCI + 14] * k[(mb*OH + oh)*OW + (ow+uow)];
-                dst[((mb*OC + oco*OCI + 15)*OH + oh)*OW + (ow+uow)] =
+                dst[dst_idx + 15*dst_idx_mul] =
                     (_mm_extract_epi16(d_arr[uow][1], 7)*2 - op_c[oh*OW + (ow+uow)]) * alpha[oco*OCI + 15] * k[(mb*OH + oh)*OW + (ow+uow)];
             }
         };
@@ -241,7 +252,6 @@ xnor_nn_status_t BcastConvolution<Traits>::exec(
     const int OC = c->oc;
     const int OH = c->oh;
     const int OW = c->ow;
-    const int IC = c->ic;
     const int IH = c->ih;
     const int IW = c->iw;
     const int KH = c->kh;
@@ -251,18 +261,16 @@ xnor_nn_status_t BcastConvolution<Traits>::exec(
     const int PH = c->ph;
     const int PW = c->pw;
 
+    const auto dfmt = c->dst_format;
+    if (dfmt != xnor_nn_data_format_nchw && dfmt != xnor_nn_data_format_nhwc)
+        return xnor_nn_unimplemented;
+
     const int ICO = state->ICO;
     const int OCO = state->OCO;
     const int OCI = state->OCI;
 
-    LOG_INFO("convolution:\t", "execute:",
-            "[", MB, "][", IC, "][", IH, "][", IW, "]",
-            "x",
-            "[", OC, "][", IC, "][", KH, "][", KW, "]",
-            "=",
-            "[", MB, "][", OC, "][", OH, "][", OW, "]",
-            "stride: [", SH, "][", SW, "]",
-            "pad: [", PH, "][", PW, "]",
+    using namespace xnor_nn::utils;
+    logger::log<logger::exec, logger::convolution>::info(c,
             sizeof(data_t) == sizeof(int32_t) ? "bcast_int" : "bcast_short",
             "ISA:", "AVX");
 
@@ -324,10 +332,20 @@ xnor_nn_status_t BcastConvolution<Traits>::exec(
                 }
             }
         }
-        for (int oci = 0; oci < OCI; oci++)
-            dst[((mb*OC + oco*OCI + oci)*OH + oh)*OW + ow] =
-                (d_arr[oci]*2 - op_c[oh*OW + ow])
+        for (int oci = 0; oci < OCI; oci++) {
+            int dst_idx = -1;
+            switch (dfmt) {
+            case xnor_nn_data_format_nchw:
+                dst_idx = ((mb*OC + oco*OCI + oci)*OH + oh)*OW + ow;
+                break;
+            case xnor_nn_data_format_nhwc:
+                dst_idx = ((mb*OH + oh)*OW + ow)*OC + oco*OCI + oci;
+                break;
+            default: break;
+            }
+            dst[dst_idx] = (d_arr[oci]*2 - op_c[oh*OW + ow])
                 * alpha[oco*OCI + oci] * k[(mb*OH + oh)*OW + ow];
+        }
     }
 
     return xnor_nn_success;

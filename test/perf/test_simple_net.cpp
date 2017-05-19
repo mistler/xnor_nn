@@ -111,8 +111,10 @@ int main(){
         p.print(std::cout);
 
         st = xnor_nn_init_convolution(&convolution, p.algorithm,
-                p.MB, p.OC, p.IC, p.IH, p.IW,
-                p.KH, p.KW, p.SH, p.SW, p.PH, p.PW);
+            xnor_nn_data_format_nchw,
+            xnor_nn_weights_format_oihw,
+            xnor_nn_data_format_nchw,
+            p.MB, p.OC, p.IC, p.IH, p.IW, p.KH, p.KW, p.SH, p.SW, p.PH, p.PW);
         if (st != xnor_nn_success) goto label;
 
         st = xnor_nn_allocate_resources(&convolution, res);

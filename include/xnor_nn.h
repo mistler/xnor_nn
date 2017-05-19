@@ -20,6 +20,9 @@ void xnor_nn_binarize_weights_float(const xnor_nn_convolution_t *c,
 
 xnor_nn_status_t xnor_nn_init_convolution(xnor_nn_convolution_t *c,
         const xnor_nn_algorithm_t algorithm,
+        const xnor_nn_tensor_format_t src_fmt,
+        const xnor_nn_tensor_format_t weights_fmt,
+        const xnor_nn_tensor_format_t dst_fmt,
         int mb, int oc, int ic, int ih, int iw,
         int kh, int kw, int sh, int sw, int ph, int pw);
 

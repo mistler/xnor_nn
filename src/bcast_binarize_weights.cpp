@@ -2,7 +2,7 @@
 
 #include <cmath>
 
-#include "logger.hpp"
+#include "convolution_logger.hpp"
 #include "xnor_nn_types.h"
 #include "convolution_traits.hpp"
 
@@ -28,7 +28,6 @@ xnor_nn_status_t BcastConvolution<Traits>::binarize_weights(
     data_t *op_c = (data_t*)res[xnor_nn_resource_operations_count];
     const unsigned int *f = (unsigned int*)from;
 
-
     const int OC = c->oc;
     const int IC = c->ic;
     const int KH = c->kh;
@@ -44,11 +43,13 @@ xnor_nn_status_t BcastConvolution<Traits>::binarize_weights(
     const int ICO = state->ICO;
     const int OCO = state->OCO;
 
-    LOG_INFO("binarize_weights:", "execute:",
-            "[", OC, "][", IC, "][", KH, "][", KW, "]",
-            "->",
-            "[", OCO, "][", KH, "][", KW, "][", ICO, "][", OCI, "][", BICI, "]",
-            "Algorithm:", "bcast");
+    const auto wfmt = c->weights_format;
+    if (wfmt != xnor_nn_weights_format_oihw
+            && wfmt != xnor_nn_weights_format_hwio)
+        return xnor_nn_unimplemented;
+
+    using namespace xnor_nn::utils;
+    logger::log<logger::exec, logger::weights>::info(c);
 
 #   pragma omp parallel for collapse(3) schedule(static)
     for (int oco = 0; oco < OCO; oco++)
@@ -63,7 +64,15 @@ xnor_nn_status_t BcastConvolution<Traits>::binarize_weights(
             for (; ic < SZ && current_ic + ic < IC; ic++) {
                 const int from_oc = oco*OCI + oci;
                 const int from_ic = current_ic + ic;
-                const int from_idx = ((from_oc*IC + from_ic)*KH + kh)*KW + kw;
+                int from_idx = -1;
+                switch (wfmt) {
+                case xnor_nn_weights_format_oihw:
+                    from_idx = ((from_oc*IC + from_ic)*KH + kh)*KW + kw; break;
+                case xnor_nn_weights_format_hwio:
+                    from_idx = ((kh*KW + kw)*IC + from_ic)*OC + from_oc; break;
+                default: break;
+                }
+
                 char tmp = (~f[from_idx]) >> 31;
                 out <<= 1;
                 out |= tmp;
@@ -92,9 +101,17 @@ xnor_nn_status_t BcastConvolution<Traits>::binarize_weights(
         *curr_alpha = 0.f;
         for (int ic = 0; ic < IC; ic++)
         for (int kh = 0; kh < KH; kh++)
-        for (int kw = 0; kw < KW; kw++)
-            *curr_alpha +=
-                std::fabs(from[((oc*IC + ic)*KH + kh)*KW + kw]) * chw;
+        for (int kw = 0; kw < KW; kw++) {
+            int from_idx = -1;
+            switch (wfmt) {
+            case xnor_nn_weights_format_oihw:
+                from_idx = ((oc*IC + ic)*KH + kh)*KW + kw; break;
+            case xnor_nn_weights_format_hwio:
+                from_idx = ((kh*KW + kw)*IC + ic)*OC + oc; break;
+            default: break;
+            }
+            *curr_alpha += std::fabs(from[from_idx]) * chw;
+        }
     }
 
     const int IH = c->ih;

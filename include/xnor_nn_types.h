@@ -44,6 +44,13 @@ typedef enum {
     xnor_nn_operation_calculate_k = 3,
 } xnor_nn_operation_t;
 
+typedef enum {
+    xnor_nn_data_format_nchw = 0,
+    xnor_nn_data_format_nhwc = 1,
+    xnor_nn_weights_format_oihw = 2,
+    xnor_nn_weights_format_hwio = 3,
+} xnor_nn_tensor_format_t;
+
 typedef void *xnor_nn_resources_t[xnor_nn_resource_number];
 
 typedef struct xnor_nn_convolution_ xnor_nn_convolution_t;
@@ -60,6 +67,10 @@ struct xnor_nn_convolution_ {
     int sh, sw;
     int kh, kw;
     int ph, pw;
+
+    xnor_nn_tensor_format_t src_format;
+    xnor_nn_tensor_format_t weights_format;
+    xnor_nn_tensor_format_t dst_format;
 
     size_t resource_size[xnor_nn_resource_number];
 

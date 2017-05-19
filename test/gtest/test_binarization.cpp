@@ -50,8 +50,9 @@ protected:
         const int vlen = xnor_nn::utils::Cpuid::vlen();
 
         st = xnor_nn_init_convolution(&convolution, p.algorithm,
-                p.mb, p.oc, p.ic, p.ih, p.iw, p.kh, p.kw,
-                p.sh, p.sw, p.ph, p.pw);
+            p.fmt.src, p.fmt.weights, p.fmt.dst,
+            p.mb, p.oc, p.ic, p.ih, p.iw, p.kh, p.kw,
+            p.sh, p.sw, p.ph, p.pw);
         if (st != xnor_nn_success) goto label;
 
         st = xnor_nn_allocate_resources(&convolution, res);
@@ -68,9 +69,11 @@ protected:
         if (st != xnor_nn_success) goto label;
 
         // Check result
-        xnor_nn::test::check_weights_bcast(p.oc, p.ic, p.kh, p.kw, bici, vlen,
+        xnor_nn::test::check_weights_bcast(p.fmt.weights,
+                p.oc, p.ic, p.kh, p.kw, bici, vlen,
                 (unsigned char*)res[xnor_nn_resource_bin_weights], weights);
-        xnor_nn::test::check_data_bcast(p.mb, p.ic, p.ih, p.iw, bici,
+        xnor_nn::test::check_data_bcast(p.fmt.src,
+                p.mb, p.ic, p.ih, p.iw, bici,
                 (unsigned char*)res[xnor_nn_resource_bin_src], src);
         // TODO: check alpha, k, a
 
@@ -91,19 +94,41 @@ TEST_P(Binarization, binarization)
 {
 }
 
+auto bcast = xnor_nn_algorithm_bcast;
+
+auto fmt_caffe = tensor_fmt_t{xnor_nn_data_format_nchw,
+    xnor_nn_weights_format_oihw, xnor_nn_data_format_nchw};
+auto fmt_tf = tensor_fmt_t{xnor_nn_data_format_nchw,
+    xnor_nn_weights_format_oihw, xnor_nn_data_format_nchw};
+
 // mb ic oc ih iw kh kw sh sw ph pw
-INSTANTIATE_TEST_CASE_P(BinarizationBcastTask,
+INSTANTIATE_TEST_CASE_P(BinarizationBcastTaskCaffe,
         Binarization, ::testing::Values(
-params_t{ xnor_nn_algorithm_bcast, 1, 1, 32, 60, 61, 3, 3, 1, 1, 0, 0 },
-params_t{ xnor_nn_algorithm_bcast, 256, 1, 32, 60, 61, 3, 3, 1, 1, 0, 0 },
-params_t{ xnor_nn_algorithm_bcast, 1, 32, 32, 20, 20, 3, 3, 1, 1, 0, 0 },
-params_t{ xnor_nn_algorithm_bcast, 256, 32, 32, 20, 20, 3, 3, 1, 1, 0, 0 }
+params_t{ bcast, fmt_caffe, 1, 1, 32, 60, 61, 3, 3, 1, 1, 0, 0 },
+params_t{ bcast, fmt_caffe, 256, 1, 32, 60, 61, 3, 3, 1, 1, 0, 0 },
+params_t{ bcast, fmt_caffe, 1, 32, 32, 20, 20, 3, 3, 1, 1, 0, 0 },
+params_t{ bcast, fmt_caffe, 256, 32, 32, 20, 20, 3, 3, 1, 1, 0, 0 }
 ));
-INSTANTIATE_TEST_CASE_P(BinarizationBcastAlexNet,
+INSTANTIATE_TEST_CASE_P(BinarizationBcastTaskTf,
         Binarization, ::testing::Values(
-params_t{ xnor_nn_algorithm_bcast, 2, 3, 96, 227, 227, 11, 11, 4, 4, 0, 0 },
-params_t{ xnor_nn_algorithm_bcast, 2, 96, 256, 27, 27, 5, 5, 1, 1, 2, 2 },
-params_t{ xnor_nn_algorithm_bcast, 2, 256, 384, 13, 13, 3, 3, 1, 1, 1, 1 },
-params_t{ xnor_nn_algorithm_bcast, 2, 384, 384, 13, 13, 3, 3, 1, 1, 1, 1 },
-params_t{ xnor_nn_algorithm_bcast, 2, 384, 256, 13, 13, 3, 3, 1, 1, 1, 1 }
+params_t{ bcast, fmt_tf, 1, 1, 32, 60, 61, 3, 3, 1, 1, 0, 0 },
+params_t{ bcast, fmt_tf, 256, 1, 32, 60, 61, 3, 3, 1, 1, 0, 0 },
+params_t{ bcast, fmt_tf, 1, 32, 32, 20, 20, 3, 3, 1, 1, 0, 0 },
+params_t{ bcast, fmt_tf, 256, 32, 32, 20, 20, 3, 3, 1, 1, 0, 0 }
+));
+INSTANTIATE_TEST_CASE_P(BinarizationBcastAlexNetCaffe,
+        Binarization, ::testing::Values(
+params_t{ bcast, fmt_caffe, 2, 3, 96, 227, 227, 11, 11, 4, 4, 0, 0 },
+params_t{ bcast, fmt_caffe, 2, 96, 256, 27, 27, 5, 5, 1, 1, 2, 2 },
+params_t{ bcast, fmt_caffe, 2, 256, 384, 13, 13, 3, 3, 1, 1, 1, 1 },
+params_t{ bcast, fmt_caffe, 2, 384, 384, 13, 13, 3, 3, 1, 1, 1, 1 },
+params_t{ bcast, fmt_caffe, 2, 384, 256, 13, 13, 3, 3, 1, 1, 1, 1 }
+));
+INSTANTIATE_TEST_CASE_P(BinarizationBcastAlexNetTf,
+        Binarization, ::testing::Values(
+params_t{ bcast, fmt_tf, 2, 3, 96, 227, 227, 11, 11, 4, 4, 0, 0 },
+params_t{ bcast, fmt_tf, 2, 96, 256, 27, 27, 5, 5, 1, 1, 2, 2 },
+params_t{ bcast, fmt_tf, 2, 256, 384, 13, 13, 3, 3, 1, 1, 1, 1 },
+params_t{ bcast, fmt_tf, 2, 384, 384, 13, 13, 3, 3, 1, 1, 1, 1 },
+params_t{ bcast, fmt_tf, 2, 384, 256, 13, 13, 3, 3, 1, 1, 1, 1 }
 ));

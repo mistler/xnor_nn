@@ -3,7 +3,7 @@
 #include <cmath>
 
 #include "xnor_nn_types.h"
-#include "logger.hpp"
+#include "convolution_logger.hpp"
 
 namespace xnor_nn {
 namespace implementation {
@@ -24,16 +24,29 @@ xnor_nn_status_t ReferenceConvolution::binarize_weights(
     const int KH = c->kh;
     const int KW = c->kw;
 
-    const int elems = OC*IC*KH*KW;
+    const auto wfmt = c->weights_format;
+    if (wfmt != xnor_nn_weights_format_oihw
+            && wfmt != xnor_nn_weights_format_hwio)
+        return xnor_nn_unimplemented;
 
-    LOG_INFO("binarize_weights:", "execute:",
-            "[", OC, "][", IC, "][", KH, "][", KW, "]",
-            "->",
-            "[", OC, "][", IC, "][", KH, "][", KW, "]",
-            "Algorithm:", "reference");
+    using namespace xnor_nn::utils;
+    logger::log<logger::exec, logger::weights>::info(c);
 
-#   pragma omp parallel for schedule(static)
-    for(int i = 0; i < elems; i++) to[i] = from[i];
+#   pragma omp parallel for collapse(2) schedule(static)
+    for (int oc = 0; oc < OC; oc++)
+    for (int ic = 0; ic < IC; ic++)
+    for (int kh = 0; kh < KH; kh++)
+    for (int kw = 0; kw < KW; kw++) {
+        int weights_idx = -1;
+        switch (wfmt) {
+        case xnor_nn_weights_format_oihw:
+            weights_idx = ((oc*IC + ic)*KH + kh)*KW + kw; break;
+        case xnor_nn_weights_format_hwio:
+            weights_idx = ((kh*KW + kw)*IC + ic)*OC + oc; break;
+        default: break;
+        }
+        to[((kh*KW + kw)*IC + ic)*OC + oc] = from[weights_idx];
+    }
 
     const float chw = 1.f / (IC*KH*KW);
 
@@ -44,9 +57,17 @@ xnor_nn_status_t ReferenceConvolution::binarize_weights(
         *curr_alpha = 0.f;
         for (int ic = 0; ic < IC; ic++)
         for (int kh = 0; kh < KH; kh++)
-        for (int kw = 0; kw < KW; kw++)
-            *curr_alpha +=
-                std::fabs(from[((oc*IC + ic)*KH + kh)*KW + kw]) * chw;
+        for (int kw = 0; kw < KW; kw++) {
+            int weights_idx = -1;
+            switch (wfmt) {
+            case xnor_nn_weights_format_oihw:
+                weights_idx = ((oc*IC + ic)*KH + kh)*KW + kw; break;
+            case xnor_nn_weights_format_hwio:
+                weights_idx = ((kh*KW + kw)*IC + ic)*OC + oc; break;
+            default: break;
+            }
+            *curr_alpha += std::fabs(from[weights_idx]) * chw;
+        }
     }
 
     return xnor_nn_success;

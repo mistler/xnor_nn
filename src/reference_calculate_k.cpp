@@ -3,7 +3,7 @@
 #include <cmath>
 
 #include "xnor_nn_types.h"
-#include "logger.hpp"
+#include "convolution_logger.hpp"
 
 namespace xnor_nn {
 namespace implementation {
@@ -33,16 +33,20 @@ xnor_nn_status_t ReferenceConvolution::calculate_k(
     const int PH = c->ph;
     const int PW = c->pw;
 
+    const auto sfmt = c->src_format;
+    const auto wfmt = c->weights_format;
+
+    if (sfmt != xnor_nn_data_format_nchw && sfmt != xnor_nn_data_format_nhwc)
+        return xnor_nn_unimplemented;
+    if (wfmt != xnor_nn_weights_format_oihw
+            && wfmt != xnor_nn_weights_format_hwio)
+        return xnor_nn_unimplemented;
+
     const float C = 1.f / IC;
     const float KHW = 1.f / KH / KW;
 
-    LOG_INFO("calculate_k:\t", "execute:",
-            "[", MB, "][", IC, "][", IH, "][", IW, "]",
-            "->",
-            "[", MB, "][", IH, "][", IW, "]",
-            "+",
-            "[", MB, "][", OH, "][", OW, "]",
-            "Algorithm:", "reference");
+    using namespace xnor_nn::utils;
+    logger::log<logger::exec, logger::k>::info(c);
 
     // Calculate A
 #   pragma omp parallel for collapse(3) schedule(static)
@@ -52,7 +56,15 @@ xnor_nn_status_t ReferenceConvolution::calculate_k(
         float *a_curr = a + (mb*IH + ih)*IW + iw;
         *a_curr = 0.f;
         for (int ic = 0; ic < IC; ic++) {
-            int src_idx = ((mb*IC + ic)*IH + ih)*IW + iw;
+            int src_idx = -1;
+            switch (sfmt) {
+            case xnor_nn_data_format_nchw:
+                src_idx = ((mb*IC + ic)*IH + ih)*IW + iw; break;
+            case xnor_nn_data_format_nhwc:
+                src_idx = ((mb*IH + ih)*IW + iw)*IC + ic; break;
+            default: break;
+            }
+
             *a_curr += std::fabs(from[src_idx]) * C;
         }
     }
